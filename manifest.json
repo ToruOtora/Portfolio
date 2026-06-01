@@ -1,0 +1,86 @@
+{
+  "name": "Toru O",
+  "tags": "motion · digital art · adoptable ",
+
+  "profile": "images/profile.jpg",
+
+  "video": "video/preview.mp4",
+
+  "socials": {
+    "x":          "https://x.com/_toru_O_",
+    "facebook":   "https://www.facebook.com/sittichok.janto",
+    "instagram":  "https://www.instagram.com/sittichokjanto/",
+    "deviantart": "https://www.deviantart.com/otorasan"
+  },
+  "galleries": {
+    "digital-art": [
+      {
+        "src":   "images/digital-art/work01.jpg",
+        "title": "",
+        "desc":  ""
+      },
+      {
+        "src":   "images/digital-art/work02.jpg",
+        "title": "",
+        "desc":  ""
+      },
+      {
+        "src":   "images/digital-art/work03.jpg",
+        "title": "",
+        "desc":  ""
+      }
+    ],
+    "motion": [
+      {
+        "src":   "images/motion/clip01.mp4",
+        "title": "ชื่อคลิป",
+        "desc":  "คำอธิบายคลิปนี้"
+      },
+      {
+        "src":   "images/motion/clip02.mp4",
+        "title": "ชื่อคลิป 2",
+        "desc":  "คำอธิบาย"
+      }
+    ],
+    "adoptable": [
+      {
+        "src":   "images/adoptable/adopt01.jpg",
+        "title": "Owner : N/A",
+        "desc":  "[OPEN] Adoptable Auction - ธีม : Lolita, Obsessively Loving, Snake, rudy red • *⁠.⁠✧",
+        "price": "฿ 500"
+      },
+      {
+        "src":   "images/adoptable/adopt02.jpg",
+        "title": "Owner : N/A",
+        "desc":  "รายละเอียด",
+        "price": "฿ 1500"
+      },
+      {
+        "src":   "images/adoptable/adopt03.jpg",
+        "title": "ชื่อตัวละคร 3",
+        "desc":  "รายละเอียด",
+        "price": "฿ 300"
+      },
+      {
+        "src":   "images/adoptable/adopt04.jpg",
+        "title": "ชื่อตัวละคร 4",
+        "desc":  "รายละเอียด",
+        "price": "SOLD"
+      },
+      {
+        "src":   "images/adoptable/adopt05.jpg",
+        "title": "ชื่อตัวละคร 5",
+        "desc":  "รายละเอียด",
+        "price": "฿ 400"
+      },
+      {
+        "src":   "images/adoptable/adopt06.jpg",
+        "title": "ชื่อตัวละคร 6",
+        "desc":  "รายละเอียด",
+        "price": "SOLD"
+      }
+    ]
+  },
+
+  "contact": "ติดต่อได้ที่ F: sittichokjanto หรือ email: sittichokjanto@email.com"
+}
