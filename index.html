@@ -1460,6 +1460,34 @@
       padding: 2rem 1.25rem 5.5rem;
     }
   }
+
+  /* Fixed contact fab on terms page (bottom right) */
+  .contact-fab.terms-contact-fab {
+    position: fixed;
+    top: auto;
+    left: auto;
+    bottom: 2rem;
+    right: 2rem;
+    z-index: 90;
+  }
+
+  @media (max-width: 900px) {
+    .contact-fab.terms-contact-fab {
+      top: auto;
+      left: auto;
+      bottom: 2rem;
+      right: 2rem;
+    }
+  }
+
+  @media (max-width: 600px) {
+    .contact-fab.terms-contact-fab {
+      top: auto;
+      left: auto;
+      bottom: 4.5rem;
+      right: 1.25rem;
+    }
+  }
 </style>
 </head>
 
@@ -1492,7 +1520,7 @@
             d="M12 17a5 5 0 100-10 5 5 0 000 10zm0-14a1 1 0 011 1v1a1 1 0 11-2 0V4a1 1 0 011-1zm0 17a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zm9-9a1 1 0 010 2h-1a1 1 0 110-2h1zM4 12a1 1 0 010 2H3a1 1 0 110-2h1zm14.95-6.95a1 1 0 010 1.41l-.7.7a1 1 0 11-1.41-1.41l.7-.7a1 1 0 011.41 0zM6.34 17.66a1 1 0 010 1.41l-.7.7a1 1 0 01-1.41-1.41l.7-.7a1 1 0 011.41 0zm12.02.7a1 1 0 01-1.41 0l-.7-.7a1 1 0 011.41-1.41l.7.7a1 1 0 010 1.41zM5.05 5.05a1 1 0 011.41 0l.7.7A1 1 0 015.75 7.16l-.7-.7a1 1 0 010-1.41z" />
         </svg>
       </button>
-      <a class="nav-commission" href="https://www.facebook.com/sittichok.janto">commission</a>
+      <a class="nav-commission" href="#" onclick="showPage('terms'); return false;">commission</a>
       <button class="hamburger" onclick="toggleMobileMenu()" aria-label="เมนู">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
           <line x1="3" y1="7" x2="21" y2="7" />
@@ -1672,6 +1700,15 @@
 
     <!-- ── TERMS ── -->
     <section class="page-section" id="page-terms">
+      <!-- Contact Button Fixed Bottom Left -->
+      <a class="contact-fab terms-contact-fab" href="https://www.facebook.com/sittichok.janto" target="_blank"
+        title="ติดต่อ">
+        <svg viewBox="0 0 24 24">
+          <path
+            d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z" />
+        </svg>
+        <span>ส่งข้อความ</span>
+      </a>
       <div class="terms-page">
         <div class="terms-section" id="terms-commission">
           <div class="terms-section-title">Commission</div>
