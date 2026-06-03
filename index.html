@@ -434,7 +434,7 @@
     }
 
     .profile-name {
-      font-size: 22px;
+      font-size: 32px;
     }
   }
 
@@ -1423,7 +1423,7 @@
   }
 
   .terms-section-title {
-    font-size: 18px;
+    font-size: 22px;
     font-weight: 700;
     letter-spacing: -0.01em;
     color: var(--text);
@@ -1437,15 +1437,51 @@
   }
 
   .terms-item-title {
-    font-size: 13px;
+    font-size: 16px;
     font-weight: 600;
     color: var(--text);
     margin-bottom: 0.4rem;
     letter-spacing: 0.02em;
   }
 
-  .terms-item-desc {
+  .info-p-box {
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 1.25rem 1.25rem 0.45rem;
+    margin-top: calc(-1.75rem + 3px);
+    margin-bottom: 2rem;
+    background: rgba(150, 150, 150, 0.04);
+  }
+
+  .terms-info-item {
+    display: grid;
+    grid-template-columns: 140px 1fr auto;
+    gap: 1rem;
+    align-items: baseline;
+    margin-bottom: 0.8rem;
     font-size: 13px;
+    border-bottom: 1px dashed var(--line);
+    padding-bottom: 0.8rem;
+  }
+  .terms-info-item:last-child {
+    border-bottom: none;
+  }
+  .terms-info-title {
+    font-weight: 600;
+    color: var(--text);
+  }
+  .terms-info-desc {
+    color: var(--text2);
+    line-height: 1.6;
+  }
+  .terms-info-price {
+    font-weight: 600;
+    color: var(--text);
+    text-align: right;
+  }
+
+  .terms-item-desc {
+    font-size: 15px;
     color: var(--text2);
     line-height: 1.85;
     white-space: pre-wrap;
@@ -1458,6 +1494,13 @@
   @media (max-width: 600px) {
     .terms-page {
       padding: 2rem 1.25rem 5.5rem;
+    }
+    .info-p-box {
+      padding: 1rem 1rem 0.2rem;
+    }
+    .terms-info-item {
+      grid-template-columns: 90px 1fr auto;
+      gap: 0.5rem;
     }
   }
 
@@ -2177,16 +2220,53 @@
     }
 
     /* ══ RENDER: terms from sheet ══ */
-    function renderTerms(commItems, adoptItems) {
+    function renderTerms(commMixedItems, adoptItems) {
+      function buildMixedHTML(items) {
+        if (!items || !items.length) return '<p style="color:var(--text3);font-size:13px">เดี๋ยวมาเพิ่มทีหลัง</p>';
+        let html = '';
+        let inBox = false;
+
+        items.forEach(item => {
+          if (item.category === 'information p') {
+            if (!inBox) {
+              html += '<div class="info-p-box">';
+              inBox = true;
+            }
+            html += `
+      <div class="terms-info-item">
+        <div class="terms-info-title">${item.title || ''}</div>
+        <div class="terms-info-desc">${item.desc ? item.desc.replace(/\n/g, '<br>') : ''}</div>
+        <div class="terms-info-price">${item.price || ''}</div>
+      </div>`;
+          } else {
+            if (inBox) {
+              html += '</div>';
+              inBox = false;
+            }
+            html += `
+      <div class="terms-item">
+        ${item.title ? `<div class="terms-item-title">${item.title}</div>` : ''}
+        ${item.desc ? `<div class="terms-item-desc">${item.desc.replace(/\n/g, '<br>')}</div>` : ''}
+      </div>`;
+          }
+        });
+
+        if (inBox) {
+          html += '</div>';
+        }
+        return html;
+      }
+
       function buildHTML(items) {
-        if (!items.length) return '<p style="color:var(--text3);font-size:13px">เดี๋ยวมาเพิ่มทีหลัง</p>';
+        if (!items || !items.length) return '<p style="color:var(--text3);font-size:13px">เดี๋ยวมาเพิ่มทีหลัง</p>';
         return items.map(item => `
       <div class="terms-item">
         ${item.title ? `<div class="terms-item-title">${item.title}</div>` : ''}
         ${item.desc ? `<div class="terms-item-desc">${item.desc.replace(/\n/g, '<br>')}</div>` : ''}
       </div>`).join('');
       }
-      document.getElementById('terms-commission-items').innerHTML = buildHTML(commItems);
+
+      document.getElementById('terms-commission-items').innerHTML = buildMixedHTML(commMixedItems);
       document.getElementById('terms-adoptable-items').innerHTML = buildHTML(adoptItems);
     }
 
@@ -2232,25 +2312,31 @@
         const iDesc = headers.indexOf('desc');
         const iPrice = headers.indexOf('price');
 
-        const galleries = { 'digital-art': [], 'motion': [], 'adoptable': [], 'agreementC': [], 'agreementA': [] };
+        const galleries = { 'digital-art': [], 'motion': [], 'adoptable': [], 'commission-mixed': [], 'agreementA': [] };
 
         rows.slice(1).forEach(r => {
           const cat = (r[iCat] || '').trim();
           const src = (r[iSrc] || '').trim();
           if (!cat) return;
+          const catLower = cat.toLowerCase();
           const item = {
+            category: catLower,
             src,
             title: iTitle >= 0 ? (r[iTitle] || '').trim() : '',
             desc: iDesc >= 0 ? (r[iDesc] || '').trim() : '',
             price: iPrice >= 0 ? (r[iPrice] || '').trim() : '',
           };
-          if (galleries[cat] !== undefined) galleries[cat].push(item);
+          if (catLower === 'information p' || catLower === 'agreementc') {
+            galleries['commission-mixed'].push(item);
+          } else if (galleries[cat] !== undefined) {
+            galleries[cat].push(item);
+          }
         });
 
         renderGallery('digital-art', galleries['digital-art']);
         renderMotion(galleries['motion']);
         renderGallery('adoptable', galleries['adoptable']);
-        renderTerms(galleries['agreementC'], galleries['agreementA']);
+        renderTerms(galleries['commission-mixed'], galleries['agreementA']);
 
       } catch (e) {
         console.warn('Google Sheets load failed:', e);
