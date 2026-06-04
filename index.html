@@ -1539,6 +1539,38 @@
       right: 1.25rem;
     }
   }
+/*======= ปุ่มส่งข้อความในใบเสร็จ =======*/
+.message-btn {
+  background: var(--bg2);
+  border: 1px solid var(--line2);
+  color: var(--text2);
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 5px 16px;
+  border-radius: 999px;
+
+  text-decoration: none;
+  font-size: 11px;
+  font-weight: 500;
+  white-space: nowrap;
+  transform: translateY(3px);
+
+  transition:
+    background 0.2s ease,
+    color 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.2s ease;
+}
+
+.message-btn:hover {
+  background: var(--text);
+  color: var(--bg);
+  border-color: var(--text);
+  transform: translateY(2px);
+}
 
   /* Calculator FAB for terms page */
   .price-fab {
@@ -2147,7 +2179,12 @@
             </div>
 
             <div class="receipt-footer">
-              ขอบคุณที่ใช้บริการครับ / Thank you for commissioning!
+              ✨ ส่งสิ่งนี้พร้อมบรีฟมาที่แชทเพื่อประเมินราคาได้เลยครับ ✨<br>
+              <a href="https://www.facebook.com/sittichok.janto"
+                target="_blank"
+                class="message-btn">
+                FB: sittichok janto
+              </a>
             </div>
           </div>
 
