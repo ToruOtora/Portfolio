@@ -1458,22 +1458,28 @@
     grid-template-columns: 140px 1fr auto;
     gap: 1rem;
     align-items: baseline;
-    margin-bottom: 0.8rem;
+    margin-bottom: -0.05rem;
     font-size: 13px;
     border-bottom: 1px dashed var(--line);
     padding-bottom: 0.8rem;
+    padding-top: 15px;
+    transform: translateY(-7px);
   }
+
   .terms-info-item:last-child {
     border-bottom: none;
   }
+
   .terms-info-title {
     font-weight: 600;
     color: var(--text);
   }
+
   .terms-info-desc {
     color: var(--text2);
     line-height: 1.6;
   }
+
   .terms-info-price {
     font-weight: 600;
     color: var(--text);
@@ -1495,9 +1501,11 @@
     .terms-page {
       padding: 2rem 1.25rem 5.5rem;
     }
+
     .info-p-box {
       padding: 1rem 1rem 0.2rem;
     }
+
     .terms-info-item {
       grid-template-columns: 90px 1fr auto;
       gap: 0.5rem;
@@ -1530,6 +1538,366 @@
       bottom: 4.5rem;
       right: 1.25rem;
     }
+  }
+
+  /* Calculator FAB for terms page */
+  .price-fab {
+    position: fixed;
+    right: 2rem;
+    bottom: 6rem;
+    width: 70px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    background: var(--bg2);
+    border: 1px solid var(--line2);
+    border-radius: 999px;
+    color: var(--text2);
+    cursor: pointer;
+    transition: all 0.25s ease;
+    z-index: 90;
+  }
+
+  .price-fab:hover {
+    width: 160px;
+    background: var(--text);
+    color: var(--bg);
+  }
+
+  .price-fab.active {
+    width: auto;
+    min-width: 90px;
+    padding: 0 16px;
+    gap: 8px;
+    border-color: #6fcf49;
+    box-shadow: 0 4px 20px rgba(111, 207, 73, 0.3);
+  }
+
+  .price-fab.active svg {
+    position: static;
+    opacity: 1;
+  }
+
+  .price-fab.active span {
+    position: static;
+    opacity: 1;
+    transform: none;
+  }
+
+  .price-fab.active:hover {
+    background: #6fcf49;
+    color: #fff;
+    border-color: #6fcf49;
+    width: auto;
+    min-width: 90px;
+    padding: 0 16px;
+  }
+
+  .price-fab.active:hover svg {
+    opacity: 1;
+    color: #fff;
+  }
+
+  .price-fab.active:hover span {
+    opacity: 1;
+    transform: none;
+    color: #fff;
+  }
+
+  .price-fab svg {
+    position: absolute;
+    width: 18px;
+    height: 18px;
+    fill: currentColor;
+    opacity: 1;
+    transition: opacity 0.2s ease;
+  }
+
+  .price-fab:hover svg {
+    opacity: 0;
+  }
+
+  .price-fab span {
+    opacity: 0;
+    transform: translateX(10px);
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    font-size: 13px;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  .price-fab:hover span {
+    opacity: 1;
+    transform: translateX(0);
+  }
+
+  @media (max-width: 600px) {
+    .price-fab {
+      right: 1.25rem;
+      bottom: 8.5rem;
+    }
+  }
+
+  /* Price calculator button inside terms list */
+  .price-calc-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: var(--bg3);
+    border: 1px solid var(--line);
+    color: var(--text);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-left: 8px;
+    transition: all 0.2s ease;
+    vertical-align: middle;
+  }
+
+  .price-calc-btn:hover {
+    background: var(--text);
+    color: var(--bg);
+    border-color: var(--text);
+    transform: scale(1.1);
+  }
+
+  .price-calc-btn.selected {
+    background: #6fcf49;
+    color: #fff;
+    border-color: #6fcf49;
+  }
+
+  .terms-info-item {
+    transition: background-color 0.2s ease, padding 0.2s ease;
+  }
+
+  .terms-info-item.calc-selected {
+    background: rgba(111, 207, 73, 0.08);
+    border-radius: 6px;
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+
+  /* Receipt Modal styles */
+  .receipt-modal-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(8px);
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+  }
+
+  .receipt-modal-backdrop.open {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .receipt-card {
+    background: var(--bg2);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    width: 90%;
+    max-width: 450px;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.25);
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    transform: translateY(20px);
+    transition: transform 0.3s ease;
+  }
+
+  .receipt-modal-backdrop.open .receipt-card {
+    transform: translateY(0);
+  }
+
+  .receipt-close {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    background: transparent;
+    border: none;
+    color: var(--text3);
+    font-size: 20px;
+    cursor: pointer;
+    z-index: 10;
+    transition: color 0.15s;
+  }
+
+  .receipt-close:hover {
+    color: var(--text);
+  }
+
+  .receipt-capture-area {
+    padding: 32px;
+    background: var(--bg2);
+    color: var(--text);
+    font-family: inherit;
+  }
+
+  .receipt-header {
+    text-align: center;
+    margin-bottom: 20px;
+  }
+
+  .receipt-logo {
+    font-size: 24px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    color: var(--text);
+    margin-bottom: 4px;
+  }
+
+  .receipt-title {
+    font-size: 14px;
+    color: var(--text2);
+    font-weight: 600;
+    margin-bottom: 6px;
+  }
+
+  .receipt-date {
+    font-size: 11px;
+    color: var(--text3);
+  }
+
+  .receipt-divider-line {
+    border-top: 2px dashed var(--line);
+    margin: 16px 0;
+  }
+
+  .receipt-items {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    max-height: 250px;
+    overflow-y: auto;
+    padding-right: 4px;
+  }
+
+  .receipt-item-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+
+  .receipt-item-name {
+    color: var(--text);
+    font-weight: 500;
+    max-width: 70%;
+  }
+
+  .receipt-item-val {
+    color: var(--text2);
+    font-weight: 600;
+    text-align: right;
+  }
+
+  .receipt-total-section {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+  }
+
+  .receipt-total-label {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text);
+  }
+
+  .receipt-total-value {
+    font-size: 20px;
+    font-weight: 800;
+    color: #6fcf49;
+  }
+
+  .receipt-footer {
+    text-align: center;
+    font-size: 11px;
+    color: var(--text3);
+    margin-top: 24px;
+  }
+
+  .receipt-actions {
+    background: var(--bg3);
+    padding: 16px 24px;
+    border-top: 1px solid var(--line);
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .receipt-actions .reset-btn {
+    grid-column: span 2;
+  }
+
+  .receipt-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 1px solid var(--line);
+    background: var(--bg2);
+    color: var(--text);
+  }
+
+  .receipt-btn svg {
+    flex-shrink: 0;
+  }
+
+  .receipt-btn:hover {
+    background: var(--text);
+    color: var(--bg);
+    border-color: var(--text);
+  }
+
+  .receipt-btn.copy-btn:hover {
+    border-color: var(--text);
+  }
+
+  .receipt-btn.save-btn {
+    background: #6fcf49;
+    color: #fff;
+    border-color: #6fcf49;
+  }
+
+  .receipt-btn.save-btn:hover {
+    background: #5db53b;
+    border-color: #5db53b;
+    color: #fff;
+  }
+
+  .receipt-btn.reset-btn {
+    border-color: rgba(235, 87, 87, 0.4);
+    color: #eb5757;
+  }
+
+  .receipt-btn.reset-btn:hover {
+    background: #eb5757;
+    border-color: #eb5757;
+    color: #fff;
   }
 </style>
 </head>
@@ -1743,6 +2111,75 @@
 
     <!-- ── TERMS ── -->
     <section class="page-section" id="page-terms">
+      <!-- Calculator FAB for terms price calculation -->
+      <div class="price-fab" id="price-fab" title="คลิกเพื่อดูรายละเอียดใบเสร็จ" onclick="openReceiptModal()">
+        <svg viewBox="0 0 24 24">
+          <path
+            d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-2 14H7v-2h10v2zm0-4H7v-2h10v2zm0-4H7V7h10v2z" />
+        </svg>
+        <span id="price-fab-text">ราคารวม: ฿0</span>
+      </div>
+
+      <!-- Receipt Estimate Modal -->
+      <div class="receipt-modal-backdrop" id="receipt-modal" onclick="closeReceiptModal(event)">
+        <div class="receipt-card">
+          <button class="receipt-close" onclick="closeReceiptModalDirect()">✕</button>
+
+          <!-- Content to capture as image -->
+          <div id="receipt-capture-area" class="receipt-capture-area">
+            <div class="receipt-header">
+              <div class="receipt-logo">Toru O</div>
+              <div class="receipt-title">ใบเสนอราคา / Receipt Estimate</div>
+              <div class="receipt-date" id="receipt-date"></div>
+            </div>
+
+            <div class="receipt-divider-line"></div>
+
+            <div class="receipt-items" id="receipt-items-list">
+              <!-- Dynamically populated -->
+            </div>
+
+            <div class="receipt-divider-line"></div>
+
+            <div class="receipt-total-section">
+              <div class="receipt-total-label">ราคารวมทั้งสิ้น (Total Estimate)</div>
+              <div class="receipt-total-value" id="receipt-total-value">฿0</div>
+            </div>
+
+            <div class="receipt-footer">
+              ขอบคุณที่ใช้บริการครับ / Thank you for commissioning!
+            </div>
+          </div>
+
+          <div class="receipt-actions">
+            <button class="receipt-btn copy-btn" onclick="copyReceiptText()">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+              </svg>
+              คัดลอกข้อความ
+            </button>
+            <button class="receipt-btn save-btn" onclick="saveReceiptImage()">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="7 10 12 15 17 10" />
+                <line x1="12" y1="15" x2="12" y2="3" />
+              </svg>
+              บันทึกรูปภาพ
+            </button>
+            <button class="receipt-btn reset-btn" onclick="resetFromReceipt()">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" />
+                <path d="M16 3h5v5" />
+                <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" />
+                <path d="M8 21H3v-5" />
+              </svg>
+              ล้างรายการทั้งหมด
+            </button>
+          </div>
+        </div>
+      </div>
+
       <!-- Contact Button Fixed Bottom Left -->
       <a class="contact-fab terms-contact-fab" href="https://www.facebook.com/sittichok.janto" target="_blank"
         title="ติดต่อ">
@@ -1786,6 +2223,7 @@
     </div>
   </div>
 
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script>
     /* ══ THEME ══ */
     function toggleTheme() {
@@ -2082,12 +2520,12 @@
         // Snapping index calculation
         if (wasDragged) {
           const movedSlides = dragOffset / cardW;
-          if (Math.abs(movedSlides) > 0.15) {
-            // Dragged enough to change slide
+          if (Math.abs(movedSlides) > 0.1) {
+            // Dragged enough to change slide (at least 1 slide)
             if (dragOffset > 0) {
-              motionIdx = Math.max(0, motionIdx - Math.round(movedSlides));
+              motionIdx = Math.max(0, motionIdx - Math.max(1, Math.round(movedSlides)));
             } else {
-              motionIdx = Math.min(total - visible, motionIdx + Math.round(-movedSlides));
+              motionIdx = Math.min(total - visible, motionIdx + Math.max(1, Math.round(-movedSlides)));
             }
           }
         }
@@ -2227,16 +2665,20 @@
         let inBox = false;
 
         items.forEach(item => {
-          if (item.category === 'information p') {
+          const cleanPrice = (item.price || '').trim();
+          if (item.category === 'information p' || cleanPrice !== '') {
             if (!inBox) {
               html += '<div class="info-p-box">';
               inBox = true;
             }
             html += `
-      <div class="terms-info-item">
+      <div class="terms-info-item" data-price="${cleanPrice}" data-title="${item.title || ''}">
         <div class="terms-info-title">${item.title || ''}</div>
         <div class="terms-info-desc">${item.desc ? item.desc.replace(/\n/g, '<br>') : ''}</div>
-        <div class="terms-info-price">${item.price || ''}</div>
+        <div class="terms-info-price">
+          <span>${cleanPrice}</span>
+          ${cleanPrice ? `<button class="price-calc-btn" onclick="toggleCalcItem(this, event)">+</button>` : ''}
+        </div>
       </div>`;
           } else {
             if (inBox) {
@@ -2268,6 +2710,336 @@
 
       document.getElementById('terms-commission-items').innerHTML = buildMixedHTML(commMixedItems);
       document.getElementById('terms-adoptable-items').innerHTML = buildHTML(adoptItems);
+    }
+
+    /* ══ TERMS PRICE CALCULATOR ══ */
+    function parsePriceExpression(priceText, customPrice = null) {
+      if (customPrice !== null) {
+        return { type: 'add', value: parseFloat(customPrice) || 0 };
+      }
+
+      // Remove spaces, currency symbols, and commas
+      let clean = priceText.replace(/[฿,\s]/g, '').trim().toLowerCase();
+
+      if (clean === '' || clean === 'ฟรี' || clean === 'free') {
+        return { type: 'add', value: 0 };
+      }
+
+      // 1. Percentage addition, e.g. +75% or +50% or "+ 75% ต่อตัว"
+      const percentMatch = clean.match(/([+-]\s*\d+(?:\.\d+)?)%/);
+      if (percentMatch) {
+        return { type: 'percent', value: parseFloat(percentMatch[1].replace(/\s/g, '')) };
+      }
+
+      // 2. Multiplier, e.g. x2, *2, x1.5, "คูณ 2"
+      const multiplyMatch = clean.match(/([x*])\s*(\d+(?:\.\d+)?)/);
+      if (multiplyMatch) {
+        return { type: 'multiply', value: parseFloat(multiplyMatch[2]) };
+      }
+
+      // 3. Flat addition/subtraction with explicit sign, e.g. +100 or -50 or "+ 100 บาท"
+      const signedMatch = clean.match(/^([+-]\s*\d+(?:\.\d+)?)/);
+      if (signedMatch) {
+        return { type: 'add', value: parseFloat(signedMatch[1].replace(/\s/g, '')) };
+      }
+
+      // 4. Simple number, e.g. 400 or 1500 or "400 บาท"
+      const numMatch = clean.match(/^(\d+(?:\.\d+)?)/);
+      if (numMatch) {
+        return { type: 'add', value: parseFloat(numMatch[1]) };
+      }
+
+      // Ranges (e.g. "100-600") or other text requires user prompt
+      return null;
+    }
+
+    function toggleCalcItem(btn, event) {
+      event.stopPropagation();
+      const itemEl = btn.closest('.terms-info-item');
+      if (!itemEl) return;
+
+      const title = itemEl.getAttribute('data-title') || '';
+      const priceText = itemEl.getAttribute('data-price') || '';
+      const isSelected = itemEl.classList.contains('calc-selected');
+
+      if (isSelected) {
+        itemEl.classList.remove('calc-selected');
+        btn.classList.remove('selected');
+        btn.textContent = '+';
+        itemEl.removeAttribute('data-custom-price');
+      } else {
+        // Deselect other selected items in the same pricing box (info-p-box)
+        const parentBox = itemEl.closest('.info-p-box');
+        if (parentBox) {
+          parentBox.querySelectorAll('.terms-info-item.calc-selected').forEach(otherItem => {
+            if (otherItem !== itemEl) {
+              otherItem.classList.remove('calc-selected');
+              otherItem.removeAttribute('data-custom-price');
+              const otherBtn = otherItem.querySelector('.price-calc-btn');
+              if (otherBtn) {
+                otherBtn.classList.remove('selected');
+                otherBtn.textContent = '+';
+              }
+            }
+          });
+        }
+
+        let expr = parsePriceExpression(priceText);
+        let customPrice = null;
+
+        if (expr === null) {
+          let defaultPromptVal = '';
+          const match = priceText.replace(/[฿,\s]/g, '').match(/\d+/);
+          if (match) defaultPromptVal = match[0];
+
+          const input = prompt(`ระบุจำนวนเงินสำหรับ "${title}"\n(ราคาในตาราง: ${priceText}):`, defaultPromptVal);
+          if (input === null) return;
+
+          const val = parseFloat(input.replace(/[฿,\s]/g, ''));
+          if (isNaN(val)) {
+            alert("กรุณาระบุตัวเลขที่ถูกต้อง");
+            return;
+          }
+          customPrice = val;
+        }
+
+        itemEl.classList.add('calc-selected');
+        btn.classList.add('selected');
+        btn.textContent = '✓';
+        if (customPrice !== null) {
+          itemEl.setAttribute('data-custom-price', customPrice);
+        }
+      }
+
+      recalculateTotal();
+    }
+
+    function recalculateTotal() {
+      const selectedItems = document.querySelectorAll('.terms-info-item.calc-selected');
+      let total = 0;
+
+      selectedItems.forEach(item => {
+        const priceText = item.getAttribute('data-price') || '';
+        const customPrice = item.getAttribute('data-custom-price');
+        const expr = parsePriceExpression(priceText, customPrice);
+
+        if (expr) {
+          if (expr.type === 'add') {
+            total += expr.value;
+          } else if (expr.type === 'percent') {
+            total += total * (expr.value / 100);
+          } else if (expr.type === 'multiply') {
+            total *= expr.value;
+          }
+        }
+      });
+
+      updatePriceFAB(total);
+    }
+
+    function updatePriceFAB(total) {
+      const fab = document.getElementById('price-fab');
+      const textEl = document.getElementById('price-fab-text');
+      if (!fab || !textEl) return;
+
+      const formatted = Math.round(total).toLocaleString();
+
+      if (total > 0) {
+        textEl.textContent = `฿${formatted}`;
+        fab.classList.add('active');
+      } else {
+        textEl.textContent = `ราคารวม: ฿0`;
+        fab.classList.remove('active');
+      }
+    }
+
+    function resetCalcSelections() {
+      const selected = document.querySelectorAll('.terms-info-item.calc-selected');
+      if (selected.length === 0) return;
+
+      if (confirm("ต้องการล้างรายการคำนวณทั้งหมดหรือไม่?")) {
+        selected.forEach(item => {
+          item.classList.remove('calc-selected');
+          item.removeAttribute('data-custom-price');
+          const btn = item.querySelector('.price-calc-btn');
+          if (btn) {
+            btn.classList.remove('selected');
+            btn.textContent = '+';
+          }
+        });
+        recalculateTotal();
+      }
+    }
+
+    /* ══ RECEIPT MODAL FUNCTIONS ══ */
+    function openReceiptModal() {
+      const selectedItems = document.querySelectorAll('.terms-info-item.calc-selected');
+      if (selectedItems.length === 0) return;
+
+      const dateEl = document.getElementById('receipt-date');
+      if (dateEl) {
+        const now = new Date();
+        dateEl.textContent = now.toLocaleDateString('th-TH', {
+          day: '2-digit', month: '2-digit', year: 'numeric',
+          hour: '2-digit', minute: '2-digit'
+        }) + ' น.';
+      }
+
+      const listEl = document.getElementById('receipt-items-list');
+      if (listEl) {
+        listEl.innerHTML = '';
+        let total = 0;
+
+        selectedItems.forEach((item, index) => {
+          const title = item.getAttribute('data-title') || `รายการที่ ${index + 1}`;
+          const priceText = item.getAttribute('data-price') || '';
+          const customPrice = item.getAttribute('data-custom-price');
+
+          const expr = parsePriceExpression(priceText, customPrice);
+          let displayValText = priceText;
+
+          if (expr) {
+            if (expr.type === 'add') {
+              total += expr.value;
+              displayValText = `฿${expr.value.toLocaleString()}`;
+            } else if (expr.type === 'percent') {
+              const diff = total * (expr.value / 100);
+              total += diff;
+              displayValText = `+฿${Math.round(diff).toLocaleString()} (${expr.value > 0 ? '+' : ''}${expr.value}%)`;
+            } else if (expr.type === 'multiply') {
+              const prev = total;
+              total *= expr.value;
+              displayValText = `฿${Math.round(total).toLocaleString()} (x${expr.value})`;
+            }
+          }
+
+          const row = document.createElement('div');
+          row.className = 'receipt-item-row';
+          row.innerHTML = `
+            <div class="receipt-item-name">${index + 1}. ${title}</div>
+            <div class="receipt-item-val">${displayValText}</div>
+          `;
+          listEl.appendChild(row);
+        });
+
+        // Set total price
+        const totalValEl = document.getElementById('receipt-total-value');
+        if (totalValEl) {
+          totalValEl.textContent = `฿${Math.round(total).toLocaleString()}`;
+        }
+      }
+
+      document.getElementById('receipt-modal').classList.add('open');
+    }
+
+    function closeReceiptModalDirect() {
+      document.getElementById('receipt-modal').classList.remove('open');
+    }
+
+    function closeReceiptModal(e) {
+      if (e.target === document.getElementById('receipt-modal')) {
+        closeReceiptModalDirect();
+      }
+    }
+
+    function resetFromReceipt() {
+      if (confirm("ต้องการล้างรายการคำนวณทั้งหมดหรือไม่?")) {
+        closeReceiptModalDirect();
+        document.querySelectorAll('.terms-info-item.calc-selected').forEach(item => {
+          item.classList.remove('calc-selected');
+          item.removeAttribute('data-custom-price');
+          const btn = item.querySelector('.price-calc-btn');
+          if (btn) {
+            btn.classList.remove('selected');
+            btn.textContent = '+';
+          }
+        });
+        recalculateTotal();
+      }
+    }
+
+    function copyReceiptText() {
+      const selectedItems = document.querySelectorAll('.terms-info-item.calc-selected');
+      if (selectedItems.length === 0) return;
+
+      let text = `🧾 รายการประเมินราคา - Toru O\n`;
+      text += `วันที่: ${document.getElementById('receipt-date').textContent}\n`;
+      text += `-----------------------------------\n`;
+
+      let total = 0;
+      selectedItems.forEach((item, index) => {
+        const title = item.getAttribute('data-title') || `รายการที่ ${index + 1}`;
+        const priceText = item.getAttribute('data-price') || '';
+        const customPrice = item.getAttribute('data-custom-price');
+        const expr = parsePriceExpression(priceText, customPrice);
+        let displayValText = priceText;
+
+        if (expr) {
+          if (expr.type === 'add') {
+            total += expr.value;
+            displayValText = `฿${expr.value.toLocaleString()}`;
+          } else if (expr.type === 'percent') {
+            const diff = total * (expr.value / 100);
+            total += diff;
+            displayValText = `+฿${Math.round(diff).toLocaleString()} (${expr.value > 0 ? '+' : ''}${expr.value}%)`;
+          } else if (expr.type === 'multiply') {
+            total *= expr.value;
+            displayValText = `฿${Math.round(total).toLocaleString()} (x${expr.value})`;
+          }
+        }
+        text += `${index + 1}. ${title}: ${displayValText}\n`;
+      });
+
+      text += `-----------------------------------\n`;
+      text += `ราคารวมทั้งสิ้น: ฿${Math.round(total).toLocaleString()}\n`;
+      text += `ขอบคุณที่ใช้บริการครับ!`;
+
+      navigator.clipboard.writeText(text).then(() => {
+        alert("คัดลอกรายละเอียดใบเสร็จลงคลิปบอร์ดแล้ว!");
+      }).catch(err => {
+        console.error('Copy failed: ', err);
+        alert("ไม่สามารถคัดลอกได้โดยอัตโนมัติ กรุณาลองอีกครั้ง");
+      });
+    }
+
+    function saveReceiptImage() {
+      const area = document.getElementById('receipt-capture-area');
+      if (!area) return;
+
+      // Disable buttons temporarily
+      const saveBtn = document.querySelector('.receipt-btn.save-btn');
+      if (saveBtn) {
+        saveBtn.disabled = true;
+        saveBtn.textContent = 'กำลังประมวลผล...';
+      }
+
+      // html2canvas options
+      const options = {
+        backgroundColor: getComputedStyle(document.documentElement).getPropertyValue('--bg2').trim(),
+        scale: 2, // Double quality
+        useCORS: true,
+        logging: false
+      };
+
+      html2canvas(area, options).then(canvas => {
+        if (saveBtn) {
+          saveBtn.disabled = false;
+          saveBtn.textContent = 'บันทึกรูปภาพ';
+        }
+
+        // Create download link
+        const link = document.createElement('a');
+        link.download = `ToruO_Estimate_${Date.now()}.png`;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+      }).catch(err => {
+        if (saveBtn) {
+          saveBtn.disabled = false;
+          saveBtn.textContent = 'บันทึกรูปภาพ';
+        }
+        console.error('Save image failed: ', err);
+        alert("ไม่สามารถบันทึกรูปภาพได้ในขณะนี้ กรุณาลองคัดลอกข้อความแทน");
+      });
     }
 
     /* ══ PARSE CSV (handles quoted fields with newlines) ══ */
