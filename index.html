@@ -2,7 +2,7 @@
 <html lang="th" data-theme="dark">
 
 <head>
-  <title>Toru_O — Portfolio</title>
+  <title>Toru_O</title>
 
   <link rel="icon" type="image/png" href="logo.png">
 </head>
@@ -1002,6 +1002,124 @@
     font-size: 12px;
   }
 
+  /* ══ GREEN ROW FOR COMPLETED 100% QUEUES ══ */
+  .queue-table tr.row-done-green {
+    background: rgba(111, 207, 73, 0.08) !important;
+    transition: background 0.2s ease;
+  }
+
+  .queue-table tr.row-done-green:hover {
+    background: rgba(111, 207, 73, 0.15) !important;
+  }
+
+  .queue-table tr.row-done-green td {
+    color: #6fcf49;
+    border-bottom-color: rgba(111, 207, 73, 0.25) !important;
+  }
+
+  .queue-table tr.row-done-green td.col-num {
+    color: #6fcf49;
+    font-weight: 800;
+  }
+
+  .queue-table tr.row-done-green .col-date,
+  .queue-table tr.row-done-green .col-note {
+    color: #8edc70;
+  }
+
+  .queue-table tr.row-done-green .progress-bar-bg {
+    background: rgba(111, 207, 73, 0.25);
+    position: relative;
+    overflow: hidden;
+    height: 8px;
+    border-radius: 100px;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.3), 0 0 8px rgba(111, 207, 73, 0.4);
+  }
+
+  .queue-table tr.row-done-green .progress-bar-fill {
+    height: 100%;
+    border-radius: 100px;
+    background: linear-gradient(90deg, #11998e 0%, #38ef7d 30%, #ffffff 50%, #38ef7d 70%, #11998e 100%) !important;
+    background-size: 200% 100% !important;
+    animation: greenLoadingWave 1.4s linear infinite !important;
+    box-shadow: 0 0 12px #6fcf49, 0 0 4px #ffffff;
+  }
+
+  .queue-table tr.row-done-green .progress-label {
+    color: #6fcf49;
+    font-weight: 800;
+    font-size: 12px;
+    text-shadow: 0 0 8px rgba(111, 207, 73, 0.5);
+  }
+
+  @keyframes greenLoadingWave {
+    0% {
+      background-position: 200% 0;
+    }
+    100% {
+      background-position: -200% 0;
+    }
+  }
+
+  /* ══ BLUE IN-PROGRESS ROW (5% - 95%) ══ */
+  .queue-table tr.row-wip-blue {
+    background: rgba(0, 150, 255, 0.08) !important;
+    transition: background 0.2s ease;
+  }
+
+  .queue-table tr.row-wip-blue:hover {
+    background: rgba(0, 150, 255, 0.15) !important;
+  }
+
+  .queue-table tr.row-wip-blue td {
+    color: #38bdf8;
+    border-bottom-color: rgba(56, 189, 248, 0.25) !important;
+  }
+
+  .queue-table tr.row-wip-blue td.col-num {
+    color: #38bdf8;
+    font-weight: 700;
+  }
+
+  .queue-table tr.row-wip-blue .col-date,
+  .queue-table tr.row-wip-blue .col-note {
+    color: #7dd3fc;
+  }
+
+  .queue-table tr.row-wip-blue .progress-bar-bg {
+    background: rgba(0, 150, 255, 0.25);
+    position: relative;
+    overflow: hidden;
+    height: 8px;
+    border-radius: 100px;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.3), 0 0 8px rgba(0, 210, 255, 0.4);
+  }
+
+  /* CONTINUOUS VIVID LOADING WAVE ANIMATION INSIDE PROGRESS BAR FILL ONLY */
+  .queue-table tr.row-wip-blue .progress-bar-fill {
+    height: 100%;
+    border-radius: 100px;
+    background: linear-gradient(90deg, #0052d4 0%, #00c6ff 30%, #ffffff 50%, #00c6ff 70%, #0052d4 100%) !important;
+    background-size: 200% 100% !important;
+    animation: blueLoadingWave 1.2s linear infinite !important;
+    box-shadow: 0 0 12px #00d2ff, 0 0 4px #ffffff;
+  }
+
+  .queue-table tr.row-wip-blue .progress-label {
+    color: #38bdf8;
+    font-weight: 800;
+    font-size: 12px;
+  }
+
+  @keyframes blueLoadingWave {
+    0% {
+      background-position: 200% 0;
+    }
+    100% {
+      background-position: -200% 0;
+    }
+  }
+
   /* progress bar */
   .progress-wrap {
     display: flex;
@@ -1011,7 +1129,7 @@
 
   .progress-bar-bg {
     flex: 1;
-    height: 4px;
+    height: 8px;
     background: var(--bg3);
     border-radius: 100px;
     overflow: hidden;
@@ -2025,7 +2143,7 @@
     <div class="nav-links" id="desktop-nav">
       <span class="nav-link active" id="nav-home" onclick="showPage('home')">หน้าแรก</span>
       <span class="nav-link" id="nav-queue" onclick="showPage('queue')">ตารางคิว</span>
-
+      <span class="nav-link" id="nav-tools" onclick="showPage('tools')">เครื่องมือ</span>
       <span class="nav-link" id="nav-terms" onclick="showPage('terms')">ข้อตกลง</span>
     </div>
 
@@ -2036,7 +2154,7 @@
         </svg>
         <svg class="icon-sun" viewBox="0 0 24 24">
           <path
-            d="M12 17a5 5 0 100-10 5 5 0 000 10zm0-14a1 1 0 011 1v1a1 1 0 11-2 0V4a1 1 0 011-1zm0 17a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zm9-9a1 1 0 010 2h-1a1 1 0 110-2h1zM4 12a1 1 0 010 2H3a1 1 0 110-2h1zm14.95-6.95a1 1 0 010 1.41l-.7.7a1 1 0 11-1.41-1.41l.7-.7a1 1 0 011.41 0zM6.34 17.66a1 1 0 010 1.41l-.7.7a1 1 0 01-1.41-1.41l.7-.7a1 1 0 011.41 0zm12.02.7a1 1 0 01-1.41 0l-.7-.7a1 1 0 011.41-1.41l.7.7a1 1 0 010 1.41zM5.05 5.05a1 1 0 011.41 0l.7.7A1 1 0 015.75 7.16l-.7-.7a1 1 0 010-1.41z" />
+            d="M12 17a5 5 0 100-10 5 5 0 000 10zm0-14a1 1 0 011 1v1a1 1 0 11-2 0V4a1 1 0 011-1zm0 17a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zm9-9a1 1 0 010 2h-1a1 1 0 110-2h1zM4 12a1 1 0 010 2H3a1 1 0 110-2h1zm14.95-6.95a1 1 0 010 1.41l-.7.7a1 1 0 11-1.41-1.41l.7-.7a1 1 0 011.41 0zM6.34 17.66a1 1 0 010 1.41l-.7.7a1 1 0 01-1.41-1.41l.7-.7a1 1 0 011.41 0zm12.02.7a1 1 0 01-1.41 0l-.7-.7a1 1 0 01-1.41-1.41l.7.7a1 1 0 010 1.41zM5.05 5.05a1 1 0 011.41 0l.7.7A1 1 0 015.75 7.16l-.7-.7a1 1 0 010-1.41z" />
         </svg>
       </button>
       <a class="nav-commission" href="#" onclick="showPage('terms'); return false;">commission</a>
@@ -2053,7 +2171,7 @@
   <div class="mobile-drawer" id="mobile-drawer">
     <span class="nav-link" onclick="showPage('home');toggleMobileMenu()">หน้าแรก</span>
     <span class="nav-link" onclick="showPage('queue');toggleMobileMenu()">ตารางคิว</span>
-
+    <span class="nav-link" onclick="showPage('tools');toggleMobileMenu()">เครื่องมือ</span>
     <span class="nav-link" onclick="showPage('terms');toggleMobileMenu()">ข้อตกลง</span>
   </div>
 
@@ -2312,6 +2430,11 @@
       </div>
     </section>
 
+    <!-- ── TOOLS ── -->
+    <section class="page-section" id="page-tools">
+      <div id="character-generator-root"></div>
+    </section>
+
   </main>
 
   <!-- ══ UNIFIED LIGHTBOX ══ -->
@@ -2352,7 +2475,7 @@
     let skipNextScroll = false;
 
     function showPage(name, skipScroll = false, fromHash = false) {
-      if (!['home', 'queue', 'works', 'terms'].includes(name)) return;
+      if (!['home', 'queue', 'works', 'terms', 'tools'].includes(name)) return;
 
       const targetPageEl = document.getElementById('page-' + name);
       if (!targetPageEl) return;
@@ -2376,7 +2499,7 @@
       document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
       targetPageEl.classList.add('active');
 
-      const map = { home: 'nav-home', queue: 'nav-queue', works: 'nav-works', terms: 'nav-terms' };
+      const map = { home: 'nav-home', queue: 'nav-queue', works: 'nav-works', terms: 'nav-terms', tools: 'nav-tools' };
       const el = document.getElementById(map[name]);
       if (el) el.classList.add('active');
 
@@ -3362,11 +3485,17 @@
       const num = parseFloat(raw.replace('%', ''));
       if (!isNaN(num)) {
         const pct = Math.min(100, Math.max(0, num));
-        const color = pct >= 100 ? '#6fcf49' : pct >= 50 ? '#f2c94c' : 'var(--text2)';
+        let styleAttr = `width:${pct}%;`;
+        if (pct >= 100) {
+          styleAttr += `background:#6fcf49;`;
+        } else if (pct < 5) {
+          styleAttr += `background:var(--text2);`;
+        }
+
         return `<td>
       <div class="progress-wrap">
         <div class="progress-bar-bg">
-          <div class="progress-bar-fill" style="width:${pct}%;background:${color}"></div>
+          <div class="progress-bar-fill" style="${styleAttr}"></div>
         </div>
         <span class="progress-label">${pct}%</span>
       </div>
@@ -3405,14 +3534,24 @@
           const get = idx => idx >= 0 ? (r[idx] || '').trim() : '';
           const status = get(iStatus);
           const sc = statusClass(status);
-          return `<tr>
+          const progVal = get(iProgress);
+          const numProgress = parseFloat(progVal.replace('%', ''));
+
+          let rowClass = '';
+          if ((!isNaN(numProgress) && numProgress >= 100) || sc === 'status-done') {
+            rowClass = 'row-done-green';
+          } else if ((!isNaN(numProgress) && numProgress > 0) || sc === 'status-wip' || status.includes('กำลัง') || status.includes('WIP') || status.includes('progress')) {
+            rowClass = 'row-wip-blue';
+          }
+
+          return `<tr class="${rowClass}">
         <td class="col-num">${String(i + 1).padStart(2, '0')}</td>
         <td>${get(iJob) || '—'}</td>
         <td>${get(iType) || '—'}</td>
         <td>${get(iOwner) || '—'}</td>
         <td><span class="status-badge ${sc}">${status || 'รอคิว'}</span></td>
         <td class="col-date">${get(iDate) || '—'}</td>
-        ${makeProgressCell(get(iProgress))}
+        ${makeProgressCell(progVal)}
         <td class="col-note">${get(iNote) || '—'}</td>
       </tr>`;
         }).join('');
@@ -3450,6 +3589,7 @@
       if (['IMG', 'VIDEO'].includes(e.target.tagName)) e.preventDefault();
     });
   </script>
+  <script src="character-generator.js"></script>
 </body>
 
 </html>
