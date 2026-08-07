@@ -77,7 +77,7 @@
   ];
 
   const themes = [
-    "Japanese", "Cyberpunk", "Dreamcore", "Fantasy", "Ocean", "Royal", "Nature", "Festival", "Horror", "Space",
+    "Japanese", "Cyberpunk", "Dreamcore", "Fantasy", "Ocean", "Royal", "Nature", "Festival", "Mystery", "Space",
     "Vintage", "Steampunk", "Yokai", "Street Fashion", "Angel", "Demon", "Fairy", "Ghost", "Post-Apocalyptic", "Sci-Fi",
     "Medieval", "Victorian", "Gothic", "Dark Fantasy", "Light Fantasy", "Mythology", "Ancient Egypt", "Ancient Greece", "Ancient China", "Ancient Japan",
     "Samurai", "Ninja", "Pirate", "Knight", "Circus", "Carnival", "Casino", "Mafia", "Detective", "Military",
@@ -184,8 +184,8 @@
     Cat: ["Witchcore", "Dreamcore", "Fairycore"],
     Dog: ["Cottagecore", "Festival", "Nature"],
     Rabbit: ["Fairy", "Dreamcore", "Cottagecore"],
-    Crow: ["Horror", "Vintage", "Gothic"],
-    Raven: ["Horror", "Voidcore", "Lovecraftian"],
+    Crow: ["Mystery", "Vintage", "Gothic"],
+    Raven: ["Mystery", "Voidcore", "Lovecraftian"],
     Sparrow: ["Nature", "Festival", "Light Fantasy"],
     Owl: ["Mystic", "Nightmare", "Witchcore"],
     Hawk: ["Sky Kingdom", "Military", "Nature"],
@@ -210,25 +210,25 @@
     Kiwi: ["Cottagecore", "Nature", "Cute"],
     Cassowary: ["Jungle", "Dark Fantasy", "Nature"],
     Ostrich: ["Desert", "Nature", "Comedy"],
-    Bat: ["Horror", "Nightmare", "Gothic"],
+    Bat: ["Mystery", "Nightmare", "Gothic"],
     Butterfly: ["Fairy", "Dreamcore", "Light Fantasy"],
-    Moth: ["Voidcore", "Horror", "Dreamcore"],
+    Moth: ["Voidcore", "Mystery", "Dreamcore"],
     Bee: ["Nature", "Cottagecore", "Festival"],
-    Wasp: ["Toxic", "Nature", "Horror"],
+    Wasp: ["Toxic", "Nature", "Dark Fantasy"],
     Hornet: ["Toxic", "Military", "Nature"],
     Ant: ["Nature", "Cottagecore", "Military"],
-    Spider: ["Horror", "Gothic", "Voidcore"],
-    Scorpion: ["Desert", "Toxic", "Horror"],
+    Spider: ["Mystery", "Gothic", "Voidcore"],
+    Scorpion: ["Desert", "Toxic", "Dark Fantasy"],
     Dragonfly: ["Fairy", "Nature", "Dreamcore"],
     Grasshopper: ["Nature", "Cottagecore", "Festival"],
     Cricket: ["Nature", "Vintage", "Cottagecore"],
     Beetle: ["Mechanical", "Nature", "Steampunk"],
     Ladybug: ["Cute", "Fairy", "Nature"],
     Firefly: ["Fairy", "Dreamcore", "Bioluminescent"],
-    Centipede: ["Horror", "Toxic", "Voidcore"],
-    Millipede: ["Nature", "Toxic", "Horror"],
+    Centipede: ["Dark Fantasy", "Toxic", "Voidcore"],
+    Millipede: ["Nature", "Toxic", "Dark Fantasy"],
     Snail: ["Cottagecore", "Dreamcore", "Nature"],
-    Slug: ["Voidcore", "Toxic", "Horror"],
+    Slug: ["Voidcore", "Toxic", "Dark Fantasy"],
     Jellyfish: ["Ocean", "Dreamcore", "Ghost"],
     Octopus: ["Ocean", "Mystic", "Lovecraftian"],
     Squid: ["Ocean", "Lovecraftian", "Mystic"],
@@ -238,10 +238,10 @@
     Walrus: ["Arctic", "Nature", "Vintage"],
     Dolphin: ["Ocean", "Light Fantasy", "Dreamcore"],
     Whale: ["Ocean", "Mystic", "Voidcore"],
-    Shark: ["Ocean", "Cyberpunk", "Horror"],
+    Shark: ["Ocean", "Cyberpunk", "Wild"],
     "Hammerhead Shark": ["Ocean", "Cyberpunk", "Toxic"],
-    "Tiger Shark": ["Ocean", "Horror", "Wild"],
-    "Great White Shark": ["Ocean", "Horror", "Military"],
+    "Tiger Shark": ["Ocean", "Deep Sea", "Wild"],
+    "Great White Shark": ["Ocean", "Deep Sea", "Military"],
     Manta: ["Ocean", "Dreamcore", "Light Fantasy"],
     Stingray: ["Ocean", "Mystic", "Dark Fantasy"],
     Swordfish: ["Ocean", "Military", "Royal"],
@@ -261,7 +261,7 @@
     "Red Panda": ["Cottagecore", "Cute", "Dreamcore"],
     Bear: ["Wild", "Nature", "Mythology"],
     "Polar Bear": ["Arctic", "Voidcore", "Nature"],
-    "Grizzly Bear": ["Wild", "Forest Spirit", "Horror"],
+    "Grizzly Bear": ["Wild", "Forest Spirit", "Mythology"],
     Koala: ["Cute", "Cottagecore", "Nature"],
     Sloth: ["Dreamcore", "Cottagecore", "Nature"],
     Monkey: ["Jungle", "Festival", "Chaos"],
@@ -281,22 +281,22 @@
     Kangaroo: ["Desert", "Festival", "Nature"],
     Hippo: ["River", "Nature", "Cute"],
     Rhino: ["Military", "Wild", "Nature"],
-    Crocodile: ["Swamp", "Horror", "Nature"],
-    Alligator: ["Swamp", "Horror", "Military"],
-    Snake: ["Horror", "Mythology", "Toxic"],
-    Cobra: ["Royal", "Horror", "Mythology"],
+    Crocodile: ["Swamp", "Wild", "Nature"],
+    Alligator: ["Swamp", "Wild", "Military"],
+    Snake: ["Mystery", "Mythology", "Toxic"],
+    Cobra: ["Royal", "Mystery", "Mythology"],
     Frog: ["Nature", "Fairy", "Cottagecore"],
-    Toad: ["Horror", "Witchcore", "Nature"],
+    Toad: ["Witchcore", "Nature", "Mystic"],
     Axolotl: ["Dreamcore", "Cute", "Mystic"],
     Phoenix: ["Mythology", "Fire", "Royal"],
     Dragon: ["Fantasy", "Mythology", "Royal"],
     Unicorn: ["Fairy", "Light Fantasy", "Royal"],
     Griffin: ["Mythology", "Royal", "Fantasy"],
-    Kraken: ["Ocean", "Lovecraftian", "Horror"],
+    Kraken: ["Ocean", "Lovecraftian", "Deep Sea"],
     Mermaid: ["Ocean", "Fairy", "Dreamcore"],
     Kitsune: ["Japanese", "Yokai", "Mystic"],
     Tanuki: ["Japanese", "Festival", "Chaos"],
-    Yeti: ["Arctic", "Mythology", "Horror"],
+    Yeti: ["Arctic", "Mythology", "Wild"],
     "Loch Ness Monster": ["Mystic", "Ocean", "Mythology"]
   };
 
@@ -309,7 +309,7 @@
     Royal: ["Crown", "Golden Crown", "Royal Cape", "Sword", "Shield", "Necklace", "Ring", "Medal", "Throne"],
     Nature: ["Bamboo", "Acorn", "Maple Leaf", "Plant Pot", "Bonsai", "Feather", "Flower Vase"],
     Festival: ["Festival Lantern", "Wind Chime", "Bell", "Pinwheel", "Mask", "Paper Crane", "Confetti"],
-    Horror: ["Skull", "Bone", "Candle", "Ghost Candle", "Cracked Mask", "Blood Stain", "Broken Sword"],
+    Mystery: ["Skull", "Bone", "Candle", "Ghost Candle", "Cracked Mask", "Blood Stain", "Broken Sword"],
     Space: ["Planet", "Galaxy", "Meteor", "Comet", "Satellite", "Spaceship", "Star", "Moon"],
     Vintage: ["Pocket Watch", "Typewriter", "Cassette", "Film Reel", "Diary", "Old Photo", "Radio"],
     Steampunk: ["Clockwork Gear", "Steam Engine", "Steam Pipe", "Steampunk Goggles", "Mechanical Arm", "Valve"],
@@ -417,7 +417,7 @@
     Royal: ["Royal Dress", "Royal Suit", "Golden Embroidered Outfit", "Royal Cape", "Overdecorated Royal Outfit", "Blue & Gold Royal Dress"],
     Nature: ["Cottagecore Dress", "Forest Guardian Cloak", "Flower-Themed Dress", "Soft Cottagecore Dress", "Nature Outfit", "Sunflower Dress"],
     Festival: ["Festival Yukata", "Orange Festival Outfit", "Streetwear Festival Outfit", "Idol Costume", "Circus Costume", "Colorful Layered Fashion"],
-    Horror: ["Blood-Stained Outfit", "Gothic Dress", "Broken Uniform", "Haunted Bride Dress", "Nightmare Cloak", "Dark Cultist Cloak"],
+    Mystery: ["Blood-Stained Outfit", "Gothic Dress", "Broken Uniform", "Haunted Bride Dress", "Nightmare Cloak", "Dark Cultist Cloak"],
     Space: ["Spacesuit", "Galaxy Cloak", "Star Traveler Outfit", "Galaxy Printed Hoodie", "Astral Traveler Outfit", "Void King Outfit"],
     Vintage: ["Victorian Dress", "Victorian Suit", "Retro 80s Outfit", "Old Fashion Coat", "Elegant Vintage Suit", "Classic Formal Dress"],
     Steampunk: ["Steampunk Outfit", "Clockwork Maid Outfit", "Clock Tower Butler Outfit", "Mechanical Suit", "Steam Engineer Outfit", "Gear Armor"],
@@ -693,7 +693,8 @@
         </div>
 
         <!-- MODE SWITCHER BUTTONS -->
-        <div class="cg-mode-group">
+        <div class="cg-mode-group ${isSmart ? 'is-smart' : ''}">
+          <div class="cg-mode-indicator"></div>
           <button class="cg-mode-btn ${isRandom ? 'active' : ''}" onclick="CharacterGenerator.setMode('random')">
             <span class="cg-mode-icon">🎲</span> Random Everything
           </button>
@@ -731,11 +732,11 @@
 
         <!-- EXPLAIN BOX -->
         <div class="cg-explain-card">
-          <div class="cg-explain-item">
+          <div class="cg-explain-item ${isRandom ? 'active-mode-item' : ''}">
             <span class="cg-explain-badge">🎲 Random Everything</span>
             <span class="cg-explain-text">สุ่มไอเดียองค์ประกอบทุกอย่างแบบอิสระ 100%</span>
           </div>
-          <div class="cg-explain-item">
+          <div class="cg-explain-item ${isSmart ? 'active-mode-item' : ''}">
             <span class="cg-explain-badge">🧠 Smart Match</span>
             <span class="cg-explain-text">ระบบจับคู่ธีมและสิ่งของให้เหมาะสมกลมกลืนกับสัตว์ที่สุ่มได้</span>
           </div>
@@ -859,6 +860,63 @@
     });
   }
 
+  function animateSaveInsert(firstPositionsMap, newId) {
+    requestAnimationFrame(() => {
+      // 1. Vertical Stretch for Count Badge
+      const countEl = document.querySelector('.cg-saved-count');
+      if (countEl) {
+        countEl.classList.remove('cg-stretch-y');
+        void countEl.offsetWidth;
+        countEl.classList.add('cg-stretch-y');
+      }
+
+      // 2. Animate new card expanding from top header & old cards sliding down
+      const allCards = document.querySelectorAll('.cg-saved-card');
+      allCards.forEach(card => {
+        const id = card.getAttribute('data-id');
+        if (id === newId) {
+          // New Card: Expand from top underneath header
+          card.classList.remove('cg-card-expand-top');
+          void card.offsetWidth;
+          card.classList.add('cg-card-expand-top');
+        } else if (firstPositionsMap && firstPositionsMap.has(id)) {
+          // Existing Card: FLIP calculation to smoothly slide down
+          const firstRect = firstPositionsMap.get(id);
+          const lastRect = card.getBoundingClientRect();
+          const deltaY = firstRect.top - lastRect.top;
+
+          if (deltaY !== 0) {
+            card.style.transition = 'none';
+            card.style.transform = `translateY(${deltaY}px)`;
+
+            requestAnimationFrame(() => {
+              requestAnimationFrame(() => {
+                card.style.transition = 'transform 0.5s cubic-bezier(0.16, 1, 0.3, 1)';
+                card.style.transform = 'translateY(0)';
+                setTimeout(() => {
+                  card.style.transition = '';
+                  card.style.transform = '';
+                }, 550);
+              });
+            });
+          }
+        }
+      });
+    });
+  }
+
+  function animateModeSwitch(mode) {
+    requestAnimationFrame(() => {
+      // Smooth mode transition animation on result card
+      const cardEl = document.querySelector('.cg-card');
+      if (cardEl) {
+        cardEl.classList.remove('mode-switch-anim');
+        void cardEl.offsetWidth;
+        cardEl.classList.add('mode-switch-anim');
+      }
+    });
+  }
+
   // Inject Styles into Document Head
   function injectStyles() {
     if (document.getElementById("cg-styles")) return;
@@ -889,6 +947,7 @@
         font-weight: 500;
       }
       .cg-mode-group {
+        position: relative;
         display: flex;
         gap: 10px;
         margin-bottom: 20px;
@@ -896,6 +955,23 @@
         padding: 6px;
         border-radius: 18px;
         border: 1px solid var(--line);
+      }
+      .cg-mode-indicator {
+        position: absolute;
+        top: 6px;
+        bottom: 6px;
+        left: 6px;
+        width: calc(50% - 11px);
+        background: var(--bg);
+        border-radius: 13px;
+        border: 1px solid var(--line);
+        box-shadow: 0 4px 14px rgba(0,0,0,0.12);
+        transition: transform 0.48s cubic-bezier(0.2, 1, 0.25, 1);
+        pointer-events: none;
+        z-index: 1;
+      }
+      .cg-mode-group.is-smart .cg-mode-indicator {
+        transform: translateX(calc(100% + 10px));
       }
       .cg-mode-btn {
         flex: 1;
@@ -905,21 +981,48 @@
         cursor: pointer;
         font-size: 14px;
         font-weight: 700;
-        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-        background: transparent;
+        transition: color 0.35s ease;
+        background: transparent !important;
         color: var(--text2);
         display: flex;
         align-items: center;
         justify-content: center;
         gap: 6px;
+        position: relative;
+        z-index: 2;
       }
       .cg-mode-btn:hover {
         color: var(--text);
       }
       .cg-mode-btn.active {
-        background: var(--bg);
         color: var(--text);
-        box-shadow: 0 4px 14px rgba(0,0,0,0.1);
+      }
+
+      /* MODE SWITCH CARD TRANSITION */
+      @keyframes cgCardModeSwitch {
+        0% {
+          opacity: 0.7;
+          transform: translateY(6px) scale(0.988);
+        }
+        50% {
+          transform: translateY(-2px) scale(1.005);
+        }
+        100% {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+        }
+      }
+
+      .cg-card.mode-switch-anim {
+        animation: cgCardModeSwitch 0.48s cubic-bezier(0.2, 1, 0.25, 1) both;
+      }
+
+      .cg-explain-item.active-mode-item {
+        background: rgba(255, 71, 87, 0.08);
+        border: 1px solid rgba(255, 71, 87, 0.25);
+        border-radius: 12px;
+        padding: 8px 12px;
+        transition: all 0.3s ease;
       }
       .cg-card {
         border: 1px solid var(--line);
@@ -987,22 +1090,19 @@
         box-shadow: 0 0 10px rgba(255, 71, 87, 0.25);
       }
 
-      /* POP & ROTATION SHAKE ANIMATION FOR LOCKED SLOTS */
+      /* POP & ROTATION SHAKE ANIMATION FOR LOCKED SLOTS (GENTLE & BALANCED) */
       @keyframes cgLockPopShake {
         0% {
           transform: scale(1) rotate(0deg);
         }
-        20% {
-          transform: scale(1.38) rotate(-16deg);
+        25% {
+          transform: scale(1.18) rotate(-7deg);
         }
-        40% {
-          transform: scale(1.38) rotate(16deg);
+        50% {
+          transform: scale(1.15) rotate(7deg);
         }
-        60% {
-          transform: scale(1.22) rotate(-10deg);
-        }
-        80% {
-          transform: scale(1.1) rotate(6deg);
+        75% {
+          transform: scale(1.06) rotate(-3deg);
         }
         100% {
           transform: scale(1) rotate(0deg);
@@ -1010,19 +1110,68 @@
       }
 
       .cg-lock-btn.lock-pop-shake {
-        animation: cgLockPopShake 0.52s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+        animation: cgLockPopShake 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
         z-index: 5;
+      }
+
+      /* VERTICAL STRETCH ANIMATION FOR COUNT BADGE */
+      @keyframes cgStretchY {
+        0% {
+          transform: scaleY(1) scaleX(1);
+        }
+        30% {
+          transform: scaleY(1.45) scaleX(0.9);
+        }
+        60% {
+          transform: scaleY(0.9) scaleX(1.05);
+        }
+        80% {
+          transform: scaleY(1.08) scaleX(0.98);
+        }
+        100% {
+          transform: scaleY(1) scaleX(1);
+        }
+      }
+
+      .cg-saved-count.cg-stretch-y {
+        animation: cgStretchY 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+        transform-origin: center center;
+      }
+
+      /* NEW CARD EXPAND & SLIDE FROM UNDERNEATH HEADER */
+      @keyframes cgExpandFromTop {
+        0% {
+          opacity: 0;
+          transform: translateY(-25px) scaleY(0.3) scaleX(0.92);
+          transform-origin: top center;
+        }
+        40% {
+          opacity: 0.7;
+          transform: translateY(-10px) scaleY(1.06) scaleX(0.98);
+        }
+        70% {
+          transform: translateY(2px) scaleY(0.98) scaleX(1.01);
+        }
+        100% {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+          transform-origin: top center;
+        }
+      }
+
+      .cg-saved-card.cg-card-expand-top {
+        animation: cgExpandFromTop 0.55s cubic-bezier(0.16, 1, 0.3, 1) both;
+        will-change: transform, opacity;
       }
 
       @keyframes cgRowLockedPulse {
         0% { transform: scale(1); }
-        30% { transform: scale(1.018); }
-        60% { transform: scale(0.992); }
+        40% { transform: scale(1.008); }
         100% { transform: scale(1); }
       }
 
       .cg-result-row.lock-pop-shake {
-        animation: cgRowLockedPulse 0.45s ease-in-out both;
+        animation: cgRowLockedPulse 0.35s ease-in-out both;
       }
       .cg-result-val-link {
         font-size: 15px;
@@ -1100,6 +1249,7 @@
         font-size: 22px;
         font-weight: 800;
         color: var(--text);
+        display: inline-block;
       }
       .cg-saved-count {
         background: var(--bg3);
@@ -1109,6 +1259,7 @@
         font-size: 13px;
         font-weight: 700;
         border: 1px solid var(--line2);
+        display: inline-block;
       }
       .cg-saved-grid {
         display: grid;
@@ -1474,8 +1625,10 @@
       }
     },
     setMode: function (mode) {
+      if (currentMode === mode) return;
       currentMode = mode;
-      this.generate();
+      renderApp();
+      animateModeSwitch(mode);
     },
     generate: function () {
       if (currentMode === "random") {
@@ -1495,6 +1648,9 @@
           return;
         }
 
+        // Capture existing cards positions for FLIP slide-down animation
+        const firstPositionsMap = getCardPositions();
+
         const { _id, ...cleanResult } = currentResult;
         const newItem = { ...cleanResult, _id: 'cg_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6) };
         savedList = [newItem, ...savedList];
@@ -1504,6 +1660,7 @@
         Object.keys(lockedState).forEach(k => { lockedState[k] = false; });
 
         renderApp();
+        animateSaveInsert(firstPositionsMap, newItem._id);
       } catch (e) {
         console.error("Error saving character:", e);
       }
