@@ -31,6 +31,20 @@
     "Satyr"
   ];
 
+  // ===== MONSTER GIRL ENCYCLOPEDIA (MGE) RACES (100 SPECIES) =====
+  const mgeRaces = [
+    "Lamia", "Harpy", "Mermaid", "Centaur", "Arachne", "Alraune", "Dullahan", "Scylla", "Sphinx", "Valkyrie",
+    "Slime Girl", "Succubus", "Incubus", "Kitsune", "Nekomata", "Dragonewt", "Phoenix", "Siren", "Kobold", "Goblin",
+    "Minotaur", "Gryphon", "Anubis", "Wendigo", "Cockatrice", "Echidna", "Medusa", "Karkadann", "Lich", "Banshee",
+    "Gargoyle", "Dryad", "Nereid", "Nymph", "Devil", "Angel", "Yuki-onna", "Jorogumo", "Kasha", "Raiju",
+    "Inugami", "Yamata no Orochi", "Holstaurus (Cow Girl)", "Baphomet", "Cait Sith", "Werewolf", "Vampire", "Ghoul", "Demon", "Salamander",
+    "Undine", "Sylph", "Gnome", "Wyvern", "Leviathan", "Kraken", "Behemoth", "Chimera", "Orthrus", "Cerberus",
+    "Pegasus", "Unicorn", "Hippogriff", "Mantis Girl", "Bee Girl (Apis)", "Ant Girl (Myrmex)", "Moth Girl", "Butterfly Girl", "Snail Girl", "Lindwurm",
+    "Mandrake", "Flytrap Girl", "Treant Girl", "Mushroom Girl", "Jiangshi", "Mummy", "Skeleton Girl", "Phantom", "Poltergeist", "Shadow Girl",
+    "Homunculus", "Automaton (Golem)", "Mimic", "Living Armor", "Doppelganger", "High Elf", "Dark Elf", "Orc Girl", "Oni (Ogre)", "Tengu",
+    "Kappa", "Kamaitachi", "Mujina", "Nue", "Qilin", "Thunderbird", "Hydra", "Sea Bishop", "Beholder Girl", "Wererabbit"
+  ];
+
   const objects = [
     "Lantern", "Mask", "Umbrella", "Mirror", "Clock", "Book", "Bell", "Sword", "Ribbon", "Teacup",
     "Candle", "Fan", "Chains", "Key", "Flowers", "Music Box", "Camera", "Scissors", "Notebook", "Pen",
@@ -297,7 +311,109 @@
     Kitsune: ["Japanese", "Yokai", "Mystic"],
     Tanuki: ["Japanese", "Festival", "Chaos"],
     Yeti: ["Arctic", "Mythology", "Wild"],
-    "Loch Ness Monster": ["Mystic", "Ocean", "Mythology"]
+    "Loch Ness Monster": ["Mystic", "Ocean", "Mythology"],
+
+    // MGE Races Smart Mappings (Complete 100 Species)
+    Lamia: ["Desert", "Ancient Egypt", "Yokai", "Mystery"],
+    Harpy: ["Sky Kingdom", "Fairy", "Mythology", "Nature"],
+    Mermaid: ["Ocean", "Deep Sea", "Fairy", "Dreamcore"],
+    Centaur: ["Medieval", "Knight", "Wild", "Cottagecore"],
+    Arachne: ["Mystery", "Gothic", "Voidcore", "Witchcore"],
+    Alraune: ["Nature", "Forest Spirit", "Cottagecore", "Fairy"],
+    Dullahan: ["Medieval", "Knight", "Gothic", "Dark Fantasy"],
+    Scylla: ["Ocean", "Deep Sea", "Lovecraftian", "Voidcore"],
+    Sphinx: ["Desert", "Ancient Egypt", "Mystic", "Astrology"],
+    Valkyrie: ["Sky Kingdom", "Royal", "Knight", "Angel"],
+    "Slime Girl": ["Dreamcore", "Cute", "Bioluminescent", "Pastel"],
+    Succubus: ["Gothic", "Demon", "Midnight Purple", "Luxury"],
+    Incubus: ["Gothic", "Demon", "Luxury", "Mafia"],
+    Kitsune: ["Japanese", "Yokai", "Mystic", "Festival"],
+    Nekomata: ["Japanese", "Yokai", "Cute", "Street Fashion"],
+    Dragonewt: ["Fantasy", "Mythology", "Royal", "Dark Fantasy"],
+    Phoenix: ["Mythology", "Celestial", "Solar", "Royal"],
+    Siren: ["Ocean", "Music", "Mystic", "Deep Sea"],
+    Kobold: ["Cottagecore", "Cute", "Nature", "Fantasy"],
+    Goblin: ["Chaos", "Cottagecore", "Street Punk", "Techwear"],
+    Minotaur: ["Medieval", "Wild", "Ancient Greece"],
+    Gryphon: ["Sky Kingdom", "Royal", "Mythology", "Knight"],
+    Anubis: ["Ancient Egypt", "Desert", "Necromancer", "Mythology"],
+    Wendigo: ["Arctic", "Dark Fantasy", "Ghost", "Forest Spirit"],
+    Cockatrice: ["Witchcore", "Mythology", "Dark Fantasy", "Nature"],
+    Echidna: ["Dark Fantasy", "Mythology", "Lovecraftian"],
+    Medusa: ["Ancient Greece", "Gothic", "Mystery", "Mythology"],
+    Karkadann: ["Desert", "Royal", "Light Fantasy"],
+    Lich: ["Necromancer", "Gothic", "Dark Fantasy", "Magic Academy"],
+    Banshee: ["Ghost", "Gothic", "Dark Fantasy", "Music"],
+    Gargoyle: ["Gothic", "Medieval", "Dark Fantasy", "Knight"],
+    Dryad: ["Forest Spirit", "Nature", "Cottagecore", "Fairy"],
+    Nereid: ["Ocean", "Fairy", "Light Fantasy", "Deep Sea"],
+    Nymph: ["Nature", "Fairy", "Ancient Greece", "Cottagecore"],
+    Devil: ["Demon", "Hell", "Gothic", "Dark Fantasy"],
+    Angel: ["Angel", "Heaven", "Celestial", "Royal"],
+    "Yuki-onna": ["Japanese", "Yokai", "Arctic", "Gothic"],
+    Jorogumo: ["Japanese", "Yokai", "Gothic", "Mystery"],
+    Kasha: ["Japanese", "Yokai", "Demon", "Street Fashion"],
+    Raiju: ["Japanese", "Yokai", "Techwear", "Sci-Fi"],
+    Inugami: ["Japanese", "Yokai", "Samurai"],
+    "Yamata no Orochi": ["Japanese", "Yokai", "Mythology", "Dark Fantasy"],
+    "Holstaurus (Cow Girl)": ["Cottagecore", "Cute", "Pastel", "Nature"],
+    Baphomet: ["Demon", "Gothic", "Necromancer", "Witchcore"],
+    "Cait Sith": ["Fairy", "Cute", "Steampunk"],
+    Werewolf: ["Werewolf", "Dark Fantasy", "Wild", "Street Punk"],
+    Vampire: ["Vampire", "Gothic", "Victorian", "Luxury"],
+    Ghoul: ["Zombie", "Dark Fantasy", "Post-Apocalyptic", "Street Punk"],
+    Demon: ["Demon", "Hell", "Dark Fantasy", "Gothic"],
+    Salamander: ["Solar", "Alchemy", "Desert"],
+    Undine: ["Ocean", "Deep Sea", "Fairy", "Light Fantasy"],
+    Sylph: ["Sky Kingdom", "Cloudcore", "Fairy", "Light Fantasy"],
+    Gnome: ["Cottagecore", "Nature", "Alchemy", "Fantasy"],
+    Wyvern: ["Fantasy", "Wild", "Sky Kingdom", "Dark Fantasy"],
+    Leviathan: ["Deep Sea", "Ocean", "Lovecraftian", "Voidcore"],
+    Kraken: ["Deep Sea", "Lovecraftian", "Ocean", "Pirate"],
+    Behemoth: ["Wild", "Post-Apocalyptic", "Desert", "Mythology"],
+    Chimera: ["Alchemy", "Dark Fantasy", "Chaos"],
+    Orthrus: ["Dark Fantasy", "Mythology", "Knight"],
+    Cerberus: ["Demon", "Dark Fantasy", "Gothic"],
+    Pegasus: ["Sky Kingdom", "Angel", "Royal", "Light Fantasy"],
+    Unicorn: ["Fairy", "Light Fantasy", "Royal", "Dreamcore"],
+    Hippogriff: ["Sky Kingdom", "Knight", "Mythology", "Royal"],
+    "Mantis Girl": ["Nature", "Ninja", "Sci-Fi"],
+    "Bee Girl (Apis)": ["Cottagecore", "Cute", "Nature", "Royal"],
+    "Ant Girl (Myrmex)": ["Techwear", "Military", "Nature"],
+    "Moth Girl": ["Dreamcore", "Witchcore", "Gothic", "Nightmare"],
+    "Butterfly Girl": ["Fairy", "Pastel", "Cottagecore", "Light Fantasy"],
+    "Snail Girl": ["Cottagecore", "Cute", "Nature"],
+    Lindwurm: ["Fantasy", "Dark Fantasy", "Medieval"],
+    Mandrake: ["Witchcore", "Alchemy", "Nature", "Cottagecore"],
+    "Flytrap Girl": ["Toxic", "Nature", "Gothic", "Witchcore"],
+    "Treant Girl": ["Nature", "Forest Spirit", "Cottagecore"],
+    "Mushroom Girl": ["Cottagecore", "Fairy", "Dreamcore", "Weirdcore"],
+    Jiangshi: ["Ancient China", "Ghost", "Gothic", "Streetwear"],
+    Mummy: ["Ancient Egypt", "Desert", "Necromancer", "Gothic"],
+    "Skeleton Girl": ["Gothic", "Necromancer", "Dark Fantasy"],
+    Phantom: ["Ghost", "Gothic", "Victorian", "Voidcore"],
+    Poltergeist: ["Weirdcore", "Ghost", "Chaos", "Kidcore"],
+    "Shadow Girl": ["Voidcore", "Gothic", "Ninja", "Cyberpunk"],
+    Homunculus: ["Alchemy", "Sci-Fi", "Glass"],
+    "Automaton (Golem)": ["Steampunk", "Clockwork", "Cyberpunk", "Mechanical"],
+    Mimic: ["Casino", "Fantasy", "Chaos"],
+    "Living Armor": ["Knight", "Medieval", "Gothic", "Dark Fantasy"],
+    Doppelganger: ["Glitch", "Weirdcore", "Voidcore", "Mystery"],
+    "High Elf": ["Royal", "Light Fantasy", "Nature", "Magic Academy"],
+    "Dark Elf": ["Dark Fantasy", "Gothic", "Ninja", "Witchcore"],
+    "Orc Girl": ["Street Punk", "Wild", "Military", "Chaos"],
+    "Oni (Ogre)": ["Japanese", "Samurai", "Street Punk", "Chaos"],
+    Tengu: ["Japanese", "Yokai", "Sky Kingdom", "Samurai"],
+    Kappa: ["Japanese", "Yokai", "Nature"],
+    Kamaitachi: ["Japanese", "Yokai", "Ninja"],
+    Mujina: ["Japanese", "Yokai", "Mystery", "Cottagecore"],
+    Nue: ["Japanese", "Yokai", "Dark Fantasy", "Chaos"],
+    Qilin: ["Ancient China", "Celestial", "Royal", "Light Fantasy"],
+    Thunderbird: ["Sky Kingdom", "Mythology"],
+    Hydra: ["Mythology", "Dark Fantasy", "Toxic"],
+    "Sea Bishop": ["Ocean", "Deep Sea", "Mystic"],
+    "Beholder Girl": ["Lovecraftian", "Voidcore", "Magic Academy", "Sci-Fi"],
+    Wererabbit: ["Cute", "Street Punk", "Wild"]
   };
 
   const smartObjects = {
@@ -485,14 +601,123 @@
     Radioactive: ["Radioactive Hazard Suit"],
     Mechanical: ["Mechanical Suit", "Clockwork Maid Outfit"],
     Clockwork: ["Clockwork Outfit", "Steampunk Outfit"],
-    Digital: ["Digital Pattern Jacket", "Pixel-Themed Hoodie"],
-    Glitch: ["Glitchcore Outfit", "Broken Uniform"],
-    VirtualReality: ["Virtual Performer Outfit", "Holographic Outfit"],
-    Arcade: ["Arcade Gamer Outfit", "Arcade Gamer Hoodie"],
-    Zombie: ["Zombie Survivor Hoodie", "Torn Clothes"],
-    Vampire: ["Elegant Vampire Outfit", "Royal Vampire Cape"],
-    Werewolf: ["Wolf Hunter Outfit", "Wolf Fur Armor"],
-    HauntedMansion: ["Haunted Bride Dress", "Ghostly Kimono"]
+    Digital: ["Digital Pattern Jacket", "Pixel-Themed Hoodie"]
+  };
+
+  const smartColors = {
+    Japanese: ["Crimson", "Scarlet", "Snow White", "Jet Black", "Sunrise Gold", "Cherry Red"],
+    Cyberpunk: ["Neon Cyan", "Neon Blue", "Neon Pink", "Neon Green", "Jet Black", "Glowing Cyan"],
+    Dreamcore: ["Pastel Pink", "Baby Blue", "Lavender", "Lilac", "Cloud White", "Pearl White"],
+    Fantasy: ["Ruby Red", "Emerald Green", "Midnight Purple", "Gold", "Silver", "Sapphire Blue"],
+    Ocean: ["Ocean Blue", "Deep Teal", "Sky Blue", "Turquoise", "Pearl White", "Coral"],
+    Royal: ["Royal Blue", "Gold", "Crimson", "Midnight Purple", "Emerald Green", "Ivory"],
+    Nature: ["Emerald Green", "Forest Green", "Olive", "Sand", "Amber", "Earth Brown"],
+    Festival: ["Scarlet", "Flame Yellow", "Hot Pink", "Gold", "Neon Orange", "Sky Blue"],
+    Mystery: ["Jet Black", "Midnight Purple", "Blood Red", "Ash Gray", "Charcoal", "Crimson"],
+    Space: ["Space Black", "Galaxy Purple", "Moonlight Silver", "Midnight Purple", "Obsidian"],
+    Vintage: ["Coffee Brown", "Amber", "Sepia", "Beige", "Ivory", "Bronze"],
+    Steampunk: ["Bronze", "Copper", "Coffee Brown", "Amber", "Charcoal", "Gold"],
+    Yokai: ["Scarlet", "Ink Black", "Snow White", "Purple", "Blood Red", "Gold"],
+    StreetFashion: ["Neon Pink", "Jet Black", "Neon Cyan", "Hot Pink", "Monochrome"],
+    Angel: ["Snow White", "Cloud White", "Moonlight Silver", "Gold", "Baby Blue"],
+    Demon: ["Blood Red", "Jet Black", "Obsidian", "Crimson", "Midnight Purple"],
+    Fairy: ["Pastel Pink", "Mint", "Lavender", "Gold", "Lilac", "Pearl White"],
+    Ghost: ["Ash Gray", "Snow White", "Frost White", "Moonlight Silver", "Charcoal"],
+    PostApocalyptic: ["Charcoal", "Ash Gray", "Rust Brown", "Olive", "Jet Black"],
+    SciFi: ["Glowing Cyan", "Neon Blue", "Silver", "White", "Jet Black"],
+    Medieval: ["Steel Gray", "Gold", "Royal Blue", "Crimson", "Bronze"],
+    Victorian: ["Wine Red", "Midnight Purple", "Jet Black", "Ivory", "Gold"],
+    Gothic: ["Jet Black", "Blood Red", "Midnight Purple", "Obsidian", "Charcoal"],
+    DarkFantasy: ["Obsidian", "Blood Red", "Midnight Purple", "Crimson", "Ash Gray"],
+    LightFantasy: ["Pearl White", "Moonlight Silver", "Sky Blue", "Rose Pink", "Gold"],
+    Mythology: ["Sunrise Gold", "Bronze", "Ivory", "Crimson", "Deep Teal"],
+    AncientEgypt: ["Gold", "Sand", "Lapis Blue", "Crimson", "Obsidian"],
+    AncientGreece: ["Ivory", "Gold", "White", "Olive", "Royal Blue"],
+    AncientChina: ["Crimson", "Gold", "Jade Green", "Ink Black", "Snow White"],
+    AncientJapan: ["Cherry Red", "Ink Black", "Gold", "Snow White", "Indigo"],
+    Samurai: ["Crimson", "Jet Black", "Gold", "Steel Gray", "Scarlet"],
+    Ninja: ["Jet Black", "Obsidian", "Midnight Purple", "Charcoal", "Dark Crimson"],
+    Pirate: ["Crimson", "Coffee Brown", "Gold", "Jet Black", "Navy Blue"],
+    Knight: ["Steel Gray", "Silver", "Royal Blue", "Crimson", "Gold"],
+    Desert: ["Sand", "Amber", "Sunrise Gold", "Crimson", "Obsidian"],
+    Arctic: ["Ice Blue", "Frost White", "Snow White", "Sky Blue", "Silver"],
+    Jungle: ["Emerald Green", "Forest Green", "Olive", "Amber", "Earth Brown"],
+    Underwater: ["Ocean Blue", "Turquoise", "Deep Teal", "Bioluminescent Cyan", "Pearl White"],
+    SkyKingdom: ["Sky Blue", "Cloud White", "Gold", "Moonlight Silver"],
+    Cloudcore: ["Cloud White", "Pastel Pink", "Baby Blue", "Lavender"],
+    Lovecraftian: ["Void Black", "Deep Teal", "Midnight Purple", "Toxic Green"],
+    Witchcore: ["Midnight Purple", "Emerald Green", "Blood Red", "Obsidian"],
+    Fairytale: ["Rose Pink", "Gold", "Sky Blue", "Ivory", "Pastel Purple"],
+    Fairycore: ["Mint", "Pastel Pink", "Lavender", "Gold", "Soft Green"],
+    Voidcore: ["Obsidian", "Jet Black", "Void Black", "Charcoal"],
+    Cottagecore: ["Sage Green", "Warm Cream", "Soft Brown", "Pastel Yellow"],
+    Angelcore: ["Snow White", "Gold", "Soft Yellow", "Cloud White"],
+    Devilcore: ["Blood Red", "Jet Black", "Flame Orange", "Obsidian"],
+    Royalcore: ["Royal Blue", "Gold", "Crimson", "Ivory"],
+    Techwear: ["Jet Black", "Charcoal", "Neon Cyan", "High-vis Yellow"],
+    StreetPunk: ["Hot Pink", "Jet Black", "Neon Green", "Crimson"],
+    Pastel: ["Pastel Pink", "Pastel Purple", "Mint", "Baby Blue"],
+    Monochrome: ["Jet Black", "Snow White", "Ash Gray", "Charcoal"],
+    Luxury: ["Gold", "Silver", "Champagne", "Wine Red", "Midnight Purple"],
+    MagicAcademy: ["Navy Blue", "Gold", "Burgundy", "Forest Green"]
+  };
+
+  const smartPersonalities = {
+    Japanese: ["Polite", "Serene", "Mysterious", "Disciplined", "Graceful"],
+    Cyberpunk: ["Rebellious", "Cynical", "Tech-Savvy", "Cool", "Resourceful"],
+    Dreamcore: ["Whimsical", "Quiet", "Dreamy", "Gentle", "Mysterious"],
+    Fantasy: ["Brave", "Curious", "Noble", "Mystic", "Adventurous"],
+    Ocean: ["Calm", "Free-Spirited", "Playful", "Mysterious", "Gentle"],
+    Royal: ["Proud", "Dignified", "Majestic", "Elegant", "Ambitious"],
+    Nature: ["Gentle", "Peaceful", "Kind", "Nurturing", "Quiet"],
+    Festival: ["Energetic", "Cheerful", "Playful", "Outgoing", "Lively"],
+    Mystery: ["Enigmatic", "Quiet", "Brooding", "Observant", "Mysterious"],
+    Space: ["Curious", "Solitary", "Philosophical", "Calm", "Dreamy"],
+    Vintage: ["Nostalgic", "Gentle", "Sophisticated", "Quiet", "Charming"],
+    Steampunk: ["Inventive", "Eccentric", "Curious", "Determined", "Bold"],
+    Yokai: ["Mischievous", "Enigmatic", "Playful", "Sly", "Ancient"],
+    StreetFashion: ["Confident", "Trendy", "Bold", "Cool", "Carefree"],
+    Angel: ["Pure", "Compassionate", "Gentle", "Graceful", "Serene"],
+    Demon: ["Mischievous", "Rebellious", "Proud", "Wild", "Cunning"],
+    Fairy: ["Playful", "Whimsical", "Cheerful", "Mischievous", "Gentle"],
+    Ghost: ["Melancholy", "Quiet", "Ethereal", "Gentle", "Sorrowful"],
+    PostApocalyptic: ["Resilient", "Pragmatic", "Tough", "Cautious", "Resourceful"],
+    SciFi: ["Logical", "Analytical", "Calm", "Curious", "Focused"],
+    Medieval: ["Honorable", "Chivalrous", "Brave", "Stalwart", "Loyal"],
+    Victorian: ["Elegant", "Reserved", "Sophisticated", "Polite", "Proper"],
+    Gothic: ["Melancholy", "Mysterious", "Elegant", "Brooding", "Quiet"],
+    DarkFantasy: ["Grim", "Determined", "Mysterious", "Solitary", "Fearless"],
+    LightFantasy: ["Optimistic", "Kind", "Graceful", "Gentle", "Bright"],
+    Mythology: ["Wise", "Majestic", "Ancient", "Proud", "Powerful"],
+    AncientEgypt: ["Majestic", "Enigmatic", "Proud", "Calm", "Mystic"],
+    AncientGreece: ["Philosophical", "Proud", "Artistic", "Noble", "Brave"],
+    AncientChina: ["Serene", "Wise", "Graceful", "Poetic", "Calm"],
+    AncientJapan: ["Disciplined", "Honorable", "Quiet", "Focused", "Loyal"],
+    Samurai: ["Honorable", "Disciplined", "Loyal", "Fierce", "Calm"],
+    Ninja: ["Stealthy", "Quiet", "Focused", "Cunning", "Observant"],
+    Pirate: ["Daring", "Rebellious", "Charismatic", "Wild", "Free-Spirited"],
+    Knight: ["Chivalrous", "Protective", "Loyal", "Brave", "Honorable"],
+    Desert: ["Resilient", "Observant", "Calm", "Independent", "Mysterious"],
+    Arctic: ["Solitary", "Calm", "Quiet", "Resilient", "Cool"],
+    Jungle: ["Wild", "Agile", "Intuitive", "Free-Spirited", "Fierce"],
+    Underwater: ["Ethereal", "Calm", "Mysterious", "Gentle", "Curious"],
+    SkyKingdom: ["Free-Spirited", "Graceful", "Dreamy", "Proud", "Optimistic"],
+    Cloudcore: ["Gentle", "Dreamy", "Soft-spoken", "Peaceful", "Quiet"],
+    Lovecraftian: ["Eccentric", "Obsessive", "Enigmatic", "Unfathomable", "Solitary"],
+    Witchcore: ["Clever", "Mysterious", "Independent", "Resourceful", "Eccentric"],
+    Fairytale: ["Naive", "Kind", "Charming", "Gentle", "Optimistic"],
+    Fairycore: ["Sweet", "Playful", "Whimsical", "Nature-Loving", "Gentle"],
+    Voidcore: ["Quiet", "Solitary", "Enigmatic", "Cold", "Mysterious"],
+    Cottagecore: ["Kind", "Warm", "Peaceful", "Simple", "Nurturing"],
+    Angelcore: ["Pure", "Soft-hearted", "Gentle", "Serene", "Kind"],
+    Devilcore: ["Wild", "Rebellious", "Fiery", "Bold", "Playful"],
+    Royalcore: ["Proud", "Sophisticated", "Ambitious", "Commanding", "Elegant"],
+    Techwear: ["Cool", "Focused", "Practical", "Calculated", "Quiet"],
+    StreetPunk: ["Fiery", "Rebellious", "Outspoken", "Bold", "Wild"],
+    Pastel: ["Sweet", "Cheerful", "Shy", "Friendly", "Cute"],
+    Monochrome: ["Stoic", "Quiet", "Serious", "Observant", "Calm"],
+    Luxury: ["Charming", "Glamorous", "Ambitious", "Confident", "Sophisticated"],
+    MagicAcademy: ["Studious", "Curious", "Ambitious", "Clever", "Enthusiastic"]
   };
 
   // ===== RANDOM HELPER =====
@@ -524,9 +749,32 @@
     clothing: false
   };
 
+  // ===== SMART CONFIG STATE =====
+  let smartConfig = {
+    includeMGE: true,
+    includeAnimals: true
+  };
+
+  try {
+    const rawConfig = localStorage.getItem("cgSmartConfig");
+    if (rawConfig) {
+      const parsed = JSON.parse(rawConfig);
+      if (typeof parsed === "object") smartConfig = { ...smartConfig, ...parsed };
+    }
+  } catch (e) {
+    console.error("Error reading cgSmartConfig:", e);
+  }
+
+  function getSpeciesPool() {
+    let pool = [];
+    if (smartConfig.includeAnimals) pool.push(...animals);
+    if (smartConfig.includeMGE) pool.push(...mgeRaces);
+    return pool.length > 0 ? pool : animals;
+  }
+
   // ===== RANDOM MODE =====
   const randomMode = () => ({
-    animal: (lockedState.animal && currentResult?.animal) ? currentResult.animal : random(animals),
+    animal: (lockedState.animal && currentResult?.animal) ? currentResult.animal : random(getSpeciesPool()),
     theme: (lockedState.theme && currentResult?.theme) ? currentResult.theme : random(themes),
     object: (lockedState.object && currentResult?.object) ? currentResult.object : random(objects),
     color: (lockedState.color && currentResult?.color) ? currentResult.color : random(colors),
@@ -536,18 +784,21 @@
 
   // ===== SMART MATCH MODE =====
   const smartMode = () => {
-    const animal = (lockedState.animal && currentResult?.animal) ? currentResult.animal : random(animals);
+    const speciesPool = getSpeciesPool();
+    const animal = (lockedState.animal && currentResult?.animal) ? currentResult.animal : random(speciesPool);
     const possibleThemes = smartThemes[animal] || themes;
     const theme = (lockedState.theme && currentResult?.theme) ? currentResult.theme : random(possibleThemes);
     const possibleObjects = smartObjects[theme] || objects;
     const possibleClothing = smartclothing[theme] || clothing;
+    const possibleColors = smartColors[theme] || colors;
+    const possiblePersonalities = smartPersonalities[theme] || personalities;
 
     return {
       animal,
       theme,
       object: (lockedState.object && currentResult?.object) ? currentResult.object : random(possibleObjects),
-      color: (lockedState.color && currentResult?.color) ? currentResult.color : random(colors),
-      personality: (lockedState.personality && currentResult?.personality) ? currentResult.personality : random(personalities),
+      color: (lockedState.color && currentResult?.color) ? currentResult.color : random(possibleColors),
+      personality: (lockedState.personality && currentResult?.personality) ? currentResult.personality : random(possiblePersonalities),
       clothing: (lockedState.clothing && currentResult?.clothing) ? currentResult.clothing : random(possibleClothing)
     };
   };
@@ -558,6 +809,7 @@
   let savedList = [];
   let pendingDeleteField = null; // { cardIndex, fieldKey, fieldLabel, fieldValue }
   let pendingAlertModal = null; // alert message string
+  let pendingSmartModal = false; // boolean for settings modal
 
   // Load saved list from LocalStorage
   try {
@@ -578,8 +830,20 @@
     const isRandom = currentMode === "random";
     const isSmart = currentMode === "smart";
 
+    const getSpeciesLabel = () => {
+      if (smartConfig.includeMGE && !smartConfig.includeAnimals) {
+        return { label: "Species", icon: "🧜‍♀️" };
+      } else if (smartConfig.includeMGE && smartConfig.includeAnimals) {
+        return { label: "Species", icon: "🧬" };
+      } else {
+        return { label: "Animal", icon: "🐱" };
+      }
+    };
+
+    const speciesInfo = getSpeciesLabel();
+
     const keyLabels = {
-      animal: { label: "Animal", icon: "🐱" },
+      animal: speciesInfo,
       theme: { label: "Theme", icon: "✨" },
       object: { label: "Object", icon: "🔮" },
       color: { label: "Color", icon: "🎨" },
@@ -603,8 +867,13 @@
           item._id = 'cg_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
         }
 
+        const isItemMGE = mgeRaces.includes(item.animal);
+        const itemSpeciesInfo = isItemMGE
+          ? { label: "Species", icon: "🧜‍♀️" }
+          : { label: "Animal", icon: "🐱" };
+
         const fields = [
-          { key: "animal", label: "Animal", icon: "🐱" },
+          { key: "animal", ...itemSpeciesInfo },
           { key: "theme", label: "Theme", icon: "✨" },
           { key: "object", label: "Object", icon: "🔮" },
           { key: "color", label: "Color", icon: "🎨" },
@@ -664,7 +933,10 @@
     const resultEntries = Object.entries(currentResult)
       .filter(([key]) => key !== "_id")
       .map(([key, val]) => {
-        const meta = keyLabels[key] || { label: key, icon: "📌" };
+        const isCurrentMGE = key === "animal" && mgeRaces.includes(val);
+        const meta = key === "animal"
+          ? (isCurrentMGE ? { label: "Species", icon: "🧜‍♀️" } : { label: "Animal", icon: "🐱" })
+          : (keyLabels[key] || { label: key, icon: "📌" });
         const isLocked = !!lockedState[key];
         return `
           <div class="cg-result-row ${isLocked ? 'is-locked-row' : ''}" data-key="${key}">
@@ -700,6 +972,11 @@
           </button>
           <button class="cg-mode-btn ${isSmart ? 'active' : ''}" onclick="CharacterGenerator.setMode('smart')">
             <span class="cg-mode-icon">🧠</span> Smart Match
+            ${isSmart ? `
+              <span class="cg-wrench-btn" onclick="event.stopPropagation(); CharacterGenerator.openSmartSettings()" title="ตั้งค่าเผ่าพันธุ์ & การสุ่ม">
+                🔧
+              </span>
+            ` : ''}
           </button>
         </div>
 
@@ -786,6 +1063,40 @@
               <p class="cg-modal-text">${pendingAlertModal}</p>
               <div class="cg-modal-actions">
                 <button class="cg-modal-btn cg-modal-btn-confirm" onclick="CharacterGenerator.closeAlertModal()">ตกลง (OK)</button>
+              </div>
+            </div>
+          </div>
+        ` : ''}
+
+        <!-- SMART MATCH SETTINGS MODAL -->
+        ${pendingSmartModal ? `
+          <div class="cg-modal-overlay" onclick="if(event.target === this) CharacterGenerator.closeSmartSettings()">
+            <div class="cg-modal-box cg-modal-settings">
+              <div class="cg-modal-icon">⚙️</div>
+              <h3 class="cg-modal-title">ตั้งค่าเผ่าพันธุ์ Smart Match</h3>
+              <p class="cg-modal-text">ปรับเลือกแหล่งข้อมูลเผ่าพันธุ์ที่จะนำมาสุ่มในระบบ</p>
+              
+              <div class="cg-settings-list">
+                <label class="cg-setting-item">
+                  <input type="checkbox" id="cfg-mge" ${smartConfig.includeMGE ? 'checked' : ''}>
+                  <div class="cg-setting-info">
+                    <span class="cg-setting-title">🧜‍♀️ เผ่าพันธุ์ Monster Girl (MGE)</span>
+                    <span class="cg-setting-sub">Lamia, Harpy, Dullahan, Slime Girl, Succubus, Arachne, Alraune ฯลฯ</span>
+                  </div>
+                </label>
+
+                <label class="cg-setting-item">
+                  <input type="checkbox" id="cfg-animals" ${smartConfig.includeAnimals ? 'checked' : ''}>
+                  <div class="cg-setting-info">
+                    <span class="cg-setting-title">🐱 สัตว์ทั่วไป (Standard Animals)</span>
+                    <span class="cg-setting-sub">Fox, Cat, Wolf, Owl, Rabbit, Lion, Bear, Eagle ฯลฯ</span>
+                  </div>
+                </label>
+              </div>
+
+              <div class="cg-modal-actions" style="margin-top: 20px;">
+                <button class="cg-modal-btn cg-modal-btn-confirm" onclick="CharacterGenerator.saveSmartSettings()">บันทึก (Save)</button>
+                <button class="cg-modal-btn cg-modal-btn-cancel" onclick="CharacterGenerator.closeSmartSettings()">ยกเลิก (Cancel)</button>
               </div>
             </div>
           </div>
@@ -1334,6 +1645,70 @@
         background: rgba(255, 71, 87, 0.15);
       }
 
+      /* WRENCH BUTTON & SETTINGS MODAL */
+      .cg-wrench-btn {
+        margin-left: 6px;
+        padding: 3px 7px;
+        border-radius: 8px;
+        background: var(--bg2);
+        border: 1px solid var(--line2);
+        font-size: 12px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .cg-wrench-btn:hover {
+        background: var(--text);
+        color: var(--bg);
+        transform: scale(1.15) rotate(15deg);
+      }
+      .cg-settings-list {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        text-align: left;
+        margin: 16px 0;
+      }
+      .cg-setting-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        padding: 12px 14px;
+        background: var(--bg3);
+        border: 1px solid var(--line2);
+        border-radius: 14px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+      }
+      .cg-setting-item:hover {
+        border-color: #ff4757;
+        background: var(--bg);
+      }
+      .cg-setting-item input[type="checkbox"] {
+        margin-top: 3px;
+        width: 18px;
+        height: 18px;
+        accent-color: #ff4757;
+        cursor: pointer;
+      }
+      .cg-setting-info {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+      .cg-setting-title {
+        font-size: 14px;
+        font-weight: 700;
+        color: var(--text);
+      }
+      .cg-setting-sub {
+        font-size: 12px;
+        color: var(--text2);
+        line-height: 1.4;
+      }
+
       /* CONFIRMATION MODAL */
       .cg-modal-overlay {
         position: fixed;
@@ -1667,6 +2042,35 @@
     },
     closeAlertModal: function () {
       pendingAlertModal = null;
+      renderApp();
+    },
+    openSmartSettings: function () {
+      pendingSmartModal = true;
+      renderApp();
+    },
+    closeSmartSettings: function () {
+      pendingSmartModal = false;
+      renderApp();
+    },
+    saveSmartSettings: function () {
+      const mgeChecked = document.getElementById("cfg-mge")?.checked;
+      const animalsChecked = document.getElementById("cfg-animals")?.checked;
+
+      if (!mgeChecked && !animalsChecked) {
+        alert("กรุณาเลือกแหล่งข้อมูลอย่างน้อย 1 อย่างครับ");
+        return;
+      }
+
+      smartConfig.includeMGE = !!mgeChecked;
+      smartConfig.includeAnimals = !!animalsChecked;
+
+      try {
+        localStorage.setItem("cgSmartConfig", JSON.stringify(smartConfig));
+      } catch (e) {
+        console.error("Error saving cgSmartConfig:", e);
+      }
+
+      pendingSmartModal = false;
       renderApp();
     },
     editSaved: function (index) {
