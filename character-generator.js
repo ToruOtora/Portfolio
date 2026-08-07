@@ -667,7 +667,7 @@
         const meta = keyLabels[key] || { label: key, icon: "📌" };
         const isLocked = !!lockedState[key];
         return `
-          <div class="cg-result-row ${isLocked ? 'is-locked-row' : ''}">
+          <div class="cg-result-row ${isLocked ? 'is-locked-row' : ''}" data-key="${key}">
             <span class="cg-result-key">
               <span class="cg-icon">${meta.icon}</span>
               <span>${meta.label}</span>
@@ -676,7 +676,7 @@
               <a href="https://www.pinterest.com/search/pins/?q=${encodeURIComponent(val)}" target="_blank" rel="noopener noreferrer" class="cg-result-val-link" title="ค้นหา ${val} ใน Pinterest">
                 <span>${val}</span>
               </a>
-              <button class="cg-lock-btn ${isLocked ? 'locked' : ''}" onclick="CharacterGenerator.toggleLock('${key}')" title="${isLocked ? 'ปลดล็อก' : 'ล็อกค่านี้ไว้'}">
+              <button class="cg-lock-btn ${isLocked ? 'locked' : ''}" data-key="${key}" onclick="CharacterGenerator.toggleLock('${key}')" title="${isLocked ? 'ปลดล็อก' : 'ล็อกค่านี้ไว้'}">
                 ${isLocked ? '🔒' : '🔓'}
               </button>
             </div>
@@ -835,6 +835,30 @@
     });
   }
 
+  function animateLockedSlots() {
+    const lockedKeys = Object.keys(lockedState).filter(k => lockedState[k]);
+    if (lockedKeys.length === 0) return;
+
+    requestAnimationFrame(() => {
+      lockedKeys.forEach(key => {
+        const lockBtn = document.querySelector(`.cg-lock-btn[data-key="${key}"]`);
+        const rowEl = document.querySelector(`.cg-result-row[data-key="${key}"]`);
+
+        if (lockBtn) {
+          lockBtn.classList.remove("lock-pop-shake");
+          void lockBtn.offsetWidth;
+          lockBtn.classList.add("lock-pop-shake");
+        }
+
+        if (rowEl) {
+          rowEl.classList.remove("lock-pop-shake");
+          void rowEl.offsetWidth;
+          rowEl.classList.add("lock-pop-shake");
+        }
+      });
+    });
+  }
+
   // Inject Styles into Document Head
   function injectStyles() {
     if (document.getElementById("cg-styles")) return;
@@ -961,6 +985,44 @@
         border-color: #ff4757;
         color: #ff4757;
         box-shadow: 0 0 10px rgba(255, 71, 87, 0.25);
+      }
+
+      /* POP & ROTATION SHAKE ANIMATION FOR LOCKED SLOTS */
+      @keyframes cgLockPopShake {
+        0% {
+          transform: scale(1) rotate(0deg);
+        }
+        20% {
+          transform: scale(1.38) rotate(-16deg);
+        }
+        40% {
+          transform: scale(1.38) rotate(16deg);
+        }
+        60% {
+          transform: scale(1.22) rotate(-10deg);
+        }
+        80% {
+          transform: scale(1.1) rotate(6deg);
+        }
+        100% {
+          transform: scale(1) rotate(0deg);
+        }
+      }
+
+      .cg-lock-btn.lock-pop-shake {
+        animation: cgLockPopShake 0.52s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+        z-index: 5;
+      }
+
+      @keyframes cgRowLockedPulse {
+        0% { transform: scale(1); }
+        30% { transform: scale(1.018); }
+        60% { transform: scale(0.992); }
+        100% { transform: scale(1); }
+      }
+
+      .cg-result-row.lock-pop-shake {
+        animation: cgRowLockedPulse 0.45s ease-in-out both;
       }
       .cg-result-val-link {
         font-size: 15px;
@@ -1423,6 +1485,7 @@
       }
       delete currentResult._id;
       renderApp();
+      animateLockedSlots();
     },
     saveResult: function () {
       try {
