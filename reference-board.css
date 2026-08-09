@@ -677,7 +677,8 @@
 .refboard-exp-backdrop,
 #refboard-alert-backdrop,
 #refboard-arrange-backdrop,
-.cg-modal-backdrop {
+.cg-modal-backdrop,
+.cg-modal-overlay {
   position: fixed !important;
   inset: 0 !important;
   background: rgba(0, 0, 0, 0.7) !important;
