@@ -674,17 +674,12 @@
 /* ═══════════════════════════════════════════════════════════════════════════
    EXPORT MODAL STYLING (หน้าต่างส่งออก)
    ═══════════════════════════════════════════════════════════════════════════ */
-.refboard-exp-backdrop,
-#refboard-alert-backdrop,
-#refboard-arrange-backdrop,
-.cg-modal-backdrop,
-.cg-modal-overlay {
-  position: fixed !important;
-  inset: 0 !important;
-  background: rgba(0, 0, 0, 0.7) !important;
-  backdrop-filter: blur(8px) !important;
-  -webkit-backdrop-filter: blur(8px) !important;
-  z-index: 99999999 !important;
+.refboard-exp-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(8px);
+  z-index: 100005;
   display: none !important;
   align-items: center;
   justify-content: center;
@@ -693,10 +688,7 @@
   transition: opacity 0.2s ease;
 }
 
-.refboard-exp-backdrop.open,
-#refboard-alert-backdrop.open,
-#refboard-arrange-backdrop.open,
-.cg-modal-backdrop.open {
+.refboard-exp-backdrop.open {
   display: flex !important;
   opacity: 1;
   pointer-events: auto;

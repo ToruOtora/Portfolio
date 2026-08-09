@@ -1709,22 +1709,21 @@
         line-height: 1.4;
       }
 
-      /* CONFIRMATION MODAL */
+      /* CONFIRMATION MODAL & ALERT NOTIFICATIONS */
       .cg-modal-overlay {
-        position: fixed !important;
-        top: 0 !important;
-        left: 0 !important;
-        right: 0 !important;
-        bottom: 0 !important;
-        background: rgba(0, 0, 0, 0.65) !important;
-        backdrop-filter: blur(4px) !important;
-        -webkit-backdrop-filter: blur(4px) !important;
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        z-index: 99999999 !important;
-        padding: 20px !important;
-        animation: cgFadeIn 0.2s ease !important;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.65);
+        backdrop-filter: blur(4px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000000 !important;
+        padding: 20px;
+        animation: cgFadeIn 0.2s ease;
       }
       .cg-modal-box {
         background: var(--bg2);
