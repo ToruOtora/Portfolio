@@ -214,7 +214,7 @@
             <div class="refboard-exp-group" id="ref-scale-group">
               <span class="refboard-exp-label">ความละเอียดภาพ (Resolution Scale):</span>
               <div class="refboard-exp-slider-wrap">
-                <input type="range" id="ref-scale-slider" min="50" max="200" step="25" value="100">
+                <input type="range" id="ref-scale-slider" min="50" max="300" step="25" value="100">
                 <span class="refboard-exp-val" id="ref-scale-val">100%</span>
               </div>
             </div>
@@ -1697,13 +1697,18 @@
   // EXPORT SYSTEM
   function updateExportSettingsVisibility(fmt) {
     const expSettings = document.getElementById('refboard-exp-settings');
+    const scaleGroup = document.getElementById('ref-scale-group');
+    const qualityGroup = document.getElementById('ref-quality-group');
     const scaleSlider = document.getElementById('ref-scale-slider');
     const scaleVal = document.getElementById('ref-scale-val');
     const qualitySlider = document.getElementById('ref-quality-slider');
     const qualityVal = document.getElementById('ref-quality-val');
 
-    if (fmt === 'png' || fmt === 'jpg') {
+    if (fmt === 'png' || fmt === 'jpg' || fmt === 'psd') {
       if (expSettings) expSettings.style.display = 'block';
+      if (scaleGroup) scaleGroup.style.display = 'block';
+      if (qualityGroup) qualityGroup.style.display = fmt === 'jpg' ? 'block' : 'none';
+
       if (scaleSlider) scaleSlider.value = 100;
       if (scaleVal) scaleVal.textContent = '100%';
       if (qualitySlider) qualitySlider.value = 100;
