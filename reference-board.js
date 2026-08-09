@@ -617,6 +617,99 @@
         viewportEl.classList.remove('panning');
       }
     });
+
+    // Touch Events for Mobile Panning (1 finger) and Pinch-to-Zoom (2 fingers)
+    let initialTouchDist = 0;
+    let initialTouchZoom = 1.0;
+    let touchStartPanX = 0;
+    let touchStartPanY = 0;
+    let isTouchPanning = false;
+
+    function getTouchDistance(e) {
+      if (e.touches.length < 2) return 0;
+      const dx = e.touches[0].clientX - e.touches[1].clientX;
+      const dy = e.touches[0].clientY - e.touches[1].clientY;
+      return Math.hypot(dx, dy);
+    }
+
+    function getTouchCenter(e) {
+      if (e.touches.length < 2) {
+        return {
+          x: e.touches[0].clientX,
+          y: e.touches[0].clientY
+        };
+      }
+      return {
+        x: (e.touches[0].clientX + e.touches[1].clientX) / 2,
+        y: (e.touches[0].clientY + e.touches[1].clientY) / 2
+      };
+    }
+
+    viewportEl.addEventListener('touchstart', (e) => {
+      if (!isModalOpen) return;
+      const isBg = e.target === viewportEl || e.target === canvasEl || e.target === emptyHintEl || e.target.closest('#refboard-empty-hint');
+
+      if (e.touches.length === 2) {
+        // 2-finger Pinch-Zoom Gesture
+        e.preventDefault();
+        initialTouchDist = getTouchDistance(e);
+        initialTouchZoom = zoom;
+        isTouchPanning = false;
+        if (selectedItemId) deselectAll();
+      } else if (e.touches.length === 1 && isBg) {
+        // 1-finger Canvas Panning
+        isTouchPanning = true;
+        touchStartPanX = e.touches[0].clientX - panX;
+        touchStartPanY = e.touches[0].clientY - panY;
+        viewportEl.classList.add('panning');
+        if (selectedItemId) deselectAll();
+      }
+    }, { passive: false });
+
+    viewportEl.addEventListener('touchmove', (e) => {
+      if (!isModalOpen) return;
+
+      if (e.touches.length === 2 && initialTouchDist > 0) {
+        e.preventDefault();
+        const currentDist = getTouchDistance(e);
+        if (currentDist > 0) {
+          const scaleRatio = currentDist / initialTouchDist;
+          const newZoom = Math.min(Math.max(initialTouchZoom * scaleRatio, 0.1), 5.0);
+
+          const rect = viewportEl.getBoundingClientRect();
+          const center = getTouchCenter(e);
+          const touchX = center.x - rect.left;
+          const touchY = center.y - rect.top;
+
+          panX = touchX - (touchX - panX) * (newZoom / zoom);
+          panY = touchY - (touchY - panY) * (newZoom / zoom);
+          zoom = newZoom;
+
+          updateTransform();
+        }
+      } else if (e.touches.length === 1 && isTouchPanning) {
+        e.preventDefault();
+        panX = e.touches[0].clientX - touchStartPanX;
+        panY = e.touches[0].clientY - touchStartPanY;
+        updateTransform();
+      }
+    }, { passive: false });
+
+    viewportEl.addEventListener('touchend', (e) => {
+      if (e.touches.length < 2) {
+        initialTouchDist = 0;
+      }
+      if (e.touches.length === 0) {
+        isTouchPanning = false;
+        viewportEl.classList.remove('panning');
+      }
+    });
+
+    viewportEl.addEventListener('touchcancel', () => {
+      initialTouchDist = 0;
+      isTouchPanning = false;
+      viewportEl.classList.remove('panning');
+    });
   }
 
   // Drag & Drop File Handling
@@ -1479,6 +1572,81 @@
       window.addEventListener('mousemove', onMouseMove);
       window.addEventListener('mouseup', onMouseUp);
     });
+
+    // Mobile Touch Handling for Individual Item Dragging & Resizing
+    itemEl.addEventListener('touchstart', (e) => {
+      if (!isModalOpen || e.touches.length !== 1) return;
+      e.stopPropagation();
+
+      selectItem(itemData.id);
+
+      const touch = e.touches[0];
+      const handleBtn = e.target.closest('.ref-handle');
+      const tbBtn = e.target.closest('.ref-tb-btn');
+
+      if (tbBtn) return;
+
+      isInteracting = true;
+      startX = touch.clientX;
+      startY = touch.clientY;
+      initialX = itemData.x;
+      initialY = itemData.y;
+      initialW = itemData.width;
+      initialH = itemData.height;
+
+      if (handleBtn) {
+        activeHandle = handleBtn.dataset.handle;
+        activeMode = activeHandle === 'rot' ? 'rotate' : 'resize';
+      } else {
+        activeMode = 'move';
+      }
+
+      function onTouchMove(te) {
+        if (!isInteracting || te.touches.length !== 1) return;
+        te.preventDefault();
+        const t = te.touches[0];
+        const dx = (t.clientX - startX) / zoom;
+        const dy = (t.clientY - startY) / zoom;
+
+        if (activeMode === 'move') {
+          const rawX = initialX + dx;
+          const rawY = initialY + dy;
+          const snapResult = applyPhotoshopSmartGuides(itemData, rawX, rawY, itemData.width, itemData.height);
+          itemData.x = snapResult.x;
+          itemData.y = snapResult.y;
+          itemEl.style.transform = `translate(${snapResult.x}px, ${snapResult.y}px) rotate(${itemData.rotation}deg)`;
+        } else if (activeMode === 'resize') {
+          let newW = initialW;
+          if (activeHandle === 'br' || activeHandle === 'tr') {
+            newW = Math.max(initialW + dx, 30);
+          } else if (activeHandle === 'tl' || activeHandle === 'bl') {
+            newW = Math.max(initialW - dx, 30);
+          }
+          const newH = newW / itemData.aspect;
+          itemData.width = newW;
+          itemData.height = newH;
+          itemEl.style.width = `${newW}px`;
+          itemEl.style.height = `${newH}px`;
+          if (itemData.imgEl) {
+            itemData.imgEl.style.width = `${newW}px`;
+            itemData.imgEl.style.height = `${newH}px`;
+          }
+        }
+      }
+
+      function onTouchEnd() {
+        clearSmartGuides();
+        isInteracting = false;
+        activeMode = null;
+        window.removeEventListener('touchmove', onTouchMove);
+        window.removeEventListener('touchend', onTouchEnd);
+        window.removeEventListener('touchcancel', onTouchEnd);
+      }
+
+      window.addEventListener('touchmove', onTouchMove, { passive: false });
+      window.addEventListener('touchend', onTouchEnd);
+      window.addEventListener('touchcancel', onTouchEnd);
+    }, { passive: false });
   }
 
   // Selection

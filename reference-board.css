@@ -189,9 +189,13 @@
 }
 
 .refboard-btn,
-.refboard-btn.btn-accent {
+.refboard-btn.btn-accent,
+.cg-modal-btn,
+.refboard-exp-btn-submit,
+.refboard-exp-btn-cancel {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
   padding: 8px 14px;
   border-radius: 999px;
@@ -204,7 +208,7 @@
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.18s ease, color 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   font-family: inherit;
   width: fit-content;
 }
@@ -215,18 +219,30 @@
 }
 
 .refboard-btn:hover,
-.refboard-btn.btn-accent:hover {
-  background: var(--text, #f0f0f0);
-  color: var(--bg, #0d0d0d);
-  border-color: var(--text, #f0f0f0);
-  transform: translateY(-1px);
+.refboard-btn.btn-accent:hover,
+.cg-modal-btn:hover,
+.refboard-exp-btn-submit:hover,
+.refboard-exp-btn-cancel:hover {
+  background: var(--text, #f0f0f0) !important;
+  color: var(--bg, #0d0d0d) !important;
+  border-color: var(--text, #f0f0f0) !important;
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.22);
+}
+
+.refboard-btn:active,
+.refboard-btn.btn-accent:active,
+.cg-modal-btn:active,
+.refboard-exp-btn-submit:active,
+.refboard-exp-btn-cancel:active {
+  transform: translateY(0) scale(0.97) !important;
 }
 
 .refboard-btn.active {
-  background: var(--text, #f0f0f0);
-  color: var(--bg, #0d0d0d);
-  border-color: var(--text, #f0f0f0);
-  font-weight: 700;
+  background: var(--text, #f0f0f0) !important;
+  color: var(--bg, #0d0d0d) !important;
+  border-color: var(--text, #f0f0f0) !important;
+  font-weight: 700 !important;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
@@ -247,7 +263,10 @@
 }
 
 [data-theme="light"] .refboard-btn,
-[data-theme="light"] .refboard-btn.btn-accent {
+[data-theme="light"] .refboard-btn.btn-accent,
+[data-theme="light"] .cg-modal-btn,
+[data-theme="light"] .refboard-exp-btn-submit,
+[data-theme="light"] .refboard-exp-btn-cancel {
   background: var(--bg, #ffffff) !important;
   color: var(--text, #0a0a0a) !important;
   border-color: var(--line2, #cccccc) !important;
@@ -260,10 +279,14 @@
 }
 
 [data-theme="light"] .refboard-btn:hover,
-[data-theme="light"] .refboard-btn.btn-accent:hover {
+[data-theme="light"] .refboard-btn.btn-accent:hover,
+[data-theme="light"] .cg-modal-btn:hover,
+[data-theme="light"] .refboard-exp-btn-submit:hover,
+[data-theme="light"] .refboard-exp-btn-cancel:hover {
   background: var(--text, #0a0a0a) !important;
   color: var(--bg, #fafafa) !important;
   border-color: var(--text, #0a0a0a) !important;
+  transform: translateY(-2px) scale(1.02);
 }
 
 [data-theme="light"] .refboard-btn:hover svg,
@@ -288,15 +311,16 @@
 }
 
 [data-theme="light"] .refboard-icon-btn:hover {
-  background: var(--bg3, #e8e8e8);
-  color: var(--text, #0a0a0a);
-  border-color: var(--line2, #cccccc);
+  background: var(--text, #0a0a0a);
+  color: var(--bg, #fafafa);
+  border-color: var(--text, #0a0a0a);
+  transform: translateY(-2px) scale(1.05);
 }
 
 .refboard-btn.btn-danger:hover {
-  background: #eb5757;
-  color: #fff;
-  border-color: #eb5757;
+  background: #eb5757 !important;
+  color: #fff !important;
+  border-color: #eb5757 !important;
 }
 
 /* Header Window Control Buttons (Float, Maximize, Close) */
@@ -310,14 +334,14 @@
   width: 32px;
   height: 32px;
   border-radius: 8px;
-  background: transparent;
-  border: 1px solid transparent;
+  background: var(--bg2, #161616);
+  border: 1px solid var(--line, #2a2a2a);
   color: var(--text2, #888);
   display: inline-flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .refboard-icon-btn * {
