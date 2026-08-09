@@ -669,10 +669,13 @@
     viewportEl.addEventListener('touchmove', (e) => {
       if (!isModalOpen) return;
 
-      if (e.touches.length === 2 && initialTouchDist > 0) {
+      if (e.touches.length === 2) {
         e.preventDefault();
         const currentDist = getTouchDistance(e);
-        if (currentDist > 0) {
+        if (initialTouchDist === 0) {
+          initialTouchDist = currentDist;
+          initialTouchZoom = zoom;
+        } else if (currentDist > 0) {
           const scaleRatio = currentDist / initialTouchDist;
           const newZoom = Math.min(Math.max(initialTouchZoom * scaleRatio, 0.1), 5.0);
 
@@ -1927,10 +1930,30 @@
         loaded++;
         if (loaded === sortedItems.length) {
           try {
+            // Create dedicated Black Background Layer at position 0 (bottom)
+            const bgCanvas = document.createElement('canvas');
+            bgCanvas.width = boardW;
+            bgCanvas.height = boardH;
+            const bgCtx = bgCanvas.getContext('2d');
+            bgCtx.fillStyle = '#0d0d0d';
+            bgCtx.fillRect(0, 0, boardW, boardH);
+
+            const bgImageData = bgCtx.getImageData(0, 0, boardW, boardH);
+            const bgLayer = {
+              name: 'Background Black',
+              left: 0,
+              top: 0,
+              canvas: bgCanvas,
+              imageData: bgImageData
+            };
+
+            // Unshift background layer so user image layers remain 100% separate above it
+            const psdLayers = [bgLayer, ...layers];
+
             const psdData = {
               width: boardW,
               height: boardH,
-              children: layers
+              children: psdLayers
             };
             const buffer = agPsd.writePsd(psdData);
             const blob = new Blob([buffer], { type: 'image/vnd.adobe.photoshop' });
