@@ -1,0 +1,978 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   REFERENCE BOARD (กระดานเรฟภาพอ้างอิง)
+   Modular CSS for Floating Ref Board Modal & Canvas
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Modal Container — default floating (mobile / tablet) */
+.refboard-modal {
+  position: fixed;
+  top: 5vh;
+  left: 5vw;
+  width: 90vw;
+  height: 88vh;
+  background: var(--bg2, #161616);
+  border: 1px solid var(--line2, #333);
+  border-radius: 16px;
+  box-shadow: none !important;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  z-index: 99999;
+  display: none !important;
+  flex-direction: column;
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
+  transform: scale(0.96) translateY(10px);
+  transition: opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1), transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.refboard-modal.open {
+  display: flex !important;
+  opacity: 1;
+  pointer-events: auto;
+  transform: none;
+}
+
+/* ═══ DESKTOP SPLIT-PANEL MODE (> 1024px) ═══ */
+@media (min-width: 1025px) {
+  /* Side panel: fixed to right edge, 57% width (43% left for character generator), full height below nav */
+  .refboard-modal {
+    top: var(--nav-h, 54px);
+    right: 0;
+    left: auto;
+    width: 57vw;
+    height: calc(100vh - var(--nav-h, 54px));
+    border-radius: 0;
+    border-right: none;
+    border-top: none;
+    border-bottom: none;
+    box-shadow: none !important;
+    transform-origin: bottom right;
+    transform: scaleX(0) scaleY(0.85);
+    opacity: 0;
+    transition:
+      transform 0.38s cubic-bezier(0.16, 1, 0.3, 1),
+      opacity 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .refboard-modal.open {
+    transform: scaleX(1) scaleY(1);
+    opacity: 1;
+  }
+
+  /* Disable dragging header on desktop split panel unless floating mode */
+  .refboard-modal #refboard-header {
+    cursor: default;
+  }
+}
+
+/* ═══ FLOATING WINDOW MODE (User toggled float button) ═══ */
+.refboard-modal.floating-mode {
+  top: 80px;
+  left: calc(50vw - 360px);
+  right: auto;
+  transform: none;
+  min-width: 320px;
+  min-height: 260px;
+  border-radius: 16px !important;
+  box-shadow: none !important;
+  border: 1px solid var(--line2, #333) !important;
+}
+
+.refboard-modal.floating-mode #refboard-header {
+  cursor: move !important;
+}
+
+.refboard-modal.maximized {
+  top: 0 !important;
+  left: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  border-radius: 0 !important;
+}
+
+/* ═══ 4 CORNER RESIZE HANDLES (For floating mode) ═══ */
+.ref-modal-handle {
+  position: absolute;
+  width: 22px;
+  height: 22px;
+  z-index: 10002;
+  display: none;
+}
+
+.refboard-modal.floating-mode .ref-modal-handle {
+  display: block;
+}
+
+.ref-modal-handle-tl {
+  top: -6px;
+  left: -6px;
+  cursor: nwse-resize;
+}
+
+.ref-modal-handle-tr {
+  top: -6px;
+  right: -6px;
+  cursor: nesw-resize;
+}
+
+.ref-modal-handle-bl {
+  bottom: -6px;
+  left: -6px;
+  cursor: nesw-resize;
+}
+
+.ref-modal-handle-br {
+  bottom: -6px;
+  right: -6px;
+  cursor: nwse-resize;
+}
+
+/* Header Bar */
+.refboard-header {
+  height: 48px;
+  background: var(--bg, #0d0d0d);
+  border-bottom: 1px solid var(--line, #2a2a2a);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  cursor: move;
+  flex-shrink: 0;
+}
+
+.refboard-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text, #f0f0f0);
+  letter-spacing: 0.02em;
+}
+
+.refboard-title-badge {
+  font-size: 10px;
+  font-weight: 500;
+  background: rgba(111, 207, 73, 0.15);
+  color: #6fcf49;
+  padding: 2px 8px;
+  border-radius: 100px;
+  border: 1px solid rgba(111, 207, 73, 0.3);
+}
+
+.refboard-header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.refboard-window-btns {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Universal Vertical Action Toolbar (Desktop & Mobile) */
+.refboard-actions {
+  position: absolute;
+  right: 14px;
+  top: 58px;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  pointer-events: auto;
+}
+
+.refboard-btn,
+.refboard-btn.btn-accent {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: var(--bg2, #161616);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--line2, #333);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+  color: var(--text, #f0f0f0);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.18s ease, color 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
+  font-family: inherit;
+  width: fit-content;
+}
+
+.refboard-btn svg,
+.refboard-btn.btn-accent svg {
+  stroke: currentColor;
+}
+
+.refboard-btn:hover,
+.refboard-btn.btn-accent:hover {
+  background: var(--text, #f0f0f0);
+  color: var(--bg, #0d0d0d);
+  border-color: var(--text, #f0f0f0);
+  transform: translateY(-1px);
+}
+
+.refboard-btn.active {
+  background: var(--text, #f0f0f0);
+  color: var(--bg, #0d0d0d);
+  border-color: var(--text, #f0f0f0);
+  font-weight: 700;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* ═══ LIGHT THEME ADAPTIVE STYLES ═══ */
+[data-theme="light"] .refboard-modal {
+  background: var(--bg2, #f0f0f0);
+  border-color: var(--line, #e0e0e0);
+  color: var(--text, #0a0a0a);
+}
+
+[data-theme="light"] .refboard-header {
+  background: var(--bg, #fafafa);
+  border-bottom-color: var(--line, #e0e0e0);
+}
+
+[data-theme="light"] .refboard-title {
+  color: var(--text, #0a0a0a);
+}
+
+[data-theme="light"] .refboard-btn,
+[data-theme="light"] .refboard-btn.btn-accent {
+  background: var(--bg, #ffffff) !important;
+  color: var(--text, #0a0a0a) !important;
+  border-color: var(--line2, #cccccc) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08) !important;
+}
+
+[data-theme="light"] .refboard-btn svg,
+[data-theme="light"] .refboard-btn.btn-accent svg {
+  stroke: var(--text, #0a0a0a) !important;
+}
+
+[data-theme="light"] .refboard-btn:hover,
+[data-theme="light"] .refboard-btn.btn-accent:hover {
+  background: var(--text, #0a0a0a) !important;
+  color: var(--bg, #fafafa) !important;
+  border-color: var(--text, #0a0a0a) !important;
+}
+
+[data-theme="light"] .refboard-btn:hover svg,
+[data-theme="light"] .refboard-btn.btn-accent:hover svg {
+  stroke: var(--bg, #fafafa) !important;
+}
+
+[data-theme="light"] .refboard-btn.active {
+  background: var(--text, #0a0a0a) !important;
+  color: var(--bg, #fafafa) !important;
+  border-color: var(--text, #0a0a0a) !important;
+}
+
+[data-theme="light"] .refboard-btn.active svg {
+  stroke: var(--bg, #fafafa) !important;
+}
+
+[data-theme="light"] .refboard-icon-btn {
+  background: var(--bg, #ffffff);
+  border-color: var(--line, #e0e0e0);
+  color: var(--text2, #666666);
+}
+
+[data-theme="light"] .refboard-icon-btn:hover {
+  background: var(--bg3, #e8e8e8);
+  color: var(--text, #0a0a0a);
+  border-color: var(--line2, #cccccc);
+}
+
+.refboard-btn.btn-danger:hover {
+  background: #eb5757;
+  color: #fff;
+  border-color: #eb5757;
+}
+
+/* Header Window Control Buttons (Float, Maximize, Close) */
+.refboard-window-btns {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.refboard-icon-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text2, #888);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.refboard-icon-btn * {
+  pointer-events: none;
+}
+
+.refboard-icon-btn:hover {
+  background: var(--bg3, #1e1e1e);
+  color: var(--text, #f0f0f0);
+  border-color: var(--line, #2a2a2a);
+}
+
+.refboard-icon-btn.active {
+  background: rgba(56, 189, 248, 0.15);
+  color: #38bdf8;
+  border-color: rgba(56, 189, 248, 0.3);
+}
+
+.refboard-icon-btn.close-btn:hover {
+  background: #eb5757;
+  color: #ffffff;
+  border-color: #eb5757;
+}
+
+/* Viewport Area */
+.refboard-viewport {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  background-color: var(--bg2, #161616);
+  background-image: radial-gradient(var(--line, #2a2a2a) 1px, transparent 1px);
+  background-size: 24px 24px;
+  cursor: grab;
+}
+
+/* White Solid Background Mode (No dots, clean solid white) */
+.refboard-viewport.bg-white-mode {
+  background-color: #ffffff !important;
+  background-image: none !important;
+}
+
+.refboard-viewport.bg-white-mode .refboard-empty-hint {
+  color: #555555 !important;
+}
+
+.refboard-viewport.bg-white-mode .refboard-empty-hint svg {
+  stroke: #555555 !important;
+}
+
+.refboard-viewport.grid-active {
+  background-image:
+    radial-gradient(rgba(233, 30, 99, 0.25) 1.5px, transparent 1.5px),
+    radial-gradient(var(--line2, #3a3a3a) 1px, transparent 1px);
+  background-size: 120px 120px, 24px 24px;
+}
+
+.refboard-viewport.panning {
+  cursor: grabbing !important;
+}
+
+/* Photoshop Smart Alignment Guide Lines (Magenta) */
+.refboard-smart-line {
+  position: absolute;
+  background: #ff007f;
+  box-shadow: 0 0 8px rgba(255, 0, 127, 0.9);
+  pointer-events: none;
+  z-index: 9999;
+}
+
+.refboard-smart-line.line-v {
+  width: 1.5px;
+  top: -5000px;
+  bottom: -5000px;
+  height: 10000px;
+}
+
+.refboard-smart-line.line-h {
+  height: 1.5px;
+  left: -5000px;
+  right: -5000px;
+  width: 10000px;
+}
+
+/* Canvas Plane (Pan & Zoom wrapper) */
+.refboard-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  transform-origin: 0 0;
+  pointer-events: auto;
+}
+
+/* Dropzone Overlay Notice */
+.refboard-drop-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(13, 13, 13, 0.85);
+  border: 2px dashed #38bdf8;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: #38bdf8;
+  font-size: 16px;
+  font-weight: 600;
+  z-index: 1000;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+
+.refboard-drop-overlay.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.refboard-drop-overlay svg {
+  width: 48px;
+  height: 48px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+}
+
+/* Empty State Instructions */
+.refboard-empty-hint {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  color: var(--text3, #555);
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.refboard-empty-hint svg {
+  width: 42px;
+  height: 42px;
+  stroke: var(--text3, #555);
+  fill: none;
+  stroke-width: 1.5;
+}
+
+.refboard-kbd {
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: var(--bg3, #1e1e1e);
+  border: 1px solid var(--line2, #333);
+  font-family: monospace;
+  font-size: 11px;
+  color: var(--text2, #888);
+}
+
+/* Individual Reference Image Item */
+.ref-item {
+  position: absolute;
+  top: 0;
+  left: 0;
+  touch-action: none;
+  cursor: move;
+  transform-origin: center center;
+}
+
+.ref-item-img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: contain;
+  pointer-events: none;
+  border-radius: 4px;
+  box-shadow: none;
+  image-rendering: high-quality;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+/* Selection State & Transform Handles */
+.ref-item.selected {
+  outline: 2px solid #38bdf8;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.ref-handle {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  background: #ffffff;
+  border: 2px solid #38bdf8;
+  border-radius: 50%;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+  z-index: 10;
+  display: none;
+}
+
+.ref-item.selected .ref-handle {
+  display: block;
+}
+
+/* Corner Handles for Smart Proportional Resizing */
+.ref-handle-tl { top: -8px; left: -8px; cursor: nwse-resize; }
+.ref-handle-tr { top: -8px; right: -8px; cursor: nesw-resize; }
+.ref-handle-bl { bottom: -8px; left: -8px; cursor: nesw-resize; }
+.ref-handle-br { bottom: -8px; right: -8px; cursor: nwse-resize; }
+
+/* Rotation Handle */
+.ref-handle-rot {
+  top: -28px;
+  left: 50%;
+  transform: translateX(-50%);
+  cursor: grab;
+  background: #38bdf8;
+  border-color: #ffffff;
+}
+
+.ref-handle-rot::after {
+  content: '';
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 2px;
+  height: 16px;
+  background: #38bdf8;
+  pointer-events: none;
+}
+
+/* Floating Quick Toolbar for Selected Item */
+.ref-item-toolbar {
+  position: absolute;
+  bottom: calc(100% + 12px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--bg, #0d0d0d);
+  border: 1px solid var(--line2, #333);
+  border-radius: 8px;
+  padding: 4px;
+  display: none;
+  gap: 4px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+  z-index: 20;
+  white-space: nowrap;
+}
+
+.ref-item.selected .ref-item-toolbar {
+  display: flex;
+}
+
+.ref-tb-btn {
+  background: transparent;
+  border: none;
+  color: var(--text2, #888);
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.ref-tb-btn:hover {
+  background: var(--bg3, #1e1e1e);
+  color: var(--text, #f0f0f0);
+}
+
+.ref-tb-btn.del-btn:hover {
+  background: rgba(235, 87, 87, 0.2);
+  color: #eb5757;
+}
+
+/* Status Footer Bar */
+.refboard-footer {
+  height: 28px;
+  background: var(--bg, #0d0d0d);
+  border-top: 1px solid var(--line, #2a2a2a);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  font-size: 11px;
+  color: var(--text3, #555);
+  flex-shrink: 0;
+}
+
+.refboard-footer-info {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+/* Nav Button Styling to integrate into main nav */
+.nav-ref-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 100px;
+  background: rgba(56, 189, 248, 0.1);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  color: #38bdf8 !important;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.nav-ref-btn:hover {
+  background: #38bdf8;
+  color: #000000 !important;
+  border-color: #38bdf8;
+}
+
+/* Hidden File Inputs */
+.refboard-file-input {
+  display: none;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   EXPORT MODAL STYLING (หน้าต่างส่งออก)
+   ═══════════════════════════════════════════════════════════════════════════ */
+.refboard-exp-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(8px);
+  z-index: 100005;
+  display: none !important;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+
+.refboard-exp-backdrop.open {
+  display: flex !important;
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.refboard-exp-card {
+  width: 90%;
+  max-width: 440px;
+  background: var(--bg2, #161616);
+  border: 1px solid var(--line2, #333);
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
+  color: var(--text, #f0f0f0);
+}
+
+.refboard-exp-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--line, #2a2a2a);
+}
+
+.refboard-exp-header h3 {
+  font-size: 16px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.refboard-exp-group {
+  margin-bottom: 18px;
+}
+
+.refboard-exp-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text2, #888);
+  margin-bottom: 8px;
+}
+
+.refboard-exp-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+.refboard-exp-opt {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: var(--bg3, #1e1e1e);
+  border: 1px solid var(--line, #2a2a2a);
+  cursor: pointer;
+  font-size: 13px;
+  transition: all 0.15s ease;
+}
+
+.refboard-exp-opt:hover,
+.refboard-exp-opt.active {
+  border-color: var(--text, #f0f0f0);
+  background: var(--bg2, #161616);
+  color: var(--text, #f0f0f0);
+  font-weight: 700;
+}
+
+.refboard-exp-slider-wrap {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.refboard-exp-slider-wrap input[type="range"] {
+  flex: 1;
+  accent-color: var(--text, #f0f0f0);
+}
+
+.refboard-exp-val {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text, #f0f0f0);
+  min-width: 45px;
+  text-align: right;
+}
+
+.refboard-exp-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 24px;
+}
+
+.refboard-exp-btn-submit {
+  flex: 1;
+  padding: 10px;
+  border-radius: 8px;
+  background: var(--text, #f0f0f0);
+  color: var(--bg, #0d0d0d);
+  font-weight: 700;
+  font-size: 13px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.refboard-exp-btn-submit:hover {
+  background: var(--text2, #e0e0e0);
+  transform: translateY(-1px);
+}
+
+.refboard-exp-btn-cancel {
+  padding: 10px 16px;
+  border-radius: 8px;
+  background: var(--bg3, #1e1e1e);
+  color: var(--text2, #888);
+  font-weight: 500;
+  font-size: 13px;
+  border: 1px solid var(--line, #2a2a2a);
+  cursor: pointer;
+}
+
+.refboard-exp-btn-cancel:hover {
+  background: var(--text, #f0f0f0);
+  color: var(--bg, #0d0d0d);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   FLOATING ACTION BUTTON (FAB) FOR TOOLS PAGE (สไตล์เดียวกับหน้าข้อตกลง)
+   ═══════════════════════════════════════════════════════════════════════════ */
+.refboard-fab {
+  position: fixed;
+  right: 2rem;
+  bottom: 2rem;
+  width: 70px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: var(--bg2, #161616);
+  border: 1px solid var(--line2, #333);
+  border-radius: 999px;
+  color: var(--text2, #888);
+  cursor: pointer;
+  transition: all 0.25s ease;
+  z-index: 90;
+  font-family: inherit;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+
+.refboard-fab:hover {
+  width: 140px;
+  background: var(--text, #f0f0f0);
+  color: var(--bg, #0d0d0d);
+  border-color: var(--text, #f0f0f0);
+}
+
+.refboard-fab svg {
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  stroke: currentColor;
+  fill: none;
+  opacity: 1;
+  transition: opacity 0.2s ease;
+}
+
+.refboard-fab:hover svg {
+  opacity: 0;
+}
+
+.refboard-fab span {
+  opacity: 0;
+  transform: translateX(10px);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.refboard-fab:hover span {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+@media (max-width: 1024px) {
+  .refboard-fab {
+    display: none !important;
+  }
+
+  .refboard-modal {
+    top: 60px !important;
+    left: 6px !important;
+    width: calc(100vw - 12px) !important;
+    height: calc(100vh - 60px) !important;
+    border-radius: 16px 16px 0 0 !important;
+  }
+
+  .refboard-header {
+    height: 48px;
+    padding: 0 12px;
+    cursor: move !important;
+  }
+
+  /* Vertical Toolbar for Mobile View */
+  .refboard-actions {
+    position: absolute;
+    right: 12px;
+    top: 56px;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 8px;
+    pointer-events: auto;
+  }
+
+  .refboard-actions .refboard-btn {
+    padding: 8px 14px;
+    border-radius: 999px;
+    background: var(--bg2, #161616);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--line2, #333);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+    font-size: 12px;
+    font-weight: 600;
+    width: fit-content;
+    display: inline-flex;
+    justify-content: flex-end;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   ALERT & CONFIRM MODAL STYLES (MATCHED TO TOOLS PAGE / CHARACTER GENERATOR)
+   ═══════════════════════════════════════════════════════════════════════════ */
+.cg-modal-box {
+  background: var(--bg2, #161616);
+  border: 1px solid var(--line2, #333);
+  border-radius: 24px;
+  padding: 28px 24px;
+  max-width: 380px;
+  width: 90%;
+  text-align: center;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.2);
+  font-family: inherit;
+}
+
+.cg-modal-icon {
+  font-size: 36px;
+  margin-bottom: 12px;
+}
+
+.cg-modal-title {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--text, #f0f0f0);
+  margin-bottom: 8px;
+}
+
+.cg-modal-text {
+  font-size: 14px;
+  color: var(--text2, #888);
+  margin-bottom: 24px;
+  line-height: 1.5;
+}
+
+.cg-modal-text b {
+  color: var(--text, #f0f0f0);
+}
+
+.cg-modal-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.cg-modal-btn {
+  flex: 1;
+  padding: 12px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.cg-modal-btn-confirm {
+  background: #ff4757;
+  color: #ffffff;
+}
+
+.cg-modal-btn-confirm:hover {
+  background: #e60023;
+  transform: translateY(-1px);
+}
+
+.cg-modal-btn-cancel {
+  background: var(--bg3, #1e1e1e);
+  color: var(--text2, #888);
+  border: 1px solid var(--line, #2a2a2a);
+}
+
+.cg-modal-btn-cancel:hover {
+  background: var(--text, #f0f0f0);
+  color: var(--bg, #0d0d0d);
+}
