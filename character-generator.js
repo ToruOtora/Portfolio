@@ -988,10 +988,10 @@
 
           <div class="cg-action-group">
             <button class="cg-btn cg-btn-generate" onclick="CharacterGenerator.generate()">
-              ⚡ random
+              ⚡ Random
             </button>
             <button class="cg-btn cg-btn-save" onclick="CharacterGenerator.saveResult()">
-              ⭐ Save Result
+              ⭐ Save
             </button>
           </div>
         </div>

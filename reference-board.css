@@ -215,7 +215,7 @@
 
 .refboard-btn svg,
 .refboard-btn.btn-accent svg {
-  stroke: currentColor;
+  stroke: currentColor !important;
 }
 
 .refboard-btn:hover,
@@ -244,6 +244,29 @@
   border-color: var(--text, #f0f0f0) !important;
   font-weight: 700 !important;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* ═══ COLLAPSIBLE ACTION BUTTONS (TOGGLE BUTTON) ═══ */
+.refboard-btn.refboard-toggle-btn {
+  background: var(--bg3, #1e1e1e);
+  border: 1px solid var(--line2, #333);
+  color: var(--text, #f0f0f0);
+}
+
+.refboard-btn.refboard-toggle-btn:hover {
+  background: var(--text, #f0f0f0) !important;
+  color: var(--bg, #0d0d0d) !important;
+}
+
+.refboard-btn.refboard-toggle-btn.active-collapsed {
+  background: var(--bg2, #161616);
+  border-color: var(--line2, #333);
+  color: var(--text, #f0f0f0);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+
+.refboard-actions.collapsed .refboard-btn:not(.refboard-toggle-btn) {
+  display: none !important;
 }
 
 /* ═══ LIGHT THEME ADAPTIVE STYLES ═══ */
@@ -275,7 +298,7 @@
 
 [data-theme="light"] .refboard-btn svg,
 [data-theme="light"] .refboard-btn.btn-accent svg {
-  stroke: var(--text, #0a0a0a) !important;
+  stroke: currentColor !important;
 }
 
 [data-theme="light"] .refboard-btn:hover,
@@ -301,7 +324,19 @@
 }
 
 [data-theme="light"] .refboard-btn.active svg {
-  stroke: var(--bg, #fafafa) !important;
+  stroke: currentColor !important;
+}
+
+[data-theme="light"] .refboard-btn.refboard-toggle-btn {
+  background: var(--bg, #ffffff) !important;
+  color: var(--text, #0a0a0a) !important;
+  border-color: var(--line2, #cccccc) !important;
+}
+
+[data-theme="light"] .refboard-btn.refboard-toggle-btn.active-collapsed {
+  background: var(--bg, #ffffff) !important;
+  color: var(--text, #0a0a0a) !important;
+  border-color: var(--line2, #cccccc) !important;
 }
 
 [data-theme="light"] .refboard-icon-btn {
@@ -530,22 +565,25 @@
 }
 
 /* Selection State & Transform Handles */
+/* Selection State & Transform Handles (Proportional at any Zoom Level) */
 .ref-item.selected {
-  outline: 2px solid #38bdf8;
-  outline-offset: 2px;
+  outline: calc(2px * var(--ref-inv-zoom, 1)) solid #38bdf8;
+  outline-offset: calc(2px * var(--ref-inv-zoom, 1));
   border-radius: 4px;
 }
 
 .ref-handle {
   position: absolute;
-  width: 12px;
-  height: 12px;
+  width: 14px;
+  height: 14px;
   background: #ffffff;
   border: 2px solid #38bdf8;
   border-radius: 50%;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
   z-index: 10;
   display: none;
+  transform: scale(var(--ref-inv-zoom, 1));
+  transform-origin: center center;
 }
 
 .ref-item.selected .ref-handle {
@@ -553,16 +591,17 @@
 }
 
 /* Corner Handles for Smart Proportional Resizing */
-.ref-handle-tl { top: -8px; left: -8px; cursor: nwse-resize; }
-.ref-handle-tr { top: -8px; right: -8px; cursor: nesw-resize; }
-.ref-handle-bl { bottom: -8px; left: -8px; cursor: nesw-resize; }
-.ref-handle-br { bottom: -8px; right: -8px; cursor: nwse-resize; }
+.ref-handle-tl { top: calc(-7px * var(--ref-inv-zoom, 1)); left: calc(-7px * var(--ref-inv-zoom, 1)); cursor: nwse-resize; }
+.ref-handle-tr { top: calc(-7px * var(--ref-inv-zoom, 1)); right: calc(-7px * var(--ref-inv-zoom, 1)); cursor: nesw-resize; }
+.ref-handle-bl { bottom: calc(-7px * var(--ref-inv-zoom, 1)); left: calc(-7px * var(--ref-inv-zoom, 1)); cursor: nesw-resize; }
+.ref-handle-br { bottom: calc(-7px * var(--ref-inv-zoom, 1)); right: calc(-7px * var(--ref-inv-zoom, 1)); cursor: nwse-resize; }
 
-/* Rotation Handle */
+/* Rotation Handle Dot & Connecting Stem Line */
 .ref-handle-rot {
-  top: -28px;
+  top: calc(-26px * var(--ref-inv-zoom, 1));
   left: 50%;
-  transform: translateX(-50%);
+  transform: translateX(-50%) scale(var(--ref-inv-zoom, 1));
+  transform-origin: center center;
   cursor: grab;
   background: #38bdf8;
   border-color: #ffffff;
@@ -571,34 +610,74 @@
 .ref-handle-rot::after {
   content: '';
   position: absolute;
-  top: 10px;
+  top: 7px;
   left: 50%;
   transform: translateX(-50%);
   width: 2px;
-  height: 16px;
+  height: 26px;
   background: #38bdf8;
   pointer-events: none;
+  z-index: -1;
 }
 
-/* Floating Quick Toolbar for Selected Item */
+/* Floating Quick Toolbar for Selected Item (Bring Front, Send Back, Delete) - Positioned ABOVE Rotation Handle */
 .ref-item-toolbar {
   position: absolute;
-  bottom: calc(100% + 12px);
+  bottom: calc(100% + (37px * var(--ref-inv-zoom, 1)));
   left: 50%;
-  transform: translateX(-50%);
+  transform: translateX(-50%) scale(var(--ref-inv-zoom, 1));
+  transform-origin: bottom center;
   background: var(--bg, #0d0d0d);
   border: 1px solid var(--line2, #333);
   border-radius: 8px;
   padding: 4px;
   display: none;
   gap: 4px;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
   z-index: 20;
   white-space: nowrap;
 }
 
 .ref-item.selected .ref-item-toolbar {
   display: flex;
+}
+
+/* Multi-Selection Unified Group Bounding Box */
+.refboard-group-box {
+  position: absolute;
+  top: 0;
+  left: 0;
+  border: calc(2px * var(--ref-inv-zoom, 1)) dashed #38bdf8;
+  background: rgba(56, 189, 248, 0.05);
+  border-radius: 6px;
+  pointer-events: none;
+  box-sizing: border-box;
+  z-index: 999;
+  display: none;
+}
+
+.refboard-group-box.active {
+  display: block;
+}
+
+.refboard-group-box .ref-handle {
+  display: block;
+  pointer-events: auto;
+}
+
+.refboard-group-box .ref-group-toolbar {
+  display: flex !important;
+  bottom: calc(100% + (14px * var(--ref-inv-zoom, 1)));
+  pointer-events: auto;
+}
+
+/* Hide individual item toolbars and handles when multi-selection is active */
+.refboard-multi-select .ref-item-toolbar:not(.ref-group-toolbar) {
+  display: none !important;
+}
+
+.refboard-multi-select .ref-item .ref-handle {
+  display: none !important;
 }
 
 .ref-tb-btn {
@@ -738,7 +817,8 @@
   gap: 10px;
 }
 
-.refboard-exp-opt {
+.refboard-exp-opt,
+.refboard-exp-pdf-mode {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -752,7 +832,9 @@
 }
 
 .refboard-exp-opt:hover,
-.refboard-exp-opt.active {
+.refboard-exp-opt.active,
+.refboard-exp-pdf-mode:hover,
+.refboard-exp-pdf-mode.active {
   border-color: var(--text, #f0f0f0);
   background: var(--bg2, #161616);
   color: var(--text, #f0f0f0);
