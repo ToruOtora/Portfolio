@@ -1519,15 +1519,15 @@
         }
       }
 
-      const aspect0 = item.aspect || (item.width / item.height) || 1.0;
+      const cropAspect = (item.width / (item.height || 1)) || item.aspect || 1.0;
       const rotDeg = item.rotation || 0;
       const rotRad = (rotDeg * Math.PI) / 180;
       const cos = Math.abs(Math.cos(rotRad));
       const sin = Math.abs(Math.sin(rotRad));
 
-      const widthRatio = cos + (1 / aspect0) * sin;
+      const widthRatio = cos + (1 / cropAspect) * sin;
       const targetW = Math.round(colWidth / (widthRatio || 1));
-      const targetH = Math.round(targetW / aspect0);
+      const targetH = Math.round(targetW / cropAspect);
       const boundingW = Math.round(targetW * cos + targetH * sin);
       const boundingH = Math.round(targetW * sin + targetH * cos);
 
@@ -1546,23 +1546,17 @@
       const renderX = newX - centerShiftX;
       const renderY = newY - centerShiftY;
 
+      const scaleRatio = targetW / (item.width || 1);
       item.x = renderX;
       item.y = renderY;
-      item.width = targetW;
-      item.height = targetH;
+      item.fullWidth = (item.fullWidth || item.width) * scaleRatio;
+      item.fullHeight = (item.fullHeight || item.height) * scaleRatio;
+      item.cropLeft = (item.cropLeft || 0) * scaleRatio;
+      item.cropTop = (item.cropTop || 0) * scaleRatio;
+      item.cropRight = (item.cropRight || 0) * scaleRatio;
+      item.cropBottom = (item.cropBottom || 0) * scaleRatio;
 
-      const el = item.el || document.getElementById(item.id);
-      if (el) {
-        item.el = el;
-        el.style.transform = `translate(${renderX}px, ${renderY}px) rotate(${rotDeg}deg)`;
-        el.style.width = `${targetW}px`;
-        el.style.height = `${targetH}px`;
-        const img = el.querySelector('.ref-item-img');
-        if (img) {
-          img.style.width = `${targetW}px`;
-          img.style.height = `${targetH}px`;
-        }
-      }
+      updateItemDom(item);
 
       colHeights[minCol] += boundingH + gap;
     });
@@ -1644,11 +1638,6 @@
       itemData.y = Math.round(itemData.y / 24) * 24;
     }
 
-    itemData.cropLeft = itemData.cropLeft || 0;
-    itemData.cropTop = itemData.cropTop || 0;
-    itemData.imgW = itemData.imgW || itemData.width;
-    itemData.imgH = itemData.imgH || itemData.height;
-
     const itemEl = document.createElement('div');
     itemEl.id = itemData.id;
     itemEl.className = 'ref-item';
@@ -1656,18 +1645,19 @@
     itemEl.style.width = `${itemData.width}px`;
     itemEl.style.height = `${itemData.height}px`;
     itemEl.style.zIndex = itemData.zIndex;
-    itemEl.style.overflow = 'hidden';
 
     itemEl.innerHTML = `
-      <img src="${itemData.dataUrl}" class="ref-item-img" alt="ref" style="width: ${itemData.imgW}px; height: ${itemData.imgH}px; transform: translate(-${itemData.cropLeft}px, -${itemData.cropTop}px);">
+      <div class="ref-item-crop">
+        <img src="${itemData.dataUrl}" class="ref-item-img" alt="ref">
+      </div>
       <div class="ref-handle ref-handle-tl" data-handle="tl"></div>
       <div class="ref-handle ref-handle-tr" data-handle="tr"></div>
       <div class="ref-handle ref-handle-bl" data-handle="bl"></div>
       <div class="ref-handle ref-handle-br" data-handle="br"></div>
-      <div class="ref-handle ref-handle-t" data-handle="t"></div>
-      <div class="ref-handle ref-handle-b" data-handle="b"></div>
-      <div class="ref-handle ref-handle-l" data-handle="l"></div>
-      <div class="ref-handle ref-handle-r" data-handle="r"></div>
+      <div class="ref-handle ref-handle-ml" data-handle="ml"></div>
+      <div class="ref-handle ref-handle-mr" data-handle="mr"></div>
+      <div class="ref-handle ref-handle-mt" data-handle="mt"></div>
+      <div class="ref-handle ref-handle-mb" data-handle="mb"></div>
       <div class="ref-handle ref-handle-rot" data-handle="rot"></div>
       
       <div class="ref-item-toolbar">
@@ -1683,7 +1673,36 @@
 
     updateItemCount();
     bindItemEvents(itemEl, itemData);
+    updateItemDom(itemData);
     selectItem(itemData.id);
+  }
+
+  // Update Item DOM Properties (Size, Transform, Crop)
+  function updateItemDom(itemData) {
+    if (!itemData) return;
+    const el = itemData.el || document.getElementById(itemData.id);
+    if (!el) return;
+
+    itemData.fullWidth = itemData.fullWidth || itemData.width;
+    itemData.fullHeight = itemData.fullHeight || itemData.height;
+    itemData.cropLeft = Math.max(0, itemData.cropLeft || 0);
+    itemData.cropTop = Math.max(0, itemData.cropTop || 0);
+    itemData.cropRight = Math.max(0, itemData.cropRight || 0);
+    itemData.cropBottom = Math.max(0, itemData.cropBottom || 0);
+
+    itemData.width = Math.max(20, itemData.fullWidth - itemData.cropLeft - itemData.cropRight);
+    itemData.height = Math.max(20, itemData.fullHeight - itemData.cropTop - itemData.cropBottom);
+
+    el.style.width = `${itemData.width}px`;
+    el.style.height = `${itemData.height}px`;
+    el.style.transform = `translate(${itemData.x}px, ${itemData.y}px) rotate(${itemData.rotation || 0}deg)`;
+
+    const img = itemData.imgEl || el.querySelector('.ref-item-img');
+    if (img) {
+      img.style.width = `${itemData.fullWidth}px`;
+      img.style.height = `${itemData.fullHeight}px`;
+      img.style.transform = `translate(-${itemData.cropLeft}px, -${itemData.cropTop}px)`;
+    }
   }
 
   // Bind Item Events
@@ -1753,23 +1772,23 @@
       let cos0 = Math.cos(rotRad0);
       let sin0 = Math.sin(rotRad0);
 
-      const initialImgW = itemData.imgW || itemData.width;
-      const initialImgH = itemData.imgH || itemData.height;
-      const initialCropLeft = itemData.cropLeft || 0;
-      const initialCropTop = itemData.cropTop || 0;
+      let initialCropLeft = itemData.cropLeft || 0;
+      let initialCropTop = itemData.cropTop || 0;
+      let initialCropRight = itemData.cropRight || 0;
+      let initialCropBottom = itemData.cropBottom || 0;
+      let initialFullW = itemData.fullWidth || itemData.width;
+      let initialFullH = itemData.fullHeight || itemData.height;
 
-      const vpRect0 = viewportEl ? viewportEl.getBoundingClientRect() : { left: 0, top: 0 };
-      const startPointerX = (e.clientX - vpRect0.left - panX) / zoom;
-      const startPointerY = (e.clientY - vpRect0.top - panY) / zoom;
+      let initialCropAspect = (initialW / (initialH || 1)) || itemData.aspect || 1;
 
       if (handleBtn) {
         activeHandle = handleBtn.dataset.handle;
         if (activeHandle === 'rot') {
           activeMode = 'rotate';
-        } else if (['tl', 'tr', 'bl', 'br'].includes(activeHandle)) {
-          activeMode = 'resize';
-        } else if (['t', 'b', 'l', 'r'].includes(activeHandle)) {
+        } else if (activeHandle === 'ml' || activeHandle === 'mr' || activeHandle === 'mt' || activeHandle === 'mb') {
           activeMode = 'crop';
+        } else {
+          activeMode = 'resize';
         }
 
         if (activeMode === 'resize') {
@@ -1840,8 +1859,8 @@
           else if (activeHandle === 'tr') { distW = localW; distH = -localH; }
           else if (activeHandle === 'bl') { distW = -localW; distH = localH; }
 
-          let newW = Math.max((distW + distH * itemData.aspect) / 2, 30);
-          let newH = newW / itemData.aspect;
+          let newW = Math.max((distW + distH * initialCropAspect) / 2, 20);
+          let newH = newW / initialCropAspect;
 
           let lcx = 0, lcy = 0;
           if (activeHandle === 'br') { lcx = newW / 2; lcy = newH / 2; }
@@ -1852,143 +1871,75 @@
           const newCx = anchorX + lcx * cos0 - lcy * sin0;
           const newCy = anchorY + lcx * sin0 + lcy * cos0;
 
-          itemData.x = newCx - newW / 2;
-          itemData.y = newCy - newH / 2;
-          
+          itemData.x = newCx - (newW / 2) * cos0 + (newH / 2) * sin0;
+          itemData.y = newCy - (newW / 2) * sin0 - (newH / 2) * cos0;
+
           const scaleRatio = newW / (initialW || 1);
-          itemData.imgW = initialImgW * scaleRatio;
-          itemData.imgH = initialImgH * scaleRatio;
+          itemData.fullWidth = initialFullW * scaleRatio;
+          itemData.fullHeight = initialFullH * scaleRatio;
           itemData.cropLeft = initialCropLeft * scaleRatio;
           itemData.cropTop = initialCropTop * scaleRatio;
-          itemData.width = newW;
-          itemData.height = newH;
+          itemData.cropRight = initialCropRight * scaleRatio;
+          itemData.cropBottom = initialCropBottom * scaleRatio;
 
-          itemEl.style.width = `${newW}px`;
-          itemEl.style.height = `${newH}px`;
-          itemEl.style.transform = `translate(${itemData.x}px, ${itemData.y}px) rotate(${rotDeg0}deg)`;
-
-          if (itemData.imgEl) {
-            itemData.imgEl.style.width = `${itemData.imgW}px`;
-            itemData.imgEl.style.height = `${itemData.imgH}px`;
-            itemData.imgEl.style.transform = `translate(-${itemData.cropLeft}px, -${itemData.cropTop}px)`;
-          }
+          updateItemDom(itemData);
         } else if (activeMode === 'crop') {
-          const vpRect = viewportEl ? viewportEl.getBoundingClientRect() : { left: 0, top: 0 };
-          const curPointerX = (me.clientX - vpRect.left - panX) / zoom;
-          const curPointerY = (me.clientY - vpRect.top - panY) / zoom;
+          const rawDx = (me.clientX - startX) / zoom;
+          const rawDy = (me.clientY - startY) / zoom;
 
-          const vecX = curPointerX - startPointerX;
-          const vecY = curPointerY - startPointerY;
+          const localDx = rawDx * cos0 + rawDy * sin0;
+          const localDy = -rawDx * sin0 + rawDy * cos0;
 
-          const localDx = vecX * cos0 + vecY * sin0;
-          const localDy = -vecX * sin0 + vecY * cos0;
-
-          if (activeHandle === 'r') {
-            const targetW = initialW + localDx;
-            const maxUncroppedW = initialImgW - initialCropLeft;
-
-            if (targetW <= maxUncroppedW) {
-              itemData.width = Math.max(targetW, 20);
-              itemData.imgW = initialImgW;
-              itemData.imgH = initialImgH;
-              itemData.cropLeft = initialCropLeft;
-            } else {
-              const newImgW = targetW + initialCropLeft;
-              const scale = newImgW / initialImgW;
-              itemData.imgW = newImgW;
-              itemData.imgH = initialImgH * scale;
-              itemData.cropLeft = initialCropLeft * scale;
-              itemData.cropTop = initialCropTop * scale;
-              itemData.width = targetW;
-              itemData.height = itemData.imgH - itemData.cropTop;
-            }
-          } else if (activeHandle === 'l') {
-            const targetW = initialW - localDx;
-            const targetCropLeft = initialCropLeft + localDx;
-
-            if (targetCropLeft >= 0 && targetW >= 20) {
-              itemData.width = targetW;
-              itemData.cropLeft = targetCropLeft;
-              itemData.imgW = initialImgW;
-              itemData.imgH = initialImgH;
-
-              const shiftLx = localDx * cos0;
-              const shiftLy = localDx * sin0;
-              itemData.x = initialX + shiftLx;
-              itemData.y = initialY + shiftLy;
-            } else if (targetCropLeft < 0) {
-              const expandDx = -targetCropLeft;
-              const scale = (initialImgW + expandDx) / initialImgW;
-              itemData.imgW = initialImgW * scale;
-              itemData.imgH = initialImgH * scale;
-              itemData.cropLeft = 0;
-              itemData.cropTop = initialCropTop * scale;
-              itemData.width = initialW + expandDx;
-              itemData.height = itemData.imgH - itemData.cropTop;
-
-              const shiftLx = (-initialCropLeft) * cos0;
-              const shiftLy = (-initialCropLeft) * sin0;
-              itemData.x = initialX + shiftLx;
-              itemData.y = initialY + shiftLy;
-            }
-          } else if (activeHandle === 'b') {
-            const targetH = initialH + localDy;
-            const maxUncroppedH = initialImgH - initialCropTop;
-
-            if (targetH <= maxUncroppedH) {
-              itemData.height = Math.max(targetH, 20);
-              itemData.imgW = initialImgW;
-              itemData.imgH = initialImgH;
-              itemData.cropTop = initialCropTop;
-            } else {
-              const newImgH = targetH + initialCropTop;
-              const scale = newImgH / initialImgH;
-              itemData.imgH = newImgH;
-              itemData.imgW = initialImgW * scale;
-              itemData.cropTop = initialCropTop * scale;
-              itemData.cropLeft = initialCropLeft * scale;
-              itemData.height = targetH;
-              itemData.width = itemData.imgW - itemData.cropLeft;
-            }
-          } else if (activeHandle === 't') {
-            const targetH = initialH - localDy;
-            const targetCropTop = initialCropTop + localDy;
-
-            if (targetCropTop >= 0 && targetH >= 20) {
-              itemData.height = targetH;
-              itemData.cropTop = targetCropTop;
-              itemData.imgW = initialImgW;
-              itemData.imgH = initialImgH;
-
-              const shiftTx = -localDy * sin0;
-              const shiftTy = localDy * cos0;
-              itemData.x = initialX + shiftTx;
-              itemData.y = initialY + shiftTy;
-            } else if (targetCropTop < 0) {
-              const expandDy = -targetCropTop;
-              const scale = (initialImgH + expandDy) / initialImgH;
-              itemData.imgH = initialImgH * scale;
-              itemData.imgW = initialImgW * scale;
-              itemData.cropTop = 0;
-              itemData.cropLeft = initialCropLeft * scale;
-              itemData.height = initialH + expandDy;
-              itemData.width = itemData.imgW - itemData.cropLeft;
-
-              const shiftTx = initialCropTop * sin0;
-              const shiftTy = -initialCropTop * cos0;
-              itemData.x = initialX + shiftTx;
-              itemData.y = initialY + shiftTy;
-            }
-          }
-
-          itemEl.style.width = `${itemData.width}px`;
-          itemEl.style.height = `${itemData.height}px`;
-          itemEl.style.transform = `translate(${itemData.x}px, ${itemData.y}px) rotate(${rotDeg0}deg)`;
-
-          if (itemData.imgEl) {
-            itemData.imgEl.style.width = `${itemData.imgW}px`;
-            itemData.imgEl.style.height = `${itemData.imgH}px`;
-            itemData.imgEl.style.transform = `translate(-${itemData.cropLeft}px, -${itemData.cropTop}px)`;
+          if (activeHandle === 'mr') {
+            const maxCropRight = initialFullW - initialCropLeft - 20;
+            const newCropRight = Math.max(0, Math.min(initialCropRight - localDx, maxCropRight));
+            itemData.cropRight = newCropRight;
+            itemData.fullWidth = initialFullW;
+            itemData.fullHeight = initialFullH;
+            itemData.cropLeft = initialCropLeft;
+            itemData.cropTop = initialCropTop;
+            itemData.cropBottom = initialCropBottom;
+            itemData.x = initialX;
+            itemData.y = initialY;
+            updateItemDom(itemData);
+          } else if (activeHandle === 'ml') {
+            const maxCropLeft = initialFullW - initialCropRight - 20;
+            const newCropLeft = Math.max(0, Math.min(initialCropLeft + localDx, maxCropLeft));
+            itemData.cropLeft = newCropLeft;
+            itemData.fullWidth = initialFullW;
+            itemData.fullHeight = initialFullH;
+            itemData.cropRight = initialCropRight;
+            itemData.cropTop = initialCropTop;
+            itemData.cropBottom = initialCropBottom;
+            const deltaCropLeft = itemData.cropLeft - initialCropLeft;
+            itemData.x = initialX + deltaCropLeft * cos0;
+            itemData.y = initialY + deltaCropLeft * sin0;
+            updateItemDom(itemData);
+          } else if (activeHandle === 'mb') {
+            const maxCropBottom = initialFullH - initialCropTop - 20;
+            const newCropBottom = Math.max(0, Math.min(initialCropBottom - localDy, maxCropBottom));
+            itemData.cropBottom = newCropBottom;
+            itemData.fullWidth = initialFullW;
+            itemData.fullHeight = initialFullH;
+            itemData.cropLeft = initialCropLeft;
+            itemData.cropTop = initialCropTop;
+            itemData.cropRight = initialCropRight;
+            itemData.x = initialX;
+            itemData.y = initialY;
+            updateItemDom(itemData);
+          } else if (activeHandle === 'mt') {
+            const maxCropTop = initialFullH - initialCropBottom - 20;
+            const newCropTop = Math.max(0, Math.min(initialCropTop + localDy, maxCropTop));
+            itemData.cropTop = newCropTop;
+            itemData.fullWidth = initialFullW;
+            itemData.fullHeight = initialFullH;
+            itemData.cropLeft = initialCropLeft;
+            itemData.cropRight = initialCropRight;
+            itemData.cropBottom = initialCropBottom;
+            const deltaCropTop = itemData.cropTop - initialCropTop;
+            itemData.x = initialX - deltaCropTop * sin0;
+            itemData.y = initialY + deltaCropTop * cos0;
+            updateItemDom(itemData);
           }
         } else if (activeMode === 'rotate') {
           const rect = itemEl.getBoundingClientRect();
@@ -2048,9 +1999,24 @@
       let cos0 = Math.cos(rotRad0);
       let sin0 = Math.sin(rotRad0);
 
+      let initialCropLeft = itemData.cropLeft || 0;
+      let initialCropTop = itemData.cropTop || 0;
+      let initialCropRight = itemData.cropRight || 0;
+      let initialCropBottom = itemData.cropBottom || 0;
+      let initialFullW = itemData.fullWidth || itemData.width;
+      let initialFullH = itemData.fullHeight || itemData.height;
+
+      let initialCropAspect = (initialW / (initialH || 1)) || itemData.aspect || 1;
+
       if (handleBtn) {
         activeHandle = handleBtn.dataset.handle;
-        activeMode = activeHandle === 'rot' ? 'rotate' : 'resize';
+        if (activeHandle === 'rot') {
+          activeMode = 'rotate';
+        } else if (activeHandle === 'ml' || activeHandle === 'mr' || activeHandle === 'mt' || activeHandle === 'mb') {
+          activeMode = 'crop';
+        } else {
+          activeMode = 'resize';
+        }
 
         if (activeMode === 'resize') {
           const cx0 = initialX + initialW / 2;
@@ -2121,8 +2087,8 @@
           else if (activeHandle === 'tr') { distW = localW; distH = -localH; }
           else if (activeHandle === 'bl') { distW = -localW; distH = localH; }
 
-          let newW = Math.max((distW + distH * itemData.aspect) / 2, 30);
-          let newH = newW / itemData.aspect;
+          let newW = Math.max((distW + distH * initialCropAspect) / 2, 20);
+          let newH = newW / initialCropAspect;
 
           let lcx = 0, lcy = 0;
           if (activeHandle === 'br') { lcx = newW / 2; lcy = newH / 2; }
@@ -2133,18 +2099,76 @@
           const newCx = anchorX + lcx * cos0 - lcy * sin0;
           const newCy = anchorY + lcx * sin0 + lcy * cos0;
 
-          itemData.x = newCx - newW / 2;
-          itemData.y = newCy - newH / 2;
-          itemData.width = newW;
-          itemData.height = newH;
+          itemData.x = newCx - (newW / 2) * cos0 + (newH / 2) * sin0;
+          itemData.y = newCy - (newW / 2) * sin0 - (newH / 2) * cos0;
 
-          itemEl.style.width = `${newW}px`;
-          itemEl.style.height = `${newH}px`;
-          if (itemData.imgEl) {
-            itemData.imgEl.style.width = `${newW}px`;
-            itemData.imgEl.style.height = `${newH}px`;
+          const scaleRatio = newW / (initialW || 1);
+          itemData.fullWidth = initialFullW * scaleRatio;
+          itemData.fullHeight = initialFullH * scaleRatio;
+          itemData.cropLeft = initialCropLeft * scaleRatio;
+          itemData.cropTop = initialCropTop * scaleRatio;
+          itemData.cropRight = initialCropRight * scaleRatio;
+          itemData.cropBottom = initialCropBottom * scaleRatio;
+
+          updateItemDom(itemData);
+        } else if (activeMode === 'crop') {
+          const rawDx = (t.clientX - startX) / zoom;
+          const rawDy = (t.clientY - startY) / zoom;
+
+          const localDx = rawDx * cos0 + rawDy * sin0;
+          const localDy = -rawDx * sin0 + rawDy * cos0;
+
+          if (activeHandle === 'mr') {
+            const maxCropRight = initialFullW - initialCropLeft - 20;
+            const newCropRight = Math.max(0, Math.min(initialCropRight - localDx, maxCropRight));
+            itemData.cropRight = newCropRight;
+            itemData.fullWidth = initialFullW;
+            itemData.fullHeight = initialFullH;
+            itemData.cropLeft = initialCropLeft;
+            itemData.cropTop = initialCropTop;
+            itemData.cropBottom = initialCropBottom;
+            itemData.x = initialX;
+            itemData.y = initialY;
+            updateItemDom(itemData);
+          } else if (activeHandle === 'ml') {
+            const maxCropLeft = initialFullW - initialCropRight - 20;
+            const newCropLeft = Math.max(0, Math.min(initialCropLeft + localDx, maxCropLeft));
+            itemData.cropLeft = newCropLeft;
+            itemData.fullWidth = initialFullW;
+            itemData.fullHeight = initialFullH;
+            itemData.cropRight = initialCropRight;
+            itemData.cropTop = initialCropTop;
+            itemData.cropBottom = initialCropBottom;
+            const deltaCropLeft = itemData.cropLeft - initialCropLeft;
+            itemData.x = initialX + deltaCropLeft * cos0;
+            itemData.y = initialY + deltaCropLeft * sin0;
+            updateItemDom(itemData);
+          } else if (activeHandle === 'mb') {
+            const maxCropBottom = initialFullH - initialCropTop - 20;
+            const newCropBottom = Math.max(0, Math.min(initialCropBottom - localDy, maxCropBottom));
+            itemData.cropBottom = newCropBottom;
+            itemData.fullWidth = initialFullW;
+            itemData.fullHeight = initialFullH;
+            itemData.cropLeft = initialCropLeft;
+            itemData.cropTop = initialCropTop;
+            itemData.cropRight = initialCropRight;
+            itemData.x = initialX;
+            itemData.y = initialY;
+            updateItemDom(itemData);
+          } else if (activeHandle === 'mt') {
+            const maxCropTop = initialFullH - initialCropBottom - 20;
+            const newCropTop = Math.max(0, Math.min(initialCropTop + localDy, maxCropTop));
+            itemData.cropTop = newCropTop;
+            itemData.fullWidth = initialFullW;
+            itemData.fullHeight = initialFullH;
+            itemData.cropLeft = initialCropLeft;
+            itemData.cropRight = initialCropRight;
+            itemData.cropBottom = initialCropBottom;
+            const deltaCropTop = itemData.cropTop - initialCropTop;
+            itemData.x = initialX - deltaCropTop * sin0;
+            itemData.y = initialY + deltaCropTop * cos0;
+            updateItemDom(itemData);
           }
-          itemEl.style.transform = `translate(${itemData.x}px, ${itemData.y}px) rotate(${rotDeg0}deg)`;
         } else if (activeMode === 'rotate') {
           const rect = itemEl.getBoundingClientRect();
           const centerX = rect.left + rect.width / 2;
@@ -2369,6 +2393,12 @@
             h: it.height,
             aspect: it.aspect,
             rotation: rotDeg,
+            fullWidth: it.fullWidth || it.width,
+            fullHeight: it.fullHeight || it.height,
+            cropLeft: it.cropLeft || 0,
+            cropTop: it.cropTop || 0,
+            cropRight: it.cropRight || 0,
+            cropBottom: it.cropBottom || 0,
             el: it.el || document.getElementById(id),
             imgEl: it.imgEl || document.querySelector(`#${id} .ref-item-img`)
           });
@@ -2444,24 +2474,20 @@
               const st = initialItemsState.get(sid);
               const sitem = itemsMap.get(sid);
               if (st && sitem) {
-                sitem.width = Math.max(st.w * scaleRatio, 20);
-                sitem.height = sitem.width / st.aspect;
-
                 const offsetX = st.x - anchorX;
                 const offsetY = st.y - anchorY;
 
                 sitem.x = anchorX + offsetX * scaleRatio;
                 sitem.y = anchorY + offsetY * scaleRatio;
 
-                if (st.el) {
-                  st.el.style.width = `${sitem.width}px`;
-                  st.el.style.height = `${sitem.height}px`;
-                  st.el.style.transform = `translate(${sitem.x}px, ${sitem.y}px) rotate(${st.rotation}deg)`;
-                }
-                if (st.imgEl) {
-                  st.imgEl.style.width = `${sitem.width}px`;
-                  st.imgEl.style.height = `${sitem.height}px`;
-                }
+                sitem.fullWidth = Math.max(st.fullWidth * scaleRatio, 20);
+                sitem.fullHeight = sitem.fullWidth / (st.aspect || 1);
+                sitem.cropLeft = st.cropLeft * scaleRatio;
+                sitem.cropTop = st.cropTop * scaleRatio;
+                sitem.cropRight = st.cropRight * scaleRatio;
+                sitem.cropBottom = st.cropBottom * scaleRatio;
+
+                updateItemDom(sitem);
               }
             });
           }
@@ -2724,14 +2750,21 @@
         ctx.translate(itemCenterX, itemCenterY);
         ctx.rotate((it.rotation * Math.PI) / 180);
 
-        const cropL = it.cropLeft || 0;
-        const cropT = it.cropTop || 0;
-        const imgW = it.imgW || it.width;
-        const imgH = it.imgH || it.height;
-        const scaleX = (img.naturalWidth || imgW) / imgW;
-        const scaleY = (img.naturalHeight || imgH) / imgH;
+        const cropLeft = it.cropLeft || 0;
+        const cropTop = it.cropTop || 0;
+        const cropRight = it.cropRight || 0;
+        const cropBottom = it.cropBottom || 0;
+        const fullW = it.fullWidth || (it.width + cropLeft + cropRight);
+        const fullH = it.fullHeight || (it.height + cropTop + cropBottom);
 
-        ctx.drawImage(img, cropL * scaleX, cropT * scaleY, it.width * scaleX, it.height * scaleY, -it.width / 2, -it.height / 2, it.width, it.height);
+        if (cropLeft > 0 || cropTop > 0 || cropRight > 0 || cropBottom > 0) {
+          ctx.beginPath();
+          ctx.rect(-it.width / 2, -it.height / 2, it.width, it.height);
+          ctx.clip();
+          ctx.drawImage(img, -it.width / 2 - cropLeft, -it.height / 2 - cropTop, fullW, fullH);
+        } else {
+          ctx.drawImage(img, -it.width / 2, -it.height / 2, it.width, it.height);
+        }
         ctx.restore();
 
         loaded++;
@@ -2790,19 +2823,12 @@
         lCanvas.height = itemH;
         const lCtx = lCanvas.getContext('2d');
 
-        const cropL = it.cropLeft || 0;
-        const cropT = it.cropTop || 0;
-        const imgW = it.imgW || it.width;
-        const imgH = it.imgH || it.height;
-        const scaleX = (img.naturalWidth || imgW) / imgW;
-        const scaleY = (img.naturalHeight || imgH) / imgH;
-
         if (it.rotation) {
           lCtx.translate(itemW / 2, itemH / 2);
           lCtx.rotate((it.rotation * Math.PI) / 180);
-          lCtx.drawImage(img, cropL * scaleX, cropT * scaleY, it.width * scaleX, it.height * scaleY, -itemW / 2, -itemH / 2, itemW, itemH);
+          lCtx.drawImage(img, -itemW / 2, -itemH / 2, itemW, itemH);
         } else {
-          lCtx.drawImage(img, cropL * scaleX, cropT * scaleY, it.width * scaleX, it.height * scaleY, 0, 0, itemW, itemH);
+          lCtx.drawImage(img, 0, 0, itemW, itemH);
         }
 
         const imgData = lCtx.getImageData(0, 0, itemW, itemH);

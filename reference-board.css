@@ -549,22 +549,32 @@
   touch-action: none;
   cursor: move;
   transform-origin: center center;
+  overflow: visible !important;
+}
+
+.ref-item-crop {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  border-radius: 4px;
+  pointer-events: none;
 }
 
 .ref-item-img {
-  width: 100%;
-  height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
   display: block;
-  object-fit: contain;
   pointer-events: none;
-  border-radius: 4px;
-  box-shadow: none;
   image-rendering: high-quality;
   user-select: none;
   -webkit-user-drag: none;
+  transform-origin: top left;
 }
 
-/* Selection State & Transform Handles */
 /* Selection State & Transform Handles (Proportional at any Zoom Level) */
 .ref-item.selected {
   outline: calc(2px * var(--ref-inv-zoom, 1)) solid #38bdf8;
@@ -596,35 +606,70 @@
 .ref-handle-bl { bottom: calc(-7px * var(--ref-inv-zoom, 1)); left: calc(-7px * var(--ref-inv-zoom, 1)); cursor: nesw-resize; }
 .ref-handle-br { bottom: calc(-7px * var(--ref-inv-zoom, 1)); right: calc(-7px * var(--ref-inv-zoom, 1)); cursor: nwse-resize; }
 
-/* Side Middle Handles for Canva-Style Edge Cropping & Uncropping */
-.ref-handle-t,
-.ref-handle-b {
-  width: calc(16px * var(--ref-inv-zoom, 1));
-  height: calc(6px * var(--ref-inv-zoom, 1));
-  border-radius: calc(3px * var(--ref-inv-zoom, 1));
-  left: 50%;
-  transform: translateX(-50%) scale(1);
-  transform-origin: center center;
-  background: #38bdf8;
-  border: 1px solid #ffffff;
+/* Side Middle Handles for Canva-Style Edge Cropping */
+.ref-handle-ml,
+.ref-handle-mr,
+.ref-handle-mt,
+.ref-handle-mb {
+  position: absolute;
+  background: #ffffff;
+  border: 1.5px solid #38bdf8;
+  z-index: 12;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
 }
 
-.ref-handle-l,
-.ref-handle-r {
-  width: calc(6px * var(--ref-inv-zoom, 1));
-  height: calc(16px * var(--ref-inv-zoom, 1));
-  border-radius: calc(3px * var(--ref-inv-zoom, 1));
+.ref-handle-ml::before,
+.ref-handle-mr::before,
+.ref-handle-mt::before,
+.ref-handle-mb::before {
+  content: '';
+  position: absolute;
+  top: -8px;
+  left: -8px;
+  right: -8px;
+  bottom: -8px;
+  background: transparent;
+}
+
+.ref-handle-ml {
   top: 50%;
-  transform: translateY(-50%) scale(1);
-  transform-origin: center center;
-  background: #38bdf8;
-  border: 1px solid #ffffff;
+  left: calc(-5px * var(--ref-inv-zoom, 1));
+  width: calc(8px * var(--ref-inv-zoom, 1));
+  height: calc(22px * var(--ref-inv-zoom, 1));
+  transform: translateY(-50%);
+  border-radius: 4px;
+  cursor: ew-resize;
 }
 
-.ref-handle-t { top: calc(-4px * var(--ref-inv-zoom, 1)); cursor: ns-resize; }
-.ref-handle-b { bottom: calc(-4px * var(--ref-inv-zoom, 1)); cursor: ns-resize; }
-.ref-handle-l { left: calc(-4px * var(--ref-inv-zoom, 1)); cursor: ew-resize; }
-.ref-handle-r { right: calc(-4px * var(--ref-inv-zoom, 1)); cursor: ew-resize; }
+.ref-handle-mr {
+  top: 50%;
+  right: calc(-5px * var(--ref-inv-zoom, 1));
+  width: calc(8px * var(--ref-inv-zoom, 1));
+  height: calc(22px * var(--ref-inv-zoom, 1));
+  transform: translateY(-50%);
+  border-radius: 4px;
+  cursor: ew-resize;
+}
+
+.ref-handle-mt {
+  top: calc(-5px * var(--ref-inv-zoom, 1));
+  left: 50%;
+  width: calc(22px * var(--ref-inv-zoom, 1));
+  height: calc(8px * var(--ref-inv-zoom, 1));
+  transform: translateX(-50%);
+  border-radius: 4px;
+  cursor: ns-resize;
+}
+
+.ref-handle-mb {
+  bottom: calc(-5px * var(--ref-inv-zoom, 1));
+  left: 50%;
+  width: calc(22px * var(--ref-inv-zoom, 1));
+  height: calc(8px * var(--ref-inv-zoom, 1));
+  transform: translateX(-50%);
+  border-radius: 4px;
+  cursor: ns-resize;
+}
 
 /* Rotation Handle Dot & Connecting Stem Line */
 .ref-handle-rot {
