@@ -3786,24 +3786,48 @@
     }));
 
     // Build SVG Group Container combining all selected items
+    let svgDefs = '';
     let svgInner = '';
-    selected.forEach((it) => {
+    selected.forEach((it, idx) => {
       const relX = it.x - minX;
       const relY = it.y - minY;
       const rot = it.rotation || 0;
+      const w = it.width;
+      const h = it.height;
+      const fullW = it.fullWidth || w;
+      const fullH = it.fullHeight || h;
+      const cL = it.cropLeft || 0;
+      const cT = it.cropTop || 0;
+      const cR = it.cropRight || 0;
+      const cB = it.cropBottom || 0;
+
+      const hasCrop = cL > 0 || cT > 0 || cR > 0 || cB > 0;
+      const clipId = `crop_clip_${idx}_${Math.random().toString(36).substr(2, 5)}`;
+
+      if (hasCrop) {
+        svgDefs += `<clipPath id="${clipId}"><rect x="0" y="0" width="${w}" height="${h}" /></clipPath>`;
+      }
 
       if (it.svgContent) {
         const parser = new DOMParser();
         const doc = parser.parseFromString(it.svgContent, 'image/svg+xml');
         const svgEl = doc.querySelector('svg');
         const content = svgEl ? svgEl.innerHTML : '';
-        svgInner += `<g transform="translate(${relX}, ${relY}) rotate(${rot}, ${it.width / 2}, ${it.height / 2})">${content}</g>`;
+        if (hasCrop) {
+          svgInner += `<g transform="translate(${relX}, ${relY}) rotate(${rot}, ${w / 2}, ${h / 2})"><g clip-path="url(#${clipId})"><g transform="translate(-${cL}, -${cT})">${content}</g></g></g>`;
+        } else {
+          svgInner += `<g transform="translate(${relX}, ${relY}) rotate(${rot}, ${w / 2}, ${h / 2})">${content}</g>`;
+        }
       } else {
-        svgInner += `<g transform="translate(${relX}, ${relY}) rotate(${rot}, ${it.width / 2}, ${it.height / 2})"><image href="${it.dataUrl}" width="${it.width}" height="${it.height}" /></g>`;
+        if (hasCrop) {
+          svgInner += `<g transform="translate(${relX}, ${relY}) rotate(${rot}, ${w / 2}, ${h / 2})"><g clip-path="url(#${clipId})"><image href="${it.dataUrl}" x="-${cL}" y="-${cT}" width="${fullW}" height="${fullH}" preserveAspectRatio="none" /></g></g>`;
+        } else {
+          svgInner += `<g transform="translate(${relX}, ${relY}) rotate(${rot}, ${w / 2}, ${h / 2})"><image href="${it.dataUrl}" width="${w}" height="${h}" preserveAspectRatio="none" /></g>`;
+        }
       }
     });
 
-    const combinedSvgText = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${groupW} ${groupH}" width="${groupW}" height="${groupH}">${svgInner}</svg>`;
+    const combinedSvgText = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${groupW} ${groupH}" width="${groupW}" height="${groupH}">${svgDefs ? `<defs>${svgDefs}</defs>` : ''}${svgInner}</svg>`;
     const blob = new Blob([combinedSvgText], { type: 'image/svg+xml' });
     const groupDataUrl = URL.createObjectURL(blob);
 
@@ -3860,30 +3884,97 @@
 
     const initGW = itemData.initialGroupWidth || itemData.width || 1;
     const initGH = itemData.initialGroupHeight || itemData.height || 1;
-    const scaleX = itemData.width / initGW;
-    const scaleY = itemData.height / initGH;
+    const scaleX = (itemData.fullWidth || itemData.width || initGW) / initGW;
+    const scaleY = (itemData.fullHeight || itemData.height || initGH) / initGH;
     const currentGroupX = itemData.x;
     const currentGroupY = itemData.y;
     const initGroupX = itemData.initialGroupX || itemData.x;
     const initGroupY = itemData.initialGroupY || itemData.y;
     const groupRot = itemData.rotation || 0;
 
+    const gCropLeft = itemData.cropLeft || 0;
+    const gCropTop = itemData.cropTop || 0;
+    const gCropRight = itemData.cropRight || 0;
+    const gCropBottom = itemData.cropBottom || 0;
+
+    const groupVisLeft = gCropLeft;
+    const groupVisTop = gCropTop;
+    const groupVisRight = (itemData.fullWidth || itemData.width || initGW) - gCropRight;
+    const groupVisBottom = (itemData.fullHeight || itemData.height || initGH) - gCropBottom;
+
+    const rotRad = (groupRot * Math.PI) / 180;
+    const cosG = Math.cos(rotRad);
+    const sinG = Math.sin(rotRad);
+
     itemData.originalItems.forEach((orig, index) => {
       const subId = 'item_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5) + '_orig' + index;
+
+      const subFullW = Math.max(20, Math.round((orig.fullWidth || orig.width) * scaleX));
+      const subFullH = Math.max(20, Math.round((orig.fullHeight || orig.height) * scaleY));
+
+      const relX = (orig.x - initGroupX) * scaleX;
+      const relY = (orig.y - initGroupY) * scaleY;
+
+      const initSubCropL = Math.round((orig.cropLeft || 0) * scaleX);
+      const initSubCropT = Math.round((orig.cropTop || 0) * scaleY);
+      const initSubCropR = Math.round((orig.cropRight || 0) * scaleX);
+      const initSubCropB = Math.round((orig.cropBottom || 0) * scaleY);
+
+      let subCropL = initSubCropL;
+      let subCropT = initSubCropT;
+      let subCropR = initSubCropR;
+      let subCropB = initSubCropB;
+
+      // Check overlap with group visible crop bounds
+      const visibleSubLeft = relX;
+      const visibleSubRight = relX + subFullW - initSubCropL - initSubCropR;
+      const visibleSubTop = relY;
+      const visibleSubBottom = relY + subFullH - initSubCropT - initSubCropB;
+
+      if (visibleSubLeft < groupVisLeft) {
+        subCropL += Math.round(groupVisLeft - visibleSubLeft);
+      }
+      if (visibleSubRight > groupVisRight) {
+        subCropR += Math.round(visibleSubRight - groupVisRight);
+      }
+      if (visibleSubTop < groupVisTop) {
+        subCropT += Math.round(groupVisTop - visibleSubTop);
+      }
+      if (visibleSubBottom > groupVisBottom) {
+        subCropB += Math.round(visibleSubBottom - groupVisBottom);
+      }
+
+      subCropL = Math.max(0, Math.min(subCropL, subFullW - 10));
+      subCropR = Math.max(0, Math.min(subCropR, subFullW - subCropL - 10));
+      subCropT = Math.max(0, Math.min(subCropT, subFullH - 10));
+      subCropB = Math.max(0, Math.min(subCropB, subFullH - subCropT - 10));
+
+      const subW = Math.max(20, subFullW - subCropL - subCropR);
+      const subH = Math.max(20, subFullH - subCropT - subCropB);
+
+      const deltaCropL = subCropL - initSubCropL;
+      const deltaCropT = subCropT - initSubCropT;
+
+      const relCroppedX = relX + deltaCropL - gCropLeft;
+      const relCroppedY = relY + deltaCropT - gCropTop;
+
+      const subX = currentGroupX + relCroppedX * cosG - relCroppedY * sinG;
+      const subY = currentGroupY + relCroppedX * sinG + relCroppedY * cosG;
+
       const restoredItem = {
         ...orig,
         id: subId,
-        x: currentGroupX + (orig.x - initGroupX) * scaleX,
-        y: currentGroupY + (orig.y - initGroupY) * scaleY,
-        width: Math.max(20, Math.round(orig.width * scaleX)),
-        height: Math.max(20, Math.round(orig.height * scaleY)),
+        x: subX,
+        y: subY,
+        width: subW,
+        height: subH,
         rotation: (orig.rotation || 0) + groupRot,
-        cropLeft: Math.round((orig.cropLeft || 0) * scaleX),
-        cropTop: Math.round((orig.cropTop || 0) * scaleY),
-        cropRight: Math.round((orig.cropRight || 0) * scaleX),
-        cropBottom: Math.round((orig.cropBottom || 0) * scaleY),
-        fullWidth: Math.round((orig.fullWidth || orig.width) * scaleX),
-        fullHeight: Math.round((orig.fullHeight || orig.height) * scaleY),
+        cropLeft: subCropL,
+        cropTop: subCropT,
+        cropRight: subCropR,
+        cropBottom: subCropB,
+        fullWidth: subFullW,
+        fullHeight: subFullH,
         zIndex: ++nextZIndex
       };
 

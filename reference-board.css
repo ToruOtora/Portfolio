@@ -624,6 +624,7 @@
   border: 1.5px solid #38bdf8;
   z-index: 12;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+  border-radius: 9999px;
 }
 
 .ref-handle-ml::before,
@@ -645,7 +646,7 @@
   width: calc(8px * var(--ref-inv-zoom, 1));
   height: calc(22px * var(--ref-inv-zoom, 1));
   transform: translateY(-50%);
-  border-radius: 4px;
+  border-radius: 9999px;
   cursor: ew-resize;
 }
 
@@ -655,7 +656,7 @@
   width: calc(8px * var(--ref-inv-zoom, 1));
   height: calc(22px * var(--ref-inv-zoom, 1));
   transform: translateY(-50%);
-  border-radius: 4px;
+  border-radius: 9999px;
   cursor: ew-resize;
 }
 
@@ -665,7 +666,7 @@
   width: calc(22px * var(--ref-inv-zoom, 1));
   height: calc(8px * var(--ref-inv-zoom, 1));
   transform: translateX(-50%);
-  border-radius: 4px;
+  border-radius: 9999px;
   cursor: ns-resize;
 }
 
@@ -675,7 +676,7 @@
   width: calc(22px * var(--ref-inv-zoom, 1));
   height: calc(8px * var(--ref-inv-zoom, 1));
   transform: translateX(-50%);
-  border-radius: 4px;
+  border-radius: 9999px;
   cursor: ns-resize;
 }
 
@@ -841,6 +842,7 @@
   inset: 0;
   background: rgba(0, 0, 0, 0.75);
   backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   z-index: 100005;
   display: none !important;
   align-items: center;
@@ -849,6 +851,8 @@
   pointer-events: none;
   transition: opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1);
   padding: 16px;
+  overflow-y: auto;
+  box-sizing: border-box;
 }
 
 .refboard-exp-backdrop.open {
@@ -860,6 +864,11 @@
 .refboard-exp-card {
   width: 100%;
   max-width: 480px;
+  max-height: calc(100dvh - 32px);
+  max-height: calc(100vh - 32px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  box-sizing: border-box;
   background: var(--bg2, #161618);
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 20px;
@@ -867,6 +876,17 @@
   box-shadow: 0 28px 70px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.05);
   color: var(--text, #f0f0f0);
   animation: expModalPop 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.refboard-exp-card::-webkit-scrollbar {
+  width: 5px;
+}
+.refboard-exp-card::-webkit-scrollbar-track {
+  background: transparent;
+}
+.refboard-exp-card::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 99px;
 }
 
 @keyframes expModalPop {
@@ -1440,21 +1460,23 @@
 /* ═══════════════════════════════════════════════════════════════════════════
    EXPORT MODAL RESPONSIVE STYLES (สำหรับหน้าจอมือถือ)
    ═══════════════════════════════════════════════════════════════════════════ */
-@media (max-width: 520px) {
+@media (max-width: 600px), (max-height: 700px) {
   .refboard-exp-backdrop {
-    padding: 12px;
+    padding: 8px;
+    align-items: center;
   }
 
   .refboard-exp-card {
     padding: 16px;
-    max-height: 88vh;
+    max-height: calc(100dvh - 16px);
+    max-height: calc(100vh - 16px);
     overflow-y: auto;
     border-radius: 16px;
   }
 
   .refboard-exp-header {
-    margin-bottom: 14px;
-    padding-bottom: 12px;
+    margin-bottom: 12px;
+    padding-bottom: 10px;
   }
 
   .refboard-exp-header h3 {
@@ -1468,9 +1490,9 @@
   }
 
   .refboard-exp-icon {
-    width: 36px;
-    height: 36px;
-    font-size: 20px;
+    width: 32px;
+    height: 32px;
+    font-size: 18px;
     flex-shrink: 0;
   }
 
@@ -1487,62 +1509,63 @@
 
   .refboard-exp-format-grid {
     grid-template-columns: repeat(2, 1fr);
-    gap: 8px;
+    gap: 6px;
   }
 
   .refboard-exp-format-card {
-    padding: 10px 8px;
-    gap: 8px;
+    padding: 8px;
+    gap: 6px;
   }
 
   .refboard-fmt-icon {
-    width: 28px;
-    height: 28px;
-    font-size: 16px;
+    width: 26px;
+    height: 26px;
+    font-size: 15px;
   }
 
   .refboard-fmt-title {
-    font-size: 12px;
+    font-size: 11.5px;
   }
 
   .refboard-fmt-desc {
-    font-size: 9.5px;
+    font-size: 9px;
   }
 
   .refboard-exp-pdf-grid {
     grid-template-columns: 1fr;
-    gap: 8px;
+    gap: 6px;
   }
 
   .refboard-exp-pdf-card {
-    padding: 10px;
+    padding: 8px 10px;
   }
 
   .refboard-exp-pdf-card strong {
-    font-size: 12px;
+    font-size: 11.5px;
     word-break: break-word;
   }
 
   .refboard-exp-pdf-card p {
-    font-size: 10px;
+    font-size: 9.5px;
     word-break: break-word;
   }
 
   .refboard-exp-settings-box {
-    padding: 12px;
-    margin-top: 12px;
+    padding: 10px 12px;
+    margin-top: 10px;
   }
 
   .refboard-exp-slider-title {
-    font-size: 11.5px;
-  }
-
-  .refboard-exp-val {
     font-size: 11px;
   }
 
+  .refboard-exp-val {
+    font-size: 10.5px;
+  }
+
   .refboard-exp-actions {
-    margin-top: 16px;
+    margin-top: 14px;
+    gap: 8px;
   }
 
   .refboard-exp-btn-submit {
@@ -1551,20 +1574,26 @@
   }
 
   .refboard-exp-btn-cancel {
-    padding: 10px 14px;
+    padding: 10px 12px;
     font-size: 12px;
   }
 
   .refboard-exp-loading-card {
-    padding: 20px 16px;
+    padding: 16px 14px;
   }
 
   .refboard-exp-loading-texts h3 {
-    font-size: 15px;
+    font-size: 14px;
   }
 
   .refboard-exp-loading-texts p {
-    font-size: 11.5px;
+    font-size: 11px;
+  }
+}
+
+@media (max-width: 380px) {
+  .refboard-exp-format-grid {
+    grid-template-columns: 1fr;
   }
 }
 
