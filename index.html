@@ -2726,15 +2726,52 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
             <span>คลังชุดสี</span>
           </button>
-          <button class="cp-action-btn" onclick="copyCssVariables()" title="คัดลอก CSS Variables">
+          <button class="cp-action-btn" onclick="copyCssVariables()" title="คัดลอก CSS Variables" style="display:none;">
             <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
             <span>CSS</span>
+          </button>
+          <button class="cp-action-btn" onclick="openExportImageModal()" title="ส่งออก / บันทึกภาพชุดสี">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            <span>บันทึกภาพ</span>
           </button>
           <label class="cp-action-label" title="สกัดสีจากรูปภาพ">
             <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
             <span>จากภาพ</span>
             <input type="file" accept="image/*" style="display:none;" onchange="extractPaletteFromImageFile(this.files[0])">
           </label>
+        </div>
+
+        <!-- Export Palette Image Modal -->
+        <div class="cp-export-modal" id="cp-export-modal">
+          <div class="cp-export-card">
+            <div class="cp-export-head">
+              <div class="cp-export-title">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                <span>บันทึกภาพชุดสี (Export Image)</span>
+              </div>
+              <button class="cp-export-close" onclick="closeExportImageModal()" title="ปิด">✕</button>
+            </div>
+            
+            <div class="cp-export-preview-container">
+              <canvas id="cp-export-canvas" style="display:none;"></canvas>
+              <img id="cp-export-img" alt="Color Palette Export">
+            </div>
+
+            <div class="cp-export-actions">
+              <button class="cp-action-btn primary" onclick="copyExportImageToClipboard()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span>คัดลอกภาพ</span>
+              </button>
+              <button class="cp-action-btn" onclick="importExportImageToRefBoard()" title="ส่งภาพชุดสีนี้ไปยังกระดานเรฟ">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M12 8v8M8 12h8"/></svg>
+                <span>นำเข้ากระดานเรฟ</span>
+              </button>
+              <button class="cp-action-btn" onclick="downloadExportImage()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                <span>ดาวน์โหลดภาพ (PNG)</span>
+              </button>
+            </div>
+          </div>
         </div>
 
         <!-- Saved Palettes & Presets Drawer -->

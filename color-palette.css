@@ -838,6 +838,104 @@
   background: rgba(255, 255, 255, 0.08);
 }
 
+/* ── Export Image Modal ── */
+.cp-export-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 300000;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+  padding: 16px;
+}
+
+.cp-export-modal.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.cp-export-card {
+  background: var(--bg2, #161616);
+  border: 1px solid var(--line2, #333);
+  border-radius: 20px;
+  width: 100%;
+  max-width: 640px;
+  padding: 20px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  transform: translateY(12px) scale(0.97);
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.cp-export-modal.open .cp-export-card {
+  transform: translateY(0) scale(1);
+}
+
+.cp-export-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.cp-export-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text, #f0f0f0);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cp-export-close {
+  background: transparent;
+  border: none;
+  color: var(--text2, #888);
+  font-size: 16px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: all 0.15s ease;
+}
+
+.cp-export-close:hover {
+  background: var(--line, #2a2a2a);
+  color: var(--text, #f0f0f0);
+}
+
+.cp-export-preview-container {
+  width: 100%;
+  background: var(--bg, #0d0d0d);
+  border: 1px solid var(--line2, #333);
+  border-radius: 12px;
+  padding: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.cp-export-preview-container canvas,
+.cp-export-preview-container img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+}
+
+.cp-export-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
 /* ── Drag & Drop Overlay ── */
 .cp-modal.cp-dragover::after {
   content: '📷 วางรูปภาพที่นี่เพื่อสกัดสี';

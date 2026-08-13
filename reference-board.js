@@ -4312,4 +4312,48 @@
     setTimeout(hideExportLoading, 400);
   }
 
+  // ── Global Helper: Add image item to board from Data URL ──
+  window.addRefBoardImageFromDataUrl = function (dataUrl) {
+    if (!dataUrl) return;
+    const img = new Image();
+    img.onload = () => {
+      let w = img.naturalWidth || 400;
+      let h = img.naturalHeight || 300;
+      const aspect = w / h;
+      const maxDim = 800;
+      if (w > maxDim || h > maxDim) {
+        if (w > h) {
+          w = maxDim;
+          h = maxDim / aspect;
+        } else {
+          h = maxDim;
+          w = maxDim * aspect;
+        }
+      }
+      const offset = (itemsMap.size % 8) * 30;
+      const x = -panX / zoom + 100 + offset;
+      const y = -panY / zoom + 100 + offset;
+
+      createRefImageItem({
+        id: 'item_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+        dataUrl: dataUrl,
+        x: x,
+        y: y,
+        width: w,
+        height: h,
+        aspect: aspect,
+        rotation: 0,
+        zIndex: ++nextZIndex
+      });
+
+      // Auto open reference board modal if not open
+      const modal = document.getElementById('refboard-modal');
+      if (modal && !modal.classList.contains('open')) {
+        if (window.toggleRefBoard) window.toggleRefBoard();
+      }
+      showToast('นำเข้าภาพชุดสีลงกระดานเรฟเรียบร้อย! 🎨');
+    };
+    img.src = dataUrl;
+  };
+
 })();

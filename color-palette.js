@@ -1422,6 +1422,227 @@
     copyToClipboard(hex, `คัดลอก ${hex} แล้ว!`);
   };
 
+  // ═══ EXPORT PALETTE IMAGE MODAL ═══
+
+  window.openExportImageModal = function () {
+    const modal = document.getElementById('cp-export-modal');
+    if (!modal) return;
+    renderExportPaletteCanvas();
+    modal.classList.add('open');
+  };
+
+  window.closeExportImageModal = function () {
+    const modal = document.getElementById('cp-export-modal');
+    if (modal) modal.classList.remove('open');
+  };
+
+  function renderExportPaletteCanvas() {
+    const canvas = document.getElementById('cp-export-canvas');
+    if (!canvas) return;
+
+    const ctx = canvas.getContext('2d');
+    const W = 1200;
+    const H = 680;
+    canvas.width = W;
+    canvas.height = H;
+
+    // Background Gradient
+    const bgGrad = ctx.createLinearGradient(0, 0, W, H);
+    bgGrad.addColorStop(0, '#111116');
+    bgGrad.addColorStop(1, '#181822');
+    ctx.fillStyle = bgGrad;
+    ctx.fillRect(0, 0, W, H);
+
+    // Subtle outer border inside canvas
+    ctx.strokeStyle = '#282836';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(1, 1, W - 2, H - 2);
+
+    // Header Title
+    ctx.font = 'bold 28px "Inter", "Prompt", sans-serif';
+    ctx.fillStyle = '#f0f0f5';
+    ctx.textAlign = 'left';
+    ctx.fillText('TORU_O COLOR PALETTE', 40, 52);
+
+    // Header Subtitle
+    ctx.font = '500 14px "Inter", "Prompt", sans-serif';
+    ctx.fillStyle = '#8888a5';
+    const modeLabel = paletteTargetMode === 'painting' ? '🎨 PAINTING MODE' : '📐 GRAPHIC MODE (60-30-10)';
+    const harmonyLabel = (activeHarmony || 'Analogous').toUpperCase();
+    ctx.fillText(`HARMONY: ${harmonyLabel}  |  ${modeLabel}`, 40, 78);
+
+    // Brand Tag
+    ctx.font = 'bold 12px "Inter", sans-serif';
+    ctx.fillStyle = '#666685';
+    ctx.textAlign = 'right';
+    ctx.fillText('TORU_O WEB TOOLS', W - 40, 52);
+
+    // Color Bars Section
+    const N = palette.length || 5;
+    const paddingX = 40;
+    const barGap = 14;
+    const availW = W - (paddingX * 2);
+    const barW = (availW - (N - 1) * barGap) / N;
+    const barY = 110;
+    const barH = 400;
+    const radius = 16;
+
+    palette.forEach((col, idx) => {
+      const x = paddingX + idx * (barW + barGap);
+
+      // Draw Bar Body with rounded corners
+      ctx.save();
+      ctx.beginPath();
+      ctx.moveTo(x + radius, barY);
+      ctx.lineTo(x + barW - radius, barY);
+      ctx.quadraticCurveTo(x + barW, barY, x + barW, barY + radius);
+      ctx.lineTo(x + barW, barY + barH - radius);
+      ctx.quadraticCurveTo(x + barW, barY + barH, x + barW - radius, barY + barH);
+      ctx.lineTo(x + radius, barY + barH);
+      ctx.quadraticCurveTo(x, barY + barH, x, barY + barH - radius);
+      ctx.lineTo(x, barY + radius);
+      ctx.quadraticCurveTo(x, barY, x + radius, barY);
+      ctx.closePath();
+      ctx.fillStyle = col.hex;
+      ctx.fill();
+
+      // Bar Border
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      ctx.restore();
+
+      // Role Badge inside or below bar
+      let roleLabel = '';
+      if (paletteTargetMode === 'painting') {
+        const pRoles = ['Atmosphere', 'Shadow', 'Hero ⭐', 'Key Light', 'Rim Light'];
+        roleLabel = pRoles[idx] || `Color #${idx + 1}`;
+      } else {
+        const gRoles = ['Background', 'Surface', 'Primary ⭐', 'Secondary', 'Text'];
+        roleLabel = gRoles[idx] || `Color #${idx + 1}`;
+      }
+
+      const colorName = getColorName(col.h, col.s, col.v);
+      const contrastTxt = textColorFor(col.hex);
+
+      // Role tag inside bar (at top of bar)
+      ctx.save();
+      ctx.font = 'bold 11px "Inter", "Prompt", sans-serif';
+      ctx.fillStyle = contrastTxt;
+      ctx.textAlign = 'center';
+      ctx.globalAlpha = 0.85;
+      ctx.fillText(roleLabel.toUpperCase(), x + barW / 2, barY + 28);
+      ctx.restore();
+
+      // HEX tag inside bar (at bottom of bar)
+      ctx.save();
+      ctx.font = 'bold 16px "SF Mono", "Consolas", monospace';
+      ctx.fillStyle = contrastTxt;
+      ctx.textAlign = 'center';
+      ctx.fillText(col.hex.toUpperCase(), x + barW / 2, barY + barH - 24);
+      ctx.restore();
+
+      // Color Name below bar (Y = 535)
+      ctx.save();
+      ctx.font = '500 12px "Prompt", "Inter", sans-serif';
+      ctx.fillStyle = '#d0d0e0';
+      ctx.textAlign = 'center';
+      
+      // Split Thai / English if too wide
+      const parts = colorName.split(' / ');
+      if (parts.length === 2 && barW < 160) {
+        ctx.fillText(parts[0], x + barW / 2, barY + barH + 28);
+        ctx.font = '11px "Inter", sans-serif';
+        ctx.fillStyle = '#8888a0';
+        ctx.fillText(parts[1], x + barW / 2, barY + barH + 46);
+      } else {
+        ctx.fillText(colorName, x + barW / 2, barY + barH + 32);
+      }
+      ctx.restore();
+    });
+
+    // Divider Line
+    ctx.strokeStyle = '#222232';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(40, 615);
+    ctx.lineTo(W - 40, 615);
+    ctx.stroke();
+
+    // Footer Watermark
+    ctx.font = '12px "Inter", sans-serif';
+    ctx.fillStyle = '#666680';
+    ctx.textAlign = 'left';
+    ctx.fillText('Exported from Color Generator', 40, 645);
+
+    ctx.textAlign = 'right';
+    ctx.fillText(new Date().toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' }), W - 40, 645);
+
+    // Update preview <img> element src
+    const imgEl = document.getElementById('cp-export-img');
+    if (imgEl) {
+      imgEl.src = canvas.toDataURL('image/png');
+    }
+  }
+
+  window.importExportImageToRefBoard = function () {
+    const canvas = document.getElementById('cp-export-canvas');
+    const imgEl = document.getElementById('cp-export-img');
+    const dataUrl = (canvas ? canvas.toDataURL('image/png') : '') || (imgEl ? imgEl.src : '');
+
+    if (!dataUrl) {
+      showToast('ไม่พบข้อมูลภาพชุดสี');
+      return;
+    }
+
+    if (window.addRefBoardImageFromDataUrl) {
+      window.addRefBoardImageFromDataUrl(dataUrl);
+      window.closeExportImageModal();
+
+      // On mobile devices (<= 1024px), close the Color Palette modal after importing
+      if (window.innerWidth <= 1024 && window.toggleColorPalette) {
+        const cpModal = document.getElementById('color-palette-modal');
+        if (cpModal && cpModal.classList.contains('open')) {
+          window.toggleColorPalette();
+        }
+      }
+    } else {
+      showToast('กระดานเรฟยังไม่พร้อมใช้งาน');
+    }
+  };
+
+  window.copyExportImageToClipboard = function () {
+    const canvas = document.getElementById('cp-export-canvas');
+    if (!canvas) return;
+    canvas.toBlob((blob) => {
+      if (!blob) {
+        showToast('ไม่สามารถสร้างไฟล์ภาพได้');
+        return;
+      }
+      try {
+        const item = new ClipboardItem({ 'image/png': blob });
+        navigator.clipboard.write([item]).then(() => {
+          showToast('คัดลอกภาพชุดสีเข้า Clipboard เรียบร้อย! 📋');
+        }).catch(() => {
+          window.downloadExportImage();
+        });
+      } catch (e) {
+        window.downloadExportImage();
+      }
+    }, 'image/png');
+  };
+
+  window.downloadExportImage = function () {
+    const canvas = document.getElementById('cp-export-canvas');
+    if (!canvas) return;
+    const link = document.createElement('a');
+    const timestamp = new Date().toISOString().slice(0, 10);
+    link.download = `color-palette-${timestamp}.png`;
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+    showToast('ดาวน์โหลดภาพชุดสีเรียบร้อย! 📥');
+  };
+
   // ═══ TOAST ═══
 
   function showToast(msg) {
