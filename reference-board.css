@@ -1657,10 +1657,6 @@
 }
 
 @media (max-width: 1024px) {
-  .refboard-fab {
-    display: none !important;
-  }
-
   .refboard-modal {
     top: 60px !important;
     left: 6px !important;

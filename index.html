@@ -15,6 +15,7 @@
   href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,700;1,9..40,300&display=swap"
   rel="stylesheet">
 <link rel="stylesheet" href="reference-board.css?v=2.1">
+<link rel="stylesheet" href="color-palette.css">
 <style>
   *,
   *::before,
@@ -314,22 +315,44 @@
     display: block;
   }
 
-  /* ══ REFBOARD SPLIT-PANEL (desktop > 1024px) ══ */
+  /* ══ TOOLS SPLIT-PANEL (desktop > 1024px) ══ */
   @media (min-width: 1025px) {
     #page-tools {
-      transition: padding-right 0.38s cubic-bezier(0.16, 1, 0.3, 1);
+      transition: padding-left 0.38s cubic-bezier(0.16, 1, 0.3, 1), 
+                  padding-right 0.38s cubic-bezier(0.16, 1, 0.3, 1),
+                  padding-top 0.38s cubic-bezier(0.16, 1, 0.3, 1);
     }
+    /* Only Color Palette is open: 45% Color / 55% Character Randomizer */
+    #page-tools.colorpalette-split {
+      padding-left: 45vw;
+      padding-right: 0;
+      padding-top: 0;
+    }
+    /* Only Ref Board is open: 43% Character Randomizer / 57% Ref Board */
     #page-tools.refboard-split {
       padding-right: 57vw;
+      padding-left: 0;
+      padding-top: 0;
+    }
+    /* BOTH windows open: Ref Board on Right (57%), Character Randomizer on Left BELOW Color Palette */
+    #page-tools.refboard-split.colorpalette-split {
+      padding-left: 0;
+      padding-right: 57vw;
+      padding-top: 450px;
     }
     #character-generator-root {
       transition: transform 0.38s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.28s ease;
       max-width: 100%;
       margin: 0 auto;
     }
-    #page-tools.refboard-split #character-generator-root {
+    #page-tools.refboard-split #character-generator-root,
+    #page-tools.colorpalette-split #character-generator-root {
       transform: none;
       opacity: 1;
+    }
+    #page-tools.refboard-split #color-palette-modal {
+      width: calc(42vw - 25px);
+      max-height: 92vh;
     }
   }
 
@@ -2230,6 +2253,16 @@
         <path fill="currentColor" d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14zm-5.04-6.71l-2.75 3.54-1.96-2.36L6.5 17h11l-3.54-4.71z"/>
       </svg>
     </button>
+    <button class="sidebar-btn" id="sidebar-colorpalette" data-tip="สุ่มคู่สี" onclick="toggleColorPalette()" style="display:none;">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="10" />
+        <path d="M12 2a10 10 0 0 1 10 10c0 2.5-2 4.5-4.5 4.5H16a2 2 0 0 0-2 2v.5c0 1.4-1.1 2.5-2.5 2.5A10 10 0 0 1 12 2z" />
+        <circle cx="7.5" cy="9.5" r="1" fill="currentColor" />
+        <circle cx="12" cy="7.5" r="1" fill="currentColor" />
+        <circle cx="16.5" cy="9.5" r="1" fill="currentColor" />
+        <circle cx="9.5" cy="14.5" r="1" fill="currentColor" />
+      </svg>
+    </button>
   </div>
   <main>
 
@@ -2471,6 +2504,248 @@
         </svg>
         <span>กระดานเรฟ</span>
       </button>
+
+      <!-- Mobile Floating Menu Popup -->
+      <div class="mobile-fab-popup" id="mobile-fab-popup">
+        <button class="mobile-popup-item" onclick="toggleRefBoard(); toggleMobileToolsPopup()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+            <circle cx="8.5" cy="8.5" r="1.5"></circle>
+            <polyline points="21 15 16 10 5 21"></polyline>
+          </svg>
+          <span>🖼️ กระดานเรฟ</span>
+        </button>
+        <button class="mobile-popup-item" onclick="toggleColorPalette(); toggleMobileToolsPopup()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10" />
+            <path d="M12 2a10 10 0 0 1 10 10c0 2.5-2 4.5-4.5 4.5H16a2 2 0 0 0-2 2v.5c0 1.4-1.1 2.5-2.5 2.5A10 10 0 0 1 12 2z" />
+          </svg>
+          <span>🎨 Color Generator</span>
+        </button>
+      </div>
+
+      <!-- Palette FAB (Bottom Right of Tools Page) -->
+      <button class="palette-fab" id="palette-fab" onclick="toggleColorPalette()" title="เปิด Color Generator">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10" />
+          <path d="M12 2a10 10 0 0 1 10 10c0 2.5-2 4.5-4.5 4.5H16a2 2 0 0 0-2 2v.5c0 1.4-1.1 2.5-2.5 2.5A10 10 0 0 1 12 2z" />
+          <circle cx="7.5" cy="9.5" r="1" fill="currentColor" />
+          <circle cx="12" cy="7.5" r="1" fill="currentColor" />
+          <circle cx="16.5" cy="9.5" r="1" fill="currentColor" />
+          <circle cx="9.5" cy="14.5" r="1" fill="currentColor" />
+        </svg>
+        <span>Color Generator</span>
+      </button>
+
+      <!-- Floating Color Palette Modal (Coolors-Style Redesign) -->
+      <div id="color-palette-modal" class="cp-modal">
+        <!-- Right edge resize handle -->
+        <div class="cp-resize-handle right" id="cp-resize-r" title="ลากขอบขวาเพื่อปรับความกว้างหน้าต่าง"></div>
+
+        <!-- Header -->
+        <div class="cp-header" id="cp-modal-header">
+          <div class="cp-title-wrap">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/>
+              <path d="M12 2a10 10 0 0 1 10 10c0 2.5-2 4.5-4.5 4.5H16a2 2 0 0 0-2 2v.5c0 1.4-1.1 2.5-2.5 2.5A10 10 0 0 1 12 2z"/>
+            </svg>
+            <span>Color Generator</span>
+          </div>
+          <div class="cp-header-controls">
+            <!-- Custom Harmony Selector -->
+            <div class="cp-harmony-dropdown-wrap" id="cp-harmony-dropdown-wrap">
+              <button class="cp-harmony-btn" id="cp-harmony-btn" onclick="toggleHarmonyMenu(event)" title="เลือกโหมดทฤษฎีสี">
+                <span class="cp-harmony-btn-icon" id="cp-harmony-current-icon">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="5" r="1.8" fill="currentColor"/><circle cx="7" cy="15" r="1.8" fill="currentColor"/><circle cx="17" cy="15" r="1.8" fill="currentColor"/></svg>
+                </span>
+                <span class="cp-harmony-btn-label" id="cp-harmony-current-label">Analogous</span>
+                <svg class="cp-harmony-arrow" width="10" height="6" viewBox="0 0 10 6"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>
+              </button>
+
+              <!-- Dropdown Menu -->
+              <div class="cp-harmony-menu" id="cp-harmony-menu">
+                <button class="cp-harmony-item active" data-harmony="analogous" onclick="selectHarmony('analogous')">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="5" r="1.8" fill="currentColor"/><circle cx="7" cy="15" r="1.8" fill="currentColor"/><circle cx="17" cy="15" r="1.8" fill="currentColor"/></svg>
+                  <div class="cp-harmony-item-info">
+                    <span class="cp-harmony-item-name">Analogous</span>
+                    <span class="cp-harmony-item-sub">สีข้างเคียง</span>
+                  </div>
+                </button>
+
+                <button class="cp-harmony-item" data-harmony="complementary" onclick="selectHarmony('complementary')">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><line x1="6" y1="12" x2="18" y2="12"/><circle cx="6" cy="12" r="1.8" fill="currentColor"/><circle cx="18" cy="12" r="1.8" fill="currentColor"/></svg>
+                  <div class="cp-harmony-item-info">
+                    <span class="cp-harmony-item-name">Complementary</span>
+                    <span class="cp-harmony-item-sub">สีตรงข้าม</span>
+                  </div>
+                </button>
+
+                <button class="cp-harmony-item" data-harmony="triad" onclick="selectHarmony('triad')">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 4 20 18 4 18"/><circle cx="12" cy="4" r="1.8" fill="currentColor"/><circle cx="20" cy="18" r="1.8" fill="currentColor"/><circle cx="4" cy="18" r="1.8" fill="currentColor"/></svg>
+                  <div class="cp-harmony-item-info">
+                    <span class="cp-harmony-item-name">Triad</span>
+                    <span class="cp-harmony-item-sub">สามเหลี่ยม 3 ทิศทาง</span>
+                  </div>
+                </button>
+
+                <button class="cp-harmony-item" data-harmony="split" onclick="selectHarmony('split')">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><line x1="12" y1="5" x2="12" y2="12"/><line x1="12" y1="12" x2="6" y2="17"/><line x1="12" y1="12" x2="18" y2="17"/><circle cx="12" cy="5" r="1.8" fill="currentColor"/><circle cx="6" cy="17" r="1.8" fill="currentColor"/><circle cx="18" cy="17" r="1.8" fill="currentColor"/></svg>
+                  <div class="cp-harmony-item-info">
+                    <span class="cp-harmony-item-name">Split-Complementary</span>
+                    <span class="cp-harmony-item-sub">แยกตรงข้าม</span>
+                  </div>
+                </button>
+
+                <button class="cp-harmony-item" data-harmony="square" onclick="selectHarmony('square')">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="5" width="14" height="14"/><circle cx="5" cy="5" r="1.8" fill="currentColor"/><circle cx="19" cy="5" r="1.8" fill="currentColor"/><circle cx="19" cy="19" r="1.8" fill="currentColor"/><circle cx="5" cy="19" r="1.8" fill="currentColor"/></svg>
+                  <div class="cp-harmony-item-info">
+                    <span class="cp-harmony-item-name">Square</span>
+                    <span class="cp-harmony-item-sub">สี่เหลี่ยม 4 ทิศทาง</span>
+                  </div>
+                </button>
+
+                <button class="cp-harmony-item" data-harmony="monochromatic" onclick="selectHarmony('monochromatic')">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="2" fill="currentColor"/></svg>
+                  <div class="cp-harmony-item-info">
+                    <span class="cp-harmony-item-name">Monochromatic</span>
+                    <span class="cp-harmony-item-sub">สีเดียวเฉดต่าง</span>
+                  </div>
+                </button>
+
+                <button class="cp-harmony-item" data-harmony="shades" onclick="selectHarmony('shades')">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z"/><path d="M12 3v18a9 9 0 0 0 0-18z" fill="currentColor"/></svg>
+                  <div class="cp-harmony-item-info">
+                    <span class="cp-harmony-item-name">Shades</span>
+                    <span class="cp-harmony-item-sub">น้ำหนักเฉดสี</span>
+                  </div>
+                </button>
+
+                <button class="cp-harmony-item" data-harmony="custom" onclick="selectHarmony('custom')">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+                  <div class="cp-harmony-item-info">
+                    <span class="cp-harmony-item-name">Custom</span>
+                    <span class="cp-harmony-item-sub">เลือกสุ่มอิสระ</span>
+                  </div>
+                </button>
+              </div>
+            </div>
+            <button class="cp-btn-icon" onclick="minimizeColorPalette()" title="ย่อหน้าต่าง">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            </button>
+            <button class="cp-btn-icon" onclick="toggleColorPalette()" title="ปิด">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- 5 Color Bars -->
+        <div class="cp-bars-container" id="cp-bars-container"></div>
+
+        <!-- Spacebar hint overlay -->
+        <div class="cp-spacebar-hint">กด Spacebar เพื่อสุ่มสีใหม่</div>
+
+        <!-- Color Inspector Drawer -->
+        <div class="cp-inspector" id="cp-inspector">
+          <div class="cp-inspector-head">
+            <div class="cp-inspector-title">
+              <div class="cp-inspector-swatch"></div>
+              <span>สี #1</span>
+            </div>
+            <button class="cp-inspector-close" id="cp-inspector-close" title="ปิด Inspector">✕</button>
+          </div>
+          <div class="cp-slider-group">
+            <div class="cp-slider-row">
+              <span class="cp-slider-label">H</span>
+              <div class="cp-slider-track hue"><div class="cp-slider-thumb h-thumb"></div></div>
+              <span class="cp-slider-value h-val">0°</span>
+            </div>
+            <div class="cp-slider-row">
+              <span class="cp-slider-label">S</span>
+              <div class="cp-slider-track sat"><div class="cp-slider-thumb s-thumb"></div></div>
+              <span class="cp-slider-value s-val">0%</span>
+            </div>
+            <div class="cp-slider-row">
+              <span class="cp-slider-label">V</span>
+              <div class="cp-slider-track val"><div class="cp-slider-thumb v-thumb"></div></div>
+              <span class="cp-slider-value v-val">0%</span>
+            </div>
+          </div>
+          <div class="cp-code-row">
+            <div class="cp-code-field">
+              <label>HEX</label>
+              <input type="text" class="cp-hex-field" maxlength="7" value="#000000">
+            </div>
+            <div class="cp-code-field">
+              <label>RGB</label>
+              <input type="text" class="cp-rgb-field" value="0, 0, 0">
+            </div>
+            <div class="cp-code-field">
+              <label>HSL</label>
+              <input type="text" class="cp-hsl-field" value="0, 0%, 0%" readonly>
+            </div>
+            <div class="cp-copy-btns">
+              <button class="cp-copy-btn" onclick="if(typeof copyColorHex==='function'){const i=document.querySelector('.cp-hex-field');copyColorHex(i?.value||'')}" title="Copy HEX">HEX</button>
+              <button class="cp-copy-btn" onclick="if(typeof copyColorArray==='function')copyColorArray()" title="Copy Array">Array</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Saved Palettes & Presets Drawer -->
+        <div class="cp-saved-drawer" id="cp-saved-drawer">
+          <div class="cp-saved-head">
+            <div class="cp-saved-title">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+              <span>คลังชุดสี & รายการที่บันทึกไว้</span>
+            </div>
+            <button class="cp-saved-close" id="cp-saved-close" title="ปิดคลังสี">✕</button>
+          </div>
+
+          <!-- Quick Save Form -->
+          <div class="cp-save-input-group">
+            <input type="text" id="cp-palette-name-input" class="cp-save-input" placeholder="ตั้งชื่อชุดสี (เช่น Sunset Vibe, Pastels)..." maxlength="30">
+            <button class="cp-action-btn primary" id="cp-btn-save-submit">
+              <svg viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+              <span>บันทึกสีปัจจุบัน</span>
+            </button>
+          </div>
+
+          <!-- Tabs -->
+          <div class="cp-drawer-tabs">
+            <button class="cp-drawer-tab active" id="cp-tab-saved">
+              ⭐ ชุดสีของฉัน (<span id="cp-saved-count">0</span>)
+            </button>
+            <button class="cp-drawer-tab" id="cp-tab-presets">
+              🎨 Presets สำเร็จรูป (60)
+            </button>
+          </div>
+
+          <!-- List Container -->
+          <div class="cp-saved-list" id="cp-saved-list">
+            <!-- JS populates cards here -->
+          </div>
+        </div>
+
+        <!-- Action Bar -->
+        <div class="cp-action-bar">
+          <button class="cp-action-btn primary" id="cp-btn-random">
+            <svg viewBox="0 0 24 24"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38"/></svg>
+            <span>สุ่มสีใหม่</span>
+          </button>
+          <button class="cp-action-btn" id="cp-btn-toggle-saved" title="เปิดคลังชุดสีและรายการที่บันทึกไว้">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+            <span>📚 คลังชุดสี</span>
+          </button>
+          <button class="cp-action-btn" onclick="copyCssVariables()" title="คัดลอก CSS Variables">
+            <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            <span>CSS</span>
+          </button>
+          <label class="cp-action-label" title="สกัดสีจากรูปภาพ">
+            <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+            <span>จากภาพ</span>
+            <input type="file" accept="image/*" style="display:none;" onchange="extractPaletteFromImageFile(this.files[0])">
+          </label>
+        </div>
+      </div>
     </section>
 
   </main>
@@ -2541,11 +2816,11 @@
       const el = document.getElementById(map[name]);
       if (el) el.classList.add('active');
 
-      // Show Ref Board button ONLY when on tools page
+      // Show Ref Board and Color Palette buttons ONLY when on tools page
       const refBtn = document.getElementById('sidebar-refboard');
-      if (refBtn) {
-        refBtn.style.display = (name === 'tools') ? 'inline-flex' : 'none';
-      }
+      const cpBtn = document.getElementById('sidebar-colorpalette');
+      if (refBtn) refBtn.style.display = (name === 'tools') ? 'inline-flex' : 'none';
+      if (cpBtn) cpBtn.style.display = (name === 'tools') ? 'inline-flex' : 'none';
 
       if (!skipScroll && !skipNextScroll) {
         window.scrollTo(0, 0);
@@ -2559,11 +2834,13 @@
       showPage(page, false, true);
     });
 
-    // Check initial page for Ref Board button visibility
+    // Check initial page for Ref Board & Color Palette button visibility
     document.addEventListener('DOMContentLoaded', () => {
       const initPage = window.location.hash.slice(1) || 'home';
       const refBtn = document.getElementById('sidebar-refboard');
+      const cpBtn = document.getElementById('sidebar-colorpalette');
       if (refBtn) refBtn.style.display = (initPage === 'tools') ? 'inline-flex' : 'none';
+      if (cpBtn) cpBtn.style.display = (initPage === 'tools') ? 'inline-flex' : 'none';
     });
 
     // Handle back button for modals
@@ -3645,6 +3922,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/svg2pdf.js/2.2.3/svg2pdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script src="color-palette.js"></script>
   <script src="reference-board.js?v=2.1"></script>
 </body>
 

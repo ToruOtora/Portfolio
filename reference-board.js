@@ -74,6 +74,13 @@
                 </svg>
                 <span id="refboard-toggle-text">ซ้อนปุ่ม</span>
               </button>
+              <button class="refboard-btn btn-accent" id="refboard-palette-toggle-btn" onclick="window.toggleColorPalette()" title="เปิด/ปิด สุ่มคู่สี">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10" />
+                  <path d="M12 2a10 10 0 0 1 10 10c0 2.5-2 4.5-4.5 4.5H16a2 2 0 0 0-2 2v.5c0 1.4-1.1 2.5-2.5 2.5A10 10 0 0 1 12 2z" />
+                </svg>
+                <span>สุ่มคู่สี</span>
+              </button>
               <button class="refboard-btn" id="refboard-bg-btn" title="สลับสีพื้นหลังกระดาน (มืด/ขาว)">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <circle cx="12" cy="12" r="9"></circle>
@@ -561,6 +568,7 @@
       setTimeout(() => {
         fitBoardToViewport();
       }, 50);
+      if (window.updateColorPaletteSplitLayout) window.updateColorPaletteSplitLayout();
       if (window._refboardUpdateHandle) window._refboardUpdateHandle();
     } else {
       closeRefBoardInternal();
@@ -578,6 +586,7 @@
     const toolsPage = document.getElementById('page-tools');
     if (toolsPage) toolsPage.classList.remove('refboard-split');
     deselectAll();
+    if (window.updateColorPaletteSplitLayout) window.updateColorPaletteSplitLayout();
     if (window._refboardUpdateHandle) window._refboardUpdateHandle();
 
     if (fromUserAction && history.state && history.state.refBoardModalOpen) {

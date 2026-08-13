@@ -960,7 +960,7 @@
       <div class="cg-container">
         <!-- HEADER -->
         <div class="cg-header-block">
-          <h1 class="cg-title">Character Randomizer</h1>
+          <h1 class="cg-title">Character Generator</h1>
           <p class="cg-subtitle">✨ OC idea randomizer for artists & creators</p>
         </div>
 
