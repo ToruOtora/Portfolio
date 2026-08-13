@@ -1227,34 +1227,16 @@
     transform: none !important;
     z-index: 200000 !important;
     box-shadow: none !important;
-  }
-
-  .cp-modal.open {
-    transform: none !important;
+    display: flex !important;
+    flex-direction: column !important;
   }
 
   .cp-header {
-    height: 44px !important;
-    padding: 0 10px !important;
-    gap: 6px !important;
-  }
-
-  .cp-title-wrap {
-    font-size: 11px !important;
-    max-width: 110px !important;
-    white-space: nowrap !important;
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
-  }
-
-  .cp-harmony-select {
-    height: 28px !important;
-    font-size: 10px !important;
-    padding: 0 18px 0 6px !important;
-    max-width: 105px !important;
+    order: 1 !important;
   }
 
   .cp-bars-container {
+    order: 2 !important;
     flex: 1 1 auto !important;
     min-height: 160px !important;
     height: 100% !important;
@@ -1263,53 +1245,8 @@
     overflow: hidden !important;
   }
 
-  .cp-color-bar {
-    padding-bottom: 8px !important;
-  }
-
-  .cp-bar-hex-label {
-    font-size: 10px !important;
-    font-weight: 700 !important;
-    padding: 3px 5px !important;
-    letter-spacing: -0.2px !important;
-    border-radius: 4px !important;
-  }
-
-  .cp-bar-name {
-    display: none !important;
-  }
-
-  /* Equal size lock & remove buttons on mobile touch screens */
-  .cp-bar-lock,
-  .cp-bar-remove {
-    opacity: 0.95 !important;
-    transform: scale(1) !important;
-    top: 8px !important;
-    width: 28px !important;
-    height: 28px !important;
-    font-size: 12px !important;
-  }
-
-  .cp-bar-lock {
-    right: 8px !important;
-  }
-
-  .cp-bar-remove {
-    left: 8px !important;
-  }
-
-  .cp-add-bar-btn {
-    opacity: 0.95 !important;
-    top: 50% !important;
-    right: -13px !important;
-    transform: translateY(-50%) !important;
-    width: 26px !important;
-    height: 26px !important;
-    font-size: 14px !important;
-    z-index: 10 !important;
-  }
-
   .cp-action-bar {
+    order: 3 !important;
     padding: 6px 8px !important;
     gap: 5px !important;
     overflow-x: auto !important;
@@ -1333,12 +1270,14 @@
   }
 
   .cp-inspector {
+    order: 4 !important;
     max-height: 40vh !important;
     overflow-y: auto !important;
     flex-shrink: 0 !important;
   }
 
   .cp-saved-drawer {
+    order: 5 !important;
     max-height: 40vh !important;
     overflow-y: auto !important;
     flex-shrink: 0 !important;
