@@ -9,7 +9,9 @@
 
   // ── State ──
   let activeHarmony = 'analogous';
-  let inspectorIdx = -1; // Which bar is being inspected (-1 = closed)
+  let historyStack = [];
+  let inspectorIdx = 0;
+  let paletteTargetMode = 'graphic'; // 'graphic' | 'painting'
   let palette = [];
   let dragSrcIdx = -1;
   let isWindowDragging = false;
@@ -132,6 +134,13 @@
     { name: '🍵 Imperial Jade', harmony: 'Shades', hexes: ['#b4f7d4', '#31a673', '#186947', '#0b3826', '#03140e'] }
   ];
 
+  // ═══ UI UTILS ═══
+  function autoFitInput(input) {
+    if (!input) return;
+    const len = input.value.length || 1;
+    input.style.width = Math.max(len, 5) + 'ch';
+  }
+
   // ═══ COLOR MATH ═══
   function hsvToRgb(h, s, v) {
     s /= 100; v /= 100;
@@ -204,17 +213,74 @@
     return lum > 0.55 ? 'rgba(0,0,0,0.8)' : 'rgba(255,255,255,0.9)';
   }
 
-  // Get approximate color name
+  // Get approximate Thai / English color name
   function getColorName(h, s, v) {
-    for (const entry of COLOR_NAMES) {
-      const hInRange = (entry.h[0] <= entry.h[1])
-        ? (h >= entry.h[0] && h <= entry.h[1])
-        : (h >= entry.h[0] || h <= entry.h[1]);
-      if (hInRange && s >= entry.s[0] && s <= entry.s[1] && v >= entry.v[0] && v <= entry.v[1]) {
-        return entry.name;
-      }
+    // 1. Achromatic (Black, White, Grays)
+    if (v <= 14) return 'ดำ / Black';
+    if (s <= 8) {
+      if (v >= 90) return 'ขาว / White';
+      if (v >= 72) return 'ขาวควันบุหรี่ / Off-White';
+      if (v >= 45) return 'เทา / Gray';
+      return 'เทาเข้ม / Dark Gray';
     }
-    return '';
+
+    // 2. Muted / Low Saturation Colors (s <= 35)
+    if (s <= 35) {
+      if (v <= 35) return 'เทาอมมืด / Charcoal';
+      if (h >= 345 || h <= 15) return 'ชมพูกะปิ / Dusty Rose';
+      if (h > 15 && h <= 45) return 'ส้มเบจ / Warm Beige';
+      if (h > 45 && h <= 70) return 'เหลืองครีม / Cream';
+      if (h > 70 && h <= 165) return 'เขียวพาสเทล / Sage Green';
+      if (h > 165 && h <= 215) return 'ฟ้าเทา / Steel Blue';
+      if (h > 215 && h <= 265) return 'ม่วงลาเวนเดอร์ / Lavender';
+      if (h > 265 && h < 345) return 'ม่วงพาสเทล / Mauve';
+    }
+
+    // 3. Dark / Deep Shades (v <= 38)
+    if (v <= 38) {
+      if (h >= 345 || h <= 15) return 'แดงเลือดหมู / Maroon';
+      if (h > 15 && h <= 45) return 'น้ำตาลเข้ม / Dark Brown';
+      if (h > 45 && h <= 75) return 'เขียวขี้ม้า / Dark Olive';
+      if (h > 75 && h <= 165) return 'เขียวแก่ / Dark Green';
+      if (h > 165 && h <= 250) return 'น้ำเงินเข้ม / Navy Blue';
+      if (h > 250 && h <= 315) return 'ม่วงเข้ม / Dark Purple';
+      if (h > 315 && h < 345) return 'ชมพูเข้ม / Dark Magenta';
+    }
+
+    // 4. Vibrant Colors
+    if (h >= 345 || h <= 12) {
+      if (s <= 65) return 'ชมพูแดง / Dusty Rose';
+      return 'แดงสด / Crimson Red';
+    }
+    if (h > 12 && h <= 28) {
+      if (v >= 70) return 'ส้มแสด / Coral Orange';
+      return 'น้ำตาลส้ม / Terracotta';
+    }
+    if (h > 28 && h <= 48) {
+      if (s <= 55) return 'ส้มพีช / Peach';
+      return 'ส้มทอง / Amber Gold';
+    }
+    if (h > 48 && h <= 68) {
+      if (v >= 80) return 'เหลืองสด / Bright Yellow';
+      return 'เหลืองมัสตาร์ด / Mustard Yellow';
+    }
+    if (h > 68 && h <= 90) return 'เขียวตอง / Lime Green';
+    if (h > 90 && h <= 145) {
+      if (v >= 70) return 'เขียวมรกต / Emerald Green';
+      return 'เขียวไผ่ / Forest Green';
+    }
+    if (h > 145 && h <= 175) return 'เขียวมินต์ / Mint Green';
+    if (h > 175 && h <= 198) return 'ฟ้าอมเขียว / Teal Blue';
+    if (h > 198 && h <= 222) return 'ฟ้าสดใส / Sky Blue';
+    if (h > 222 && h <= 252) {
+      if (v >= 65) return 'น้ำเงินไพลิน / Sapphire Blue';
+      return 'น้ำเงินคราม / Royal Blue';
+    }
+    if (h > 252 && h <= 285) return 'ม่วงอเมทิสต์ / Amethyst Purple';
+    if (h > 285 && h <= 318) return 'ม่วงกล้วยไม้ / Orchid Purple';
+    if (h > 318 && h < 345) return 'ชมพูสด / Hot Pink';
+
+    return 'ชมพูแดง / Dusty Rose';
   }
 
   // ═══ CURATED SMART PALETTE ENGINE ═══
@@ -228,58 +294,100 @@
     return rand(zone.min, zone.max);
   }
 
-  // Generate a beautiful 5-color palette using 60-30-10 rule
-  // Generate a beautiful palette using 60-30-10 rule and optional target count & base hue
+  // Generate a beautiful palette using 60-30-10 rule (Graphic) or Hue Shifting (Painting)
   function generateSmartPalette(count = 5, overrideBaseHue = null) {
     const baseHue = (overrideBaseHue !== null) ? overrideBaseHue : pickCuratedHue();
     const isDark = Math.random() > 0.5; // Random light/dark theme
 
     const colors = [];
 
-    // Slot 0: Background (60%) — very light or very dark
+    // Slot 0: Background
     if (isDark) {
       colors.push({ h: baseHue, s: rand(5, 18), v: rand(6, 14) });
     } else {
       colors.push({ h: baseHue, s: rand(3, 12), v: rand(95, 99) });
     }
 
-    // Slot 1: Surface (30%) — slightly different from background
+    // Slot 1: Surface
     if (isDark) {
       colors.push({ h: (baseHue + rand(-10, 10) + 360) % 360, s: rand(8, 22), v: rand(16, 28) });
     } else {
       colors.push({ h: (baseHue + rand(-10, 10) + 360) % 360, s: rand(5, 18), v: rand(88, 95) });
     }
 
-    // Slot 2: Primary Accent (10%) — the HERO color, vivid & beautiful
-    colors.push({ h: baseHue, s: rand(65, 92), v: rand(70, 95) });
-
-    // Slot 3: Secondary — harmony-based offset
-    let secHue = baseHue;
-    switch (activeHarmony) {
-      case 'complementary': secHue = (baseHue + 180 + rand(-10, 10) + 360) % 360; break;
-      case 'triad': secHue = (baseHue + 120 + rand(-10, 10) + 360) % 360; break;
-      case 'split': secHue = (baseHue + 150 + rand(-10, 10) + 360) % 360; break;
-      case 'square': secHue = (baseHue + 90 + rand(-10, 10) + 360) % 360; break;
-      case 'monochromatic': secHue = baseHue; break;
-      case 'shades': secHue = baseHue; break;
-      case 'custom': secHue = pickCuratedHue(); break;
-      case 'analogous':
-      default: secHue = (baseHue + rand(25, 45)) % 360; break;
+    // Slot 2: Primary Accent / Base Color
+    if (paletteTargetMode === 'painting') {
+      colors.push({ h: baseHue, s: rand(35, 65), v: rand(55, 85) });
+    } else {
+      colors.push({ h: baseHue, s: rand(65, 92), v: rand(70, 95) });
     }
 
-    if (activeHarmony === 'monochromatic') {
-      colors.push({ h: secHue, s: rand(40, 65), v: rand(50, 75) });
-    } else if (activeHarmony === 'shades') {
-      colors.push({ h: secHue, s: rand(30, 90), v: rand(40, 60) });
-    } else {
-      colors.push({ h: secHue, s: rand(55, 85), v: rand(60, 88) });
-    }
+    if (paletteTargetMode === 'painting') {
+      // 🎨 PAINTING MODE — Full Lighting Environment with Harmony
+      // ─── Slot 0: Atmosphere Background (influenced by harmony) ───
+      let atmosHueOffset = 0;
+      switch (activeHarmony) {
+        case 'complementary': atmosHueOffset = 180; break;
+        case 'triad': atmosHueOffset = 240; break;
+        case 'split': atmosHueOffset = 210; break;
+        case 'square': atmosHueOffset = 270; break;
+        case 'monochromatic': atmosHueOffset = 0; break;
+        case 'shades': atmosHueOffset = 0; break;
+        case 'custom': atmosHueOffset = rand(60, 300); break;
+        case 'analogous':
+        default: atmosHueOffset = rand(15, 35); break;
+      }
+      const atmosH = (baseHue + atmosHueOffset + 360) % 360;
+      colors[0] = { h: atmosH, s: rand(10, 25), v: isDark ? rand(12, 25) : rand(86, 95) };
 
-    // Slot 4: Text/Contrast — opposite brightness from background
-    if (isDark) {
-      colors.push({ h: baseHue, s: rand(2, 10), v: rand(88, 97) });
+      // ─── Slot 1: Shadow (Cool Hue Shift +20~35°) ───
+      const shadowH = (baseHue + rand(20, 35)) % 360;
+      const shadowS = (activeHarmony === 'monochromatic') ? rand(20, 50) : rand(40, 75);
+      const shadowV = (activeHarmony === 'shades') ? rand(10, 25) : rand(18, 38);
+      colors[1] = { h: shadowH, s: shadowS, v: shadowV };
+
+      // ─── Slot 3: Key Light (Warm Hue Shift -12~20°) ───
+      colors.push({ h: (baseHue - rand(12, 20) + 360) % 360, s: rand(12, 38), v: rand(84, 98) });
+
+      // ─── Slot 4: Rim Light / Accent (Calculated from activeHarmony!) ───
+      let rimHue = baseHue;
+      switch (activeHarmony) {
+        case 'complementary': rimHue = (baseHue + 180 + rand(-8, 8)) % 360; break;
+        case 'triad': rimHue = (baseHue + 120 + rand(-8, 8)) % 360; break;
+        case 'split': rimHue = (baseHue + 150 + rand(-8, 8)) % 360; break;
+        case 'square': rimHue = (baseHue + 90 + rand(-8, 8)) % 360; break;
+        case 'monochromatic': rimHue = baseHue; break;
+        case 'shades': rimHue = baseHue; break;
+        case 'custom': rimHue = pickCuratedHue(); break;
+        case 'analogous':
+        default: rimHue = (baseHue + rand(28, 48)) % 360; break;
+      }
+      const rimS = (activeHarmony === 'monochromatic') ? rand(60, 90) : rand(50, 85);
+      const rimV = (activeHarmony === 'shades') ? rand(55, 75) : rand(72, 95);
+      colors.push({ h: rimHue, s: rimS, v: rimV });
     } else {
-      colors.push({ h: baseHue, s: rand(10, 25), v: rand(10, 22) });
+      // 📐 GRAPHIC MODE — 60-30-10 Rule
+      // Slot 3: Secondary — harmony-based offset
+      let secHue = baseHue;
+      switch (activeHarmony) {
+        case 'complementary': secHue = (baseHue + 180 + rand(-10, 10) + 360) % 360; break;
+        case 'triad': secHue = (baseHue + 120 + rand(-10, 10) + 360) % 360; break;
+        case 'split': secHue = (baseHue + 150 + rand(-10, 10) + 360) % 360; break;
+        case 'square': secHue = (baseHue + 90 + rand(-10, 10) + 360) % 360; break;
+        case 'monochromatic': secHue = baseHue; break;
+        case 'shades': secHue = baseHue; break;
+        case 'custom': secHue = pickCuratedHue(); break;
+        case 'analogous':
+        default: secHue = (baseHue + rand(25, 45)) % 360; break;
+      }
+      const secS = (activeHarmony === 'monochromatic') ? rand(40, 65) : rand(55, 85);
+      const secV = (activeHarmony === 'shades') ? rand(40, 60) : rand(60, 88);
+      colors.push({ h: secHue, s: secS, v: secV });
+
+      // Slot 4: Text Accent (60-30-10 contrast)
+      const txtS = isDark ? rand(2, 10) : rand(10, 25);
+      const txtV = isDark ? rand(88, 97) : rand(10, 22);
+      colors.push({ h: baseHue, s: txtS, v: txtV });
     }
 
     // Slots 5+: Generate additional harmonious colors if count > 5
@@ -392,43 +500,98 @@
 
       const isDarkBg = palette[0].v < 50;
 
-      if (i === 0) {
-        // Background
-        col.h = base.h;
-        col.s = isDarkBg ? rand(5, 18) : rand(3, 12);
-        col.v = isDarkBg ? rand(6, 14) : rand(95, 99);
-      } else if (i === 1) {
-        // Surface
-        col.h = (base.h + rand(-10, 10) + 360) % 360;
-        col.s = isDarkBg ? rand(8, 22) : rand(5, 18);
-        col.v = isDarkBg ? rand(16, 28) : rand(88, 95);
-      } else if (i === 3) {
-        // Secondary
-        let secHue = base.h;
-        switch (activeHarmony) {
-          case 'complementary': secHue = (base.h + 180) % 360; break;
-          case 'triad': secHue = (base.h + 120) % 360; break;
-          case 'split': secHue = (base.h + 150) % 360; break;
-          case 'square': secHue = (base.h + 90) % 360; break;
-          case 'monochromatic': secHue = base.h; break;
-          case 'shades': secHue = base.h; break;
-          case 'custom': secHue = pickCuratedHue(); break;
-          case 'analogous':
-          default: secHue = (base.h + rand(25, 45)) % 360; break;
+      if (paletteTargetMode === 'painting') {
+        // 🎨 PAINTING HARMONY ENGINE (restructured)
+        if (i === 0) {
+          // ─── Atmosphere Background (influenced by harmony) ───
+          let atmosOffset = 0;
+          switch (activeHarmony) {
+            case 'complementary': atmosOffset = 180; break;
+            case 'triad': atmosOffset = 240; break;
+            case 'split': atmosOffset = 210; break;
+            case 'square': atmosOffset = 270; break;
+            case 'monochromatic': atmosOffset = 0; break;
+            case 'shades': atmosOffset = 0; break;
+            case 'custom': atmosOffset = rand(60, 300); break;
+            case 'analogous':
+            default: atmosOffset = rand(15, 35); break;
+          }
+          col.h = (base.h + atmosOffset + 360) % 360;
+          col.s = rand(10, 25);
+          col.v = isDarkBg ? rand(12, 25) : rand(86, 95);
+        } else if (i === 1) {
+          // ─── Shadow (Cool Hue Shift +20~35°) ───
+          col.h = (base.h + rand(20, 35)) % 360;
+          col.s = (activeHarmony === 'monochromatic') ? rand(20, 50) : rand(40, 75);
+          col.v = (activeHarmony === 'shades') ? rand(10, 25) : rand(18, 38);
+        } else if (i === 3) {
+          // ─── Key Light (Warm Hue Shift -12~20°) ───
+          col.h = (base.h - rand(12, 20) + 360) % 360;
+          col.s = rand(12, 38);
+          col.v = rand(84, 98);
+        } else if (i === 4) {
+          // ─── Rim Light (Calculated from activeHarmony!) ───
+          let rimHue = base.h;
+          switch (activeHarmony) {
+            case 'complementary': rimHue = (base.h + 180 + rand(-8, 8)) % 360; break;
+            case 'triad': rimHue = (base.h + 120 + rand(-8, 8)) % 360; break;
+            case 'split': rimHue = (base.h + 150 + rand(-8, 8)) % 360; break;
+            case 'square': rimHue = (base.h + 90 + rand(-8, 8)) % 360; break;
+            case 'monochromatic': rimHue = base.h; break;
+            case 'shades': rimHue = base.h; break;
+            case 'custom': rimHue = pickCuratedHue(); break;
+            case 'analogous':
+            default: rimHue = (base.h + rand(28, 48)) % 360; break;
+          }
+          col.h = rimHue;
+          col.s = (activeHarmony === 'monochromatic') ? rand(60, 90) : rand(50, 85);
+          col.v = (activeHarmony === 'shades') ? rand(55, 75) : rand(72, 95);
+        } else if (i >= 5) {
+          // ─── Extra Shadow / Accent (Cool Hue Shift) ───
+          col.h = (base.h + 25 + (i - 5) * 35 + 360) % 360;
+          col.s = rand(45, 80);
+          col.v = rand(20, 42);
         }
-        col.h = secHue;
-        col.s = (activeHarmony === 'monochromatic') ? rand(40, 65) : rand(55, 85);
-        col.v = (activeHarmony === 'shades') ? rand(40, 60) : rand(60, 88);
-      } else if (i === 4) {
-        // Text
-        col.h = base.h;
-        col.s = isDarkBg ? rand(2, 10) : rand(10, 25);
-        col.v = isDarkBg ? rand(88, 97) : rand(10, 22);
-      } else if (i >= 5) {
-        // Extra color slots
-        col.h = (base.h + (i - 4) * 45 + rand(-15, 15) + 360) % 360;
-        col.s = isDarkBg ? rand(30, 85) : rand(25, 80);
-        col.v = isDarkBg ? rand(45, 90) : rand(40, 95);
+      } else {
+        // 📐 GRAPHIC HARMONY ENGINE
+        if (i === 0) {
+          // Background
+          col.h = base.h;
+          col.s = isDarkBg ? rand(5, 18) : rand(3, 12);
+          col.v = isDarkBg ? rand(6, 14) : rand(95, 99);
+        } else if (i === 1) {
+          // Surface
+          col.h = (base.h + rand(-10, 10) + 360) % 360;
+          col.s = isDarkBg ? rand(8, 22) : rand(5, 18);
+          col.v = isDarkBg ? rand(16, 28) : rand(88, 95);
+        } else if (i === 3) {
+          // Secondary
+          let secHue = base.h;
+          switch (activeHarmony) {
+            case 'complementary': secHue = (base.h + 180) % 360; break;
+            case 'triad': secHue = (base.h + 120) % 360; break;
+            case 'split': secHue = (base.h + 150) % 360; break;
+            case 'square': secHue = (base.h + 90) % 360; break;
+            case 'monochromatic': secHue = base.h; break;
+            case 'shades': secHue = base.h; break;
+            case 'custom': secHue = pickCuratedHue(); break;
+            case 'analogous':
+            default: secHue = (base.h + rand(25, 45)) % 360; break;
+          }
+          col.h = secHue;
+          col.s = (activeHarmony === 'monochromatic') ? rand(40, 65) : rand(55, 85);
+          col.v = (activeHarmony === 'shades') ? rand(40, 60) : rand(60, 88);
+        } else if (i === 4) {
+          // Text
+          col.h = base.h;
+          col.s = isDarkBg ? rand(2, 10) : rand(10, 25);
+          col.v = isDarkBg ? rand(88, 97) : rand(10, 22);
+        } else if (i >= 5) {
+          // Extra color slots
+          col.h = (base.h + (i - 4) * 45 + rand(-15, 15) + 360) % 360;
+          col.s = isDarkBg ? rand(30, 85) : rand(25, 80);
+          col.v = isDarkBg ? rand(45, 90) : rand(40, 95);
+        }
       }
 
       col.hex = hsvToHex(col.h, col.s, col.v);
@@ -449,7 +612,9 @@
     palette.forEach((col, idx) => {
       const txtCol = textColorFor(col.hex);
       const colorName = getColorName(col.h, col.s, col.v);
-      const roleNames = ['Background', 'Surface', 'Primary ⭐', 'Secondary', 'Text'];
+      const roleNames = (paletteTargetMode === 'painting')
+        ? []
+        : ['Background', 'Surface', 'Primary ⭐', 'Secondary', 'Text'];
 
       const bar = document.createElement('div');
       bar.className = 'cp-color-bar';
@@ -602,7 +767,8 @@
 
     // Update title
     const title = inspector.querySelector('.cp-inspector-title span');
-    if (title) title.textContent = `สี #${inspectorIdx + 1}`;
+    const colorName = getColorName(col.h, col.s, col.v);
+    if (title) title.textContent = `สี #${inspectorIdx + 1}${colorName ? ' — ' + colorName : ''}`;
 
     // Update slider backgrounds
     const satTrack = inspector.querySelector('.cp-slider-track.sat');
@@ -633,13 +799,22 @@
 
     // Update code inputs
     const hexInput = inspector.querySelector('.cp-hex-field');
-    if (hexInput && document.activeElement !== hexInput) hexInput.value = col.hex;
+    if (hexInput && document.activeElement !== hexInput) {
+      hexInput.value = col.hex;
+      autoFitInput(hexInput);
+    }
 
     const rgbInput = inspector.querySelector('.cp-rgb-field');
-    if (rgbInput && document.activeElement !== rgbInput) rgbInput.value = `${r}, ${g}, ${b}`;
+    if (rgbInput && document.activeElement !== rgbInput) {
+      rgbInput.value = `${r}, ${g}, ${b}`;
+      autoFitInput(rgbInput);
+    }
 
     const hslInput = inspector.querySelector('.cp-hsl-field');
-    if (hslInput && document.activeElement !== hslInput) hslInput.value = `${hsl.h}, ${hsl.s}%, ${hsl.l}%`;
+    if (hslInput && document.activeElement !== hslInput) {
+      hslInput.value = `${hsl.h}, ${hsl.s}%, ${hsl.l}%`;
+      autoFitInput(hslInput);
+    }
   }
 
   function handleSliderInteraction(e, type) {
@@ -716,7 +891,6 @@
     const input = document.getElementById('cp-palette-name-input');
     const name = input ? input.value.trim() : '';
     window.saveCurrentPalette(name);
-    if (input) input.value = '';
   };
 
   window.saveCurrentPalette = function (customName) {
@@ -740,6 +914,10 @@
     savePalettesToStorage(saved);
     showToast(`บันทึกชุดสี "${finalName}" เรียบร้อยแล้ว! ⭐`);
     
+    // Clear search/name input bar so all saved palettes are listed
+    const input = document.getElementById('cp-palette-name-input');
+    if (input) input.value = '';
+
     const drawer = document.getElementById('cp-saved-drawer');
     if (drawer && !drawer.classList.contains('open')) {
       drawer.classList.add('open');
@@ -783,6 +961,9 @@
   function renderSavedList() {
     const listContainer = document.getElementById('cp-saved-list');
     const countSpan = document.getElementById('cp-saved-count');
+    const nameInput = document.getElementById('cp-palette-name-input');
+    const query = nameInput ? nameInput.value.trim().toLowerCase() : '';
+
     if (!listContainer) return;
 
     const saved = getSavedPalettesFromStorage();
@@ -791,18 +972,32 @@
     listContainer.innerHTML = '';
 
     if (activeSavedTab === 'saved') {
-      if (saved.length === 0) {
-        listContainer.innerHTML = `
-          <div class="cp-empty-state">
-            <div style="font-size:24px;margin-bottom:6px;">⭐</div>
-            <div>ยังไม่มีชุดสีที่บันทึกไว้</div>
-            <div style="font-size:11px;opacity:0.7;margin-top:2px;">พิมพ์ชื่อแล้วกด "บันทึกสีปัจจุบัน" หรือกด "⭐ เซฟสีนี้" ด้านล่าง</div>
-          </div>
-        `;
+      const itemsToRender = query
+        ? saved.filter(item => (item.name && item.name.toLowerCase().includes(query)) || (item.hexes && item.hexes.some(h => h.toLowerCase().includes(query))))
+        : saved;
+
+      if (itemsToRender.length === 0) {
+        if (query) {
+          listContainer.innerHTML = `
+            <div class="cp-empty-state">
+              <div style="font-size:24px;margin-bottom:6px;">🔍</div>
+              <div>ไม่พบชุดสีที่ตรงกับ "${query}"</div>
+              <div style="font-size:11px;opacity:0.7;margin-top:2px;">ลองค้นหาชื่ออื่น หรือกด "บันทึกสีปัจจุบัน" เพื่อบันทึกชื่อนี้</div>
+            </div>
+          `;
+        } else {
+          listContainer.innerHTML = `
+            <div class="cp-empty-state">
+              <div style="font-size:24px;margin-bottom:6px;">⭐</div>
+              <div>ยังไม่มีชุดสีที่บันทึกไว้</div>
+              <div style="font-size:11px;opacity:0.7;margin-top:2px;">พิมพ์ชื่อแล้วกด "บันทึกสีปัจจุบัน" หรือกด "⭐ เซฟสีนี้" ด้านล่าง</div>
+            </div>
+          `;
+        }
         return;
       }
 
-      saved.forEach((item) => {
+      itemsToRender.forEach((item) => {
         const card = document.createElement('div');
         card.className = 'cp-palette-card';
 
@@ -825,7 +1020,26 @@
         listContainer.appendChild(card);
       });
     } else {
-      CURATED_PALETTES.forEach((item, idx) => {
+      const itemsToRender = query
+        ? CURATED_PALETTES.map((item, originalIdx) => ({ item, originalIdx })).filter(({ item }) =>
+            (item.name && item.name.toLowerCase().includes(query)) ||
+            (item.harmony && item.harmony.toLowerCase().includes(query)) ||
+            (item.hexes && item.hexes.some(h => h.toLowerCase().includes(query)))
+          )
+        : CURATED_PALETTES.map((item, originalIdx) => ({ item, originalIdx }));
+
+      if (itemsToRender.length === 0) {
+        listContainer.innerHTML = `
+          <div class="cp-empty-state">
+            <div style="font-size:24px;margin-bottom:6px;">🔍</div>
+            <div>ไม่พบ Preset ที่ตรงกับ "${query}"</div>
+            <div style="font-size:11px;opacity:0.7;margin-top:2px;">ลองค้นหาคำอื่น เช่น Pastel, Cyberpunk, Jade</div>
+          </div>
+        `;
+        return;
+      }
+
+      itemsToRender.forEach(({ item, originalIdx }) => {
         const card = document.createElement('div');
         card.className = 'cp-palette-card';
 
@@ -841,7 +1055,7 @@
           </div>
           <div class="cp-card-swatches">${swatchesHtml}</div>
           <div class="cp-card-actions">
-            <button class="cp-card-btn primary" onclick="loadCuratedPreset(${idx})">📥 โหลดชุดสี</button>
+            <button class="cp-card-btn primary" onclick="loadCuratedPreset(${originalIdx})">📥 โหลดชุดสี</button>
             <button class="cp-card-btn" onclick="copyColorHex('${computedHexes.join(', ')}')">📋 Copy</button>
           </div>
         `;
@@ -872,53 +1086,256 @@
     showToast(`โหลดชุดสี "${preset.name}" เรียบร้อย! 🎨`);
   };
 
-  // ═══ IMAGE EXTRACTION ═══
+  // ═══ IMAGE EXTRACTION — Median Cut + Role Assignment ═══
 
+  // ── Median Cut Color Quantization ──
+  function medianCut(pixels, targetCount) {
+    if (pixels.length === 0) return [];
+
+    function getRange(box) {
+      let minR = 255, maxR = 0, minG = 255, maxG = 0, minB = 255, maxB = 0;
+      for (const p of box) {
+        if (p[0] < minR) minR = p[0]; if (p[0] > maxR) maxR = p[0];
+        if (p[1] < minG) minG = p[1]; if (p[1] > maxG) maxG = p[1];
+        if (p[2] < minB) minB = p[2]; if (p[2] > maxB) maxB = p[2];
+      }
+      return { r: maxR - minR, g: maxG - minG, b: maxB - minB };
+    }
+
+    function splitBox(box) {
+      if (box.length <= 1) return [box];
+      const range = getRange(box);
+      let channel = 0;
+      if (range.g >= range.r && range.g >= range.b) channel = 1;
+      else if (range.b >= range.r && range.b >= range.g) channel = 2;
+      box.sort((a, b) => a[channel] - b[channel]);
+      const mid = Math.floor(box.length / 2);
+      return [box.slice(0, mid), box.slice(mid)];
+    }
+
+    let boxes = [pixels];
+    while (boxes.length < targetCount) {
+      let largestIdx = 0, largestSize = 0;
+      for (let i = 0; i < boxes.length; i++) {
+        if (boxes[i].length > largestSize) {
+          largestSize = boxes[i].length;
+          largestIdx = i;
+        }
+      }
+      if (largestSize <= 1) break;
+      const [a, b] = splitBox(boxes[largestIdx]);
+      boxes.splice(largestIdx, 1, a, b);
+    }
+
+    return boxes.map(box => {
+      let rSum = 0, gSum = 0, bSum = 0;
+      for (const p of box) { rSum += p[0]; gSum += p[1]; bSum += p[2]; }
+      const len = box.length || 1;
+      return {
+        r: Math.round(rSum / len),
+        g: Math.round(gSum / len),
+        b: Math.round(bSum / len),
+        count: box.length
+      };
+    });
+  }
+
+  // ── HSV Euclidean Distance (perceptually weighted) ──
+  function hsvDistance(a, b) {
+    const dH = Math.min(Math.abs(a.h - b.h), 360 - Math.abs(a.h - b.h)) / 180;
+    const dS = Math.abs(a.s - b.s) / 100;
+    const dV = Math.abs(a.v - b.v) / 100;
+    return Math.sqrt(dH * dH * 1.2 + dS * dS + dV * dV);
+  }
+
+  // ── Select distinct colors using HSV distance ──
+  function selectDistinctColors(candidates, count, minDist) {
+    minDist = minDist || 0.22;
+    const selected = [];
+    for (const c of candidates) {
+      const isFar = selected.every(s => hsvDistance(s.hsv, c.hsv) > minDist);
+      if (isFar || selected.length < 1) {
+        selected.push(c);
+      }
+      if (selected.length >= count) break;
+    }
+    // Fallback: fill remaining with most distant available
+    if (selected.length < count) {
+      for (const c of candidates) {
+        if (selected.some(s => s.hex === c.hex)) continue;
+        selected.push(c);
+        if (selected.length >= count) break;
+      }
+    }
+    return selected;
+  }
+
+  // ── Role Assignment: sort extracted colors by slot function ──
+  function assignColorRoles(colors, mode) {
+    if (colors.length < 3) return colors;
+
+    const items = colors.map(c => ({
+      ...c,
+      luminance: c.hsv.v,
+      saturation: c.hsv.s
+    }));
+
+    if (mode === 'painting') {
+      // Painting: Atmosphere(V extreme) → Shadow(V low) → Hero(S high) → KeyLight(V high S low) → RimLight(remaining)
+      const sorted = [...items].sort((a, b) => a.luminance - b.luminance);
+      const result = new Array(items.length);
+
+      // Slot 0: Atmosphere — lowest or highest V depending on overall mood
+      const avgV = items.reduce((s, c) => s + c.luminance, 0) / items.length;
+      const atmosCandidate = avgV < 50 ? sorted[0] : sorted[sorted.length - 1];
+      result[0] = atmosCandidate;
+
+      // Slot 1: Shadow — lowest V (excluding atmosphere)
+      const remaining1 = items.filter(c => c !== atmosCandidate);
+      remaining1.sort((a, b) => a.luminance - b.luminance);
+      result[1] = remaining1[0] || items[1];
+
+      // Slot 2: Hero — highest saturation
+      const remaining2 = items.filter(c => c !== result[0] && c !== result[1]);
+      remaining2.sort((a, b) => b.saturation - a.saturation);
+      result[2] = remaining2[0] || items[2];
+
+      // Slot 3: Key Light — highest V & lowest S among remaining
+      const remaining3 = items.filter(c => c !== result[0] && c !== result[1] && c !== result[2]);
+      remaining3.sort((a, b) => (b.luminance - b.saturation * 0.3) - (a.luminance - a.saturation * 0.3));
+      result[3] = remaining3[0] || items[3];
+
+      // Slot 4+: Rim Light & extras — fill rest
+      const usedSet = new Set([result[0], result[1], result[2], result[3]]);
+      let fillIdx = 4;
+      for (const c of items) {
+        if (!usedSet.has(c) && fillIdx < items.length) {
+          result[fillIdx++] = c;
+        }
+      }
+      // Fill any nulls
+      for (let i = 0; i < result.length; i++) {
+        if (!result[i]) result[i] = items[i] || items[0];
+      }
+      return result;
+    } else {
+      // Graphic: Background(V extreme) → Surface(V near bg) → Primary(S high) → Secondary(S mid) → Text(V opposite bg)
+      const sorted = [...items].sort((a, b) => a.luminance - b.luminance);
+      const result = new Array(items.length);
+
+      const avgV = items.reduce((s, c) => s + c.luminance, 0) / items.length;
+      const isDark = avgV < 50;
+
+      // Slot 0: Background — darkest or lightest
+      result[0] = isDark ? sorted[0] : sorted[sorted.length - 1];
+
+      // Slot 1: Surface — second darkest/lightest
+      result[1] = isDark ? sorted[1] : sorted[sorted.length - 2];
+
+      // Slot 2: Primary — most saturated
+      const remaining2 = items.filter(c => c !== result[0] && c !== result[1]);
+      remaining2.sort((a, b) => b.saturation - a.saturation);
+      result[2] = remaining2[0] || items[2];
+
+      // Slot 3: Secondary — second most saturated
+      const remaining3 = items.filter(c => c !== result[0] && c !== result[1] && c !== result[2]);
+      remaining3.sort((a, b) => b.saturation - a.saturation);
+      result[3] = remaining3[0] || items[3];
+
+      // Slot 4: Text — opposite luminance from background
+      const remaining4 = items.filter(c => c !== result[0] && c !== result[1] && c !== result[2] && c !== result[3]);
+      if (remaining4.length > 0) {
+        remaining4.sort((a, b) => isDark ? (b.luminance - a.luminance) : (a.luminance - b.luminance));
+        result[4] = remaining4[0];
+      }
+
+      // Fill remaining slots
+      const usedSet = new Set(result.filter(Boolean));
+      let fillIdx = 0;
+      for (let i = 0; i < result.length; i++) {
+        if (!result[i]) {
+          while (fillIdx < items.length && usedSet.has(items[fillIdx])) fillIdx++;
+          result[i] = items[fillIdx] || items[0];
+          fillIdx++;
+        }
+      }
+      return result;
+    }
+  }
+
+  // ── Show Image Preview with Color Dots ──
+  function showImagePreview(imgSrc, extractedColors) {
+    let previewEl = document.getElementById('cp-img-preview');
+    if (!previewEl) {
+      previewEl = document.createElement('div');
+      previewEl.id = 'cp-img-preview';
+      previewEl.className = 'cp-img-preview';
+      // Insert after action bar
+      const actionBar = document.querySelector('.cp-action-bar');
+      if (actionBar && actionBar.parentNode) {
+        actionBar.parentNode.insertBefore(previewEl, actionBar.nextSibling);
+      }
+    }
+
+    const dotsHtml = extractedColors.map((c, i) =>
+      `<span class="cp-img-dot" style="background:${c.hex};" title="สล็อต ${i + 1}: ${c.hex}"></span>`
+    ).join('');
+
+    previewEl.innerHTML = `
+      <div class="cp-img-preview-inner">
+        <img src="${imgSrc}" alt="Extracted source" />
+        <div class="cp-img-dots">${dotsHtml}</div>
+        <button class="cp-img-close" onclick="this.closest('.cp-img-preview').remove()" title="ปิด">✕</button>
+      </div>
+    `;
+  }
+
+  // ── Main Extract Function (rewritten) ──
   window.extractPaletteFromImageFile = function (file) {
     if (!file) return;
     const reader = new FileReader();
     reader.onload = function (e) {
+      const imgSrc = e.target.result;
       const img = new Image();
       img.onload = function () {
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
-        canvas.width = 100;
-        canvas.height = 100;
-        ctx.drawImage(img, 0, 0, 100, 100);
+        const sampleSize = 120;
+        canvas.width = sampleSize;
+        canvas.height = sampleSize;
+        ctx.drawImage(img, 0, 0, sampleSize, sampleSize);
 
-        const imgData = ctx.getImageData(0, 0, 100, 100).data;
-        const buckets = {};
+        const imgData = ctx.getImageData(0, 0, sampleSize, sampleSize).data;
+        const pixels = [];
 
-        for (let i = 0; i < imgData.length; i += 16) {
-          const r = Math.round(imgData[i] / 16) * 16;
-          const g = Math.round(imgData[i + 1] / 16) * 16;
-          const b = Math.round(imgData[i + 2] / 16) * 16;
-          const hex = rgbToHex(r, g, b);
-          buckets[hex] = (buckets[hex] || 0) + 1;
+        // Sample every 2nd pixel (skip pure transparent)
+        for (let i = 0; i < imgData.length; i += 8) {
+          const a = imgData[i + 3];
+          if (a < 128) continue; // skip transparent
+          pixels.push([imgData[i], imgData[i + 1], imgData[i + 2]]);
         }
 
-        const sorted = Object.keys(buckets).sort((a, b) => buckets[b] - buckets[a]);
-        const distinct = [];
+        // Median Cut → get ~palette.length * 3 candidates for better selection
+        const targetBuckets = Math.max(palette.length * 3, 15);
+        const buckets = medianCut(pixels, targetBuckets);
 
-        for (const hex of sorted) {
-          const [r, g, b] = hexToRgb(hex);
-          const hsv = rgbToHsv(r, g, b);
-          const isFar = distinct.every(d =>
-            Math.abs(d.hsv.h - hsv.h) > 25 || Math.abs(d.hsv.v - hsv.v) > 20
-          );
-          if (isFar || distinct.length < 2) {
-            distinct.push({ hex, hsv });
-          }
-          if (distinct.length >= palette.length) break;
-        }
+        // Convert to HSV + hex, sort by pixel count
+        const candidates = buckets
+          .map(b => {
+            const hex = rgbToHex(b.r, b.g, b.b);
+            const hsv = rgbToHsv(b.r, b.g, b.b);
+            return { hex, hsv, count: b.count };
+          })
+          .sort((a, b) => b.count - a.count);
 
-        while (distinct.length < palette.length && sorted[distinct.length]) {
-          const hex = sorted[distinct.length];
-          const [r, g, b] = hexToRgb(hex);
-          distinct.push({ hex, hsv: rgbToHsv(r, g, b) });
-        }
+        // Select distinct colors
+        const distinct = selectDistinctColors(candidates, palette.length, 0.22);
 
-        distinct.forEach((item, idx) => {
+        // Assign roles based on current mode
+        const assigned = assignColorRoles(distinct, paletteTargetMode);
+
+        // Apply to palette
+        assigned.forEach((item, idx) => {
           if (palette[idx] && !palette[idx].locked) {
             palette[idx] = {
               hex: item.hex, h: item.hsv.h, s: item.hsv.s, v: item.hsv.v, locked: false
@@ -926,14 +1343,64 @@
           }
         });
 
+        // Show preview
+        showImagePreview(imgSrc, assigned.map(c => ({ hex: c.hex })));
+
         renderBars();
         updateInspector();
         showToast('สกัดสีจากรูปภาพเรียบร้อย!');
       };
-      img.src = e.target.result;
+      img.src = imgSrc;
     };
     reader.readAsDataURL(file);
   };
+
+  // ── Drag & Drop Support ──
+  (function initDragDrop() {
+    const modal = document.getElementById('color-palette-modal');
+    if (!modal) return;
+
+    let dragCounter = 0;
+
+    modal.addEventListener('dragenter', function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      dragCounter++;
+      modal.classList.add('cp-dragover');
+    });
+
+    modal.addEventListener('dragleave', function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      dragCounter--;
+      if (dragCounter <= 0) {
+        dragCounter = 0;
+        modal.classList.remove('cp-dragover');
+      }
+    });
+
+    modal.addEventListener('dragover', function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    });
+
+    modal.addEventListener('drop', function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      dragCounter = 0;
+      modal.classList.remove('cp-dragover');
+
+      const files = e.dataTransfer && e.dataTransfer.files;
+      if (files && files.length > 0) {
+        const file = files[0];
+        if (file.type.startsWith('image/')) {
+          window.extractPaletteFromImageFile(file);
+        } else {
+          showToast('กรุณาลากไฟล์รูปภาพเท่านั้น');
+        }
+      }
+    });
+  })();
 
   // ═══ COPY / EXPORT ═══
 
@@ -1215,7 +1682,41 @@
         menu.classList.remove('open');
       }
     }
+
+    const modeMenu = document.getElementById('cp-target-mode-menu');
+    const modeBtn = document.getElementById('cp-target-mode-btn');
+    if (modeMenu && modeMenu.classList.contains('open')) {
+      if (!modeMenu.contains(e.target) && (!modeBtn || !modeBtn.contains(e.target))) {
+        modeMenu.classList.remove('open');
+      }
+    }
   });
+
+  window.toggleTargetModeMenu = function (e) {
+    if (e) e.stopPropagation();
+    const menu = document.getElementById('cp-target-mode-menu');
+    if (menu) menu.classList.toggle('open');
+  };
+
+  window.selectTargetMode = function (mode) {
+    if (mode !== 'graphic' && mode !== 'painting') return;
+    paletteTargetMode = mode;
+
+    const labelEl = document.getElementById('cp-target-mode-label');
+    if (labelEl) {
+      labelEl.textContent = mode === 'painting' ? 'รูปแบบสี: ภาพวาด ▾' : 'รูปแบบสี: กราฟิก ▾';
+    }
+
+    document.querySelectorAll('.cp-mode-item').forEach(item => {
+      item.classList.toggle('active', item.dataset.mode === mode);
+    });
+
+    const menu = document.getElementById('cp-target-mode-menu');
+    if (menu) menu.classList.remove('open');
+
+    showToast(`เปลี่ยนเป็นโหมด "${mode === 'painting' ? 'สีสำหรับภาพวาด 🎨' : 'สีสำหรับกราฟิก 📐'}"`);
+    randomizePalette();
+  };
 
   // ═══ INITIALIZATION ═══
 
@@ -1306,6 +1807,7 @@
 
     const nameInput = document.getElementById('cp-palette-name-input');
     if (nameInput) {
+      nameInput.addEventListener('input', renderSavedList);
       nameInput.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') {
           e.preventDefault();
