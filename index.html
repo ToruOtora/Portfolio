@@ -563,7 +563,7 @@
     width: 100%;
     display: block;
     border-radius: 4px;
-    transition: transform 0.3s;
+    transition: transform 0.3s ease;
   }
 
   .masonry-item:hover img {
@@ -597,11 +597,21 @@
     cursor: pointer;
   }
 
+  .hero-video-banner video,
   .video-card video {
     width: 100%;
     display: block;
     aspect-ratio: 16/9;
     object-fit: cover;
+    filter: blur(12px);
+    transform: scale(1.04);
+    transition: filter 0.5s ease, transform 0.5s ease;
+  }
+
+  .hero-video-banner video.video-ready,
+  .video-card video.video-ready {
+    filter: blur(0px);
+    transform: scale(1);
   }
 
   .video-card .play-icon {
@@ -2971,6 +2981,26 @@
       }
     }
 
+    /* ══ GLOBAL TOAST NOTIFICATION ══ */
+    function showToast(msg) {
+      if (typeof window.showToast === 'function' && window.showToast !== showToast) {
+        window.showToast(msg);
+        return;
+      }
+      let toast = document.getElementById('cp-toast');
+      if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'cp-toast';
+        toast.className = 'cp-toast';
+        document.body.appendChild(toast);
+      }
+      toast.innerText = msg;
+      toast.classList.add('show');
+      clearTimeout(toast._timer);
+      toast._timer = setTimeout(() => toast.classList.remove('show'), 2200);
+    }
+    window.showToast = showToast;
+
     function syncHeroVideo(isHome) {
       const vid = document.getElementById('hero-video');
       const ph = document.getElementById('video-ph');
@@ -2983,9 +3013,15 @@
         }
         vid.style.display = 'block';
         if (ph) ph.style.display = 'none';
+        
+        const onPlaying = () => vid.classList.add('video-ready');
+        vid.addEventListener('playing', onPlaying);
+        vid.addEventListener('loadeddata', onPlaying);
+
         setupHomePreloader();
       } else {
         vid.pause();
+        vid.classList.remove('video-ready');
         vid.removeAttribute('src');
         vid.load();
         vid.style.display = 'none';
@@ -3246,18 +3282,30 @@
       const overlay = document.getElementById('da-fade-overlay');
       if (!box || !overlay) return;
 
-      // Wait for images to render and styles to calculate layout
-      setTimeout(() => {
-        if (box.classList.contains('expanded')) return;
+      if (box.classList.contains('expanded')) return;
 
-        if (box.scrollHeight <= 490) {
-          overlay.style.display = 'none';
-          box.style.maxHeight = 'none';
-        } else {
+      const runCheck = () => {
+        if (box.classList.contains('expanded')) return;
+        const itemCount = box.querySelectorAll('.masonry-item').length;
+        if (box.scrollHeight > 490 || itemCount >= 6) {
           overlay.style.display = 'flex';
           box.style.maxHeight = '480px';
+        } else {
+          overlay.style.display = 'none';
+          box.style.maxHeight = 'none';
         }
-      }, 300);
+      };
+
+      runCheck();
+      setTimeout(runCheck, 300);
+      setTimeout(runCheck, 800);
+      setTimeout(runCheck, 1500);
+
+      box.querySelectorAll('img').forEach(img => {
+        if (!img.complete) {
+          img.addEventListener('load', runCheck, { once: true });
+        }
+      });
     }
 
     /* ══ RENDER: motion carousel ══ */
@@ -3283,6 +3331,13 @@
         div.innerHTML = `
       <video src="${src}" loop muted playsinline preload="none"></video>
       <div class="play-icon"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div>`;
+
+        const vid = div.querySelector('video');
+        if (vid) {
+          const onPlaying = () => vid.classList.add('video-ready');
+          vid.addEventListener('playing', onPlaying);
+          vid.addEventListener('loadeddata', onPlaying);
+        }
 
         track.appendChild(div);
       });
@@ -3893,10 +3948,10 @@
       text += `ขอบคุณที่ใช้บริการครับ!`;
 
       navigator.clipboard.writeText(text).then(() => {
-        alert("คัดลอกรายละเอียดใบเสร็จลงคลิปบอร์ดแล้ว!");
+        showToast("คัดลอกรายละเอียดใบเสร็จลงคลิปบอร์ดแล้ว! 📋");
       }).catch(err => {
         console.error('Copy failed: ', err);
-        alert("ไม่สามารถคัดลอกได้โดยอัตโนมัติ กรุณาลองอีกครั้ง");
+        showToast("ไม่สามารถคัดลอกได้ในขณะนี้");
       });
     }
 
@@ -3930,13 +3985,14 @@
         link.download = `ToruO_Estimate_${Date.now()}.png`;
         link.href = canvas.toDataURL('image/png');
         link.click();
+        showToast("บันทึกภาพใบเสร็จเรียบร้อยแล้ว! 📥");
       }).catch(err => {
         if (saveBtn) {
           saveBtn.disabled = false;
           saveBtn.textContent = 'บันทึกรูปภาพ';
         }
         console.error('Save image failed: ', err);
-        alert("ไม่สามารถบันทึกรูปภาพได้ในขณะนี้ กรุณาลองคัดลอกข้อความแทน");
+        showToast("ไม่สามารถบันทึกรูปภาพได้ในขณะนี้");
       });
     }
 
