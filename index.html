@@ -2169,6 +2169,62 @@
     border-color: #eb5757;
     color: #fff;
   }
+
+  /* ══ HOME PRELOADER OVERLAY ══ */
+  .home-preloader {
+    position: absolute;
+    inset: 0;
+    background: var(--bg);
+    z-index: 80;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: opacity 0.45s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.45s cubic-bezier(0.4, 0, 0.2, 1);
+    opacity: 1;
+    visibility: visible;
+  }
+
+  .home-preloader.fade-out {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+  }
+
+  .preloader-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    text-align: center;
+  }
+
+  .preloader-spinner {
+    width: 36px;
+    height: 36px;
+    border: 3px solid var(--line2);
+    border-top-color: var(--text);
+    border-radius: 50%;
+    animation: preloaderSpin 0.75s linear infinite;
+  }
+
+  @keyframes preloaderSpin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+
+  .preloader-brand {
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    color: var(--text);
+    text-transform: uppercase;
+  }
+
+  .preloader-sub {
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    color: var(--text3);
+  }
 </style>
 </head>
 
@@ -2268,6 +2324,15 @@
 
     <!-- ── HOME ── -->
     <section class="page-section active" id="page-home">
+
+      <!-- Home Preloader -->
+      <div class="home-preloader" id="home-preloader">
+        <div class="preloader-content">
+          <div class="preloader-spinner"></div>
+          <div class="preloader-brand">Toru_O</div>
+          <div class="preloader-sub">กำลังโหลดมีเดีย...</div>
+        </div>
+      </div>
 
       <div class="hero-video-banner">
         <video id="hero-video" autoplay loop muted playsinline preload="none" style="display:none"></video>
@@ -2856,6 +2921,55 @@
     /* ══ NAV & HERO VIDEO DEFER LOAD ══ */
     let skipNextScroll = false;
     window.heroVideoUrl = '';
+    window.preloaderDismissed = false;
+    let preloaderTimer = null;
+
+    function dismissHomePreloader() {
+      if (window.preloaderDismissed) return;
+      window.preloaderDismissed = true;
+      if (preloaderTimer) clearTimeout(preloaderTimer);
+
+      const loader = document.getElementById('home-preloader');
+      const vid = document.getElementById('hero-video');
+
+      if (vid && vid.src) {
+        try {
+          vid.currentTime = 0;
+        } catch (e) {}
+        vid.play().catch(() => {});
+      }
+
+      if (loader) {
+        loader.classList.add('fade-out');
+        setTimeout(() => {
+          loader.style.display = 'none';
+        }, 500);
+      }
+    }
+
+    function setupHomePreloader() {
+      const isHome = document.getElementById('page-home')?.classList.contains('active');
+      if (!isHome) {
+        dismissHomePreloader();
+        return;
+      }
+
+      preloaderTimer = setTimeout(dismissHomePreloader, 2800);
+
+      const vid = document.getElementById('hero-video');
+      if (vid) {
+        const onReady = () => {
+          dismissHomePreloader();
+          vid.removeEventListener('loadeddata', onReady);
+          vid.removeEventListener('canplay', onReady);
+        };
+        vid.addEventListener('loadeddata', onReady);
+        vid.addEventListener('canplay', onReady);
+        if (vid.readyState >= 2) {
+          onReady();
+        }
+      }
+    }
 
     function syncHeroVideo(isHome) {
       const vid = document.getElementById('hero-video');
@@ -2865,10 +2979,11 @@
       if (isHome && window.heroVideoUrl) {
         if (!vid.src || !vid.src.includes(window.heroVideoUrl)) {
           vid.src = window.heroVideoUrl;
+          vid.load();
         }
         vid.style.display = 'block';
         if (ph) ph.style.display = 'none';
-        vid.play().catch(e => console.log('Hero video play error:', e));
+        setupHomePreloader();
       } else {
         vid.pause();
         vid.removeAttribute('src');
@@ -2891,6 +3006,41 @@
       renderMotion(galleries['motion']);
       renderGallery('adoptable', galleries['adoptable']);
       window.homeGalleriesRendered = true;
+    }
+
+    /* ══ VIEWPORT VIDEO OBSERVER (IntersectionObserver) ══ */
+    let globalVideoObserver = null;
+
+    function initVideoObserver() {
+      if (!('IntersectionObserver' in window)) return;
+      if (globalVideoObserver) globalVideoObserver.disconnect();
+
+      globalVideoObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          const vid = entry.target;
+          if (entry.isIntersecting) {
+            if (vid.paused && vid.src) {
+              vid.play().catch(() => {});
+            }
+          } else {
+            if (!vid.paused) {
+              vid.pause();
+            }
+          }
+        });
+      }, {
+        threshold: 0.15
+      });
+
+      const heroVid = document.getElementById('hero-video');
+      if (heroVid && heroVid.src) {
+        globalVideoObserver.observe(heroVid);
+      }
+
+      const motionVids = document.querySelectorAll('#gallery-motion video');
+      motionVids.forEach(v => {
+        if (v.src) globalVideoObserver.observe(v);
+      });
     }
 
     function showPage(name, skipScroll = false, fromHash = false) {
@@ -2928,9 +3078,9 @@
 
       if (isHome) {
         renderHomeGalleriesIfNeeded();
-        const motionVids = document.querySelectorAll('#gallery-motion video');
-        motionVids.forEach(v => v.play().catch(() => {}));
+        setTimeout(initVideoObserver, 100);
       } else {
+        if (globalVideoObserver) globalVideoObserver.disconnect();
         const motionVids = document.querySelectorAll('#gallery-motion video');
         motionVids.forEach(v => v.pause());
       }
@@ -3134,17 +3284,11 @@
       <video src="${src}" loop muted playsinline preload="none"></video>
       <div class="play-icon"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div>`;
 
-        // Play automatically if home page is active
-        const isHome = document.getElementById('page-home')?.classList.contains('active');
-        if (isHome) {
-          const vid = div.querySelector('video');
-          vid.play().catch(e => console.log('Autoplay play error:', e));
-        }
-
         track.appendChild(div);
       });
 
       initMotionCarousel();
+      setTimeout(initVideoObserver, 100);
     }
 
     function initMotionCarousel() {
@@ -3168,12 +3312,6 @@
           }
           openLb('video', src, info);
         });
-
-        // Ensure video is playing
-        const vid = card.querySelector('video');
-        if (vid) {
-          vid.play().catch(e => console.log('Autoplay retry:', e));
-        }
       });
 
       let startTouchX = 0;
