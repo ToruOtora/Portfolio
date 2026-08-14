@@ -2270,7 +2270,7 @@
     <section class="page-section active" id="page-home">
 
       <div class="hero-video-banner">
-        <video id="hero-video" autoplay loop muted playsinline style="display:none"></video>
+        <video id="hero-video" autoplay loop muted playsinline preload="none" style="display:none"></video>
         <div class="video-ph" id="video-ph">
           <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
             <rect x="2" y="2" width="20" height="20" rx="3" />
@@ -2853,8 +2853,45 @@
       if (saved) document.documentElement.setAttribute('data-theme', saved);
     })();
 
-    /* ══ NAV ══ */
+    /* ══ NAV & HERO VIDEO DEFER LOAD ══ */
     let skipNextScroll = false;
+    window.heroVideoUrl = '';
+
+    function syncHeroVideo(isHome) {
+      const vid = document.getElementById('hero-video');
+      const ph = document.getElementById('video-ph');
+      if (!vid) return;
+
+      if (isHome && window.heroVideoUrl) {
+        if (!vid.src || !vid.src.includes(window.heroVideoUrl)) {
+          vid.src = window.heroVideoUrl;
+        }
+        vid.style.display = 'block';
+        if (ph) ph.style.display = 'none';
+        vid.play().catch(e => console.log('Hero video play error:', e));
+      } else {
+        vid.pause();
+        vid.removeAttribute('src');
+        vid.load();
+        vid.style.display = 'none';
+        if (ph) ph.style.display = 'flex';
+      }
+    }
+
+    window.sheetGalleriesData = null;
+    window.homeGalleriesRendered = false;
+
+    function renderHomeGalleriesIfNeeded() {
+      if (window.homeGalleriesRendered || !window.sheetGalleriesData) return;
+      const isHome = document.getElementById('page-home')?.classList.contains('active');
+      if (!isHome) return;
+
+      const galleries = window.sheetGalleriesData;
+      renderGallery('digital-art', galleries['digital-art']);
+      renderMotion(galleries['motion']);
+      renderGallery('adoptable', galleries['adoptable']);
+      window.homeGalleriesRendered = true;
+    }
 
     function showPage(name, skipScroll = false, fromHash = false) {
       if (!['home', 'queue', 'works', 'terms', 'tools'].includes(name)) return;
@@ -2884,6 +2921,19 @@
       const map = { home: 'nav-home', queue: 'nav-queue', works: 'nav-works', terms: 'nav-terms', tools: 'nav-tools' };
       const el = document.getElementById(map[name]);
       if (el) el.classList.add('active');
+
+      // Defer/unload hero video depending on whether home page is open
+      const isHome = (name === 'home');
+      syncHeroVideo(isHome);
+
+      if (isHome) {
+        renderHomeGalleriesIfNeeded();
+        const motionVids = document.querySelectorAll('#gallery-motion video');
+        motionVids.forEach(v => v.play().catch(() => {}));
+      } else {
+        const motionVids = document.querySelectorAll('#gallery-motion video');
+        motionVids.forEach(v => v.pause());
+      }
 
       // Show Ref Board and Color Palette buttons ONLY when on tools page
       const refBtn = document.getElementById('sidebar-refboard');
@@ -3081,12 +3131,15 @@
         const div = document.createElement('div');
         div.className = 'video-card playing';
         div.innerHTML = `
-      <video src="${src}" autoplay loop muted playsinline preload="metadata"></video>
+      <video src="${src}" loop muted playsinline preload="none"></video>
       <div class="play-icon"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div>`;
 
-        // Play automatically
-        const vid = div.querySelector('video');
-        vid.play().catch(e => console.log('Autoplay play error:', e));
+        // Play automatically if home page is active
+        const isHome = document.getElementById('page-home')?.classList.contains('active');
+        if (isHome) {
+          const vid = div.querySelector('video');
+          vid.play().catch(e => console.log('Autoplay play error:', e));
+        }
 
         track.appendChild(div);
       });
@@ -3812,10 +3865,9 @@
           }
         });
 
-        renderGallery('digital-art', galleries['digital-art']);
-        renderMotion(galleries['motion']);
-        renderGallery('adoptable', galleries['adoptable']);
+        window.sheetGalleriesData = galleries;
         renderTerms(galleries['commission-mixed'], galleries['agreementA']);
+        renderHomeGalleriesIfNeeded();
 
       } catch (e) {
         console.warn('Google Sheets load failed:', e);
@@ -3849,9 +3901,11 @@
           if (m.socials.deviantart) document.getElementById('social-da').href = m.socials.deviantart;
         }
         if (m.video) {
-          const vid = document.getElementById('hero-video');
-          vid.src = m.video; vid.style.display = 'block';
-          document.getElementById('video-ph').style.display = 'none';
+          window.heroVideoUrl = m.video;
+          const isHome = document.getElementById('page-home')?.classList.contains('active');
+          if (isHome) {
+            syncHeroVideo(true);
+          }
         }
         if (m.contact) document.getElementById('footer-contact').innerHTML = m.contact;
 
