@@ -41,7 +41,7 @@
   // DOM Elements
   let modalEl, headerEl, viewportEl, canvasEl, emptyHintEl, dropOverlayEl;
   let addFileInput, importFileInput;
-  let exportModalEl, alertModalEl, arrangeModalEl;
+  let exportModalEl, alertModalEl, arrangeModalEl, linkModalEl, linkInputEl;
 
   // Store Items Data: Map<id, { id, dataUrl, x, y, width, height, aspect, rotation, zIndex }>
   const itemsMap = new Map();
@@ -119,15 +119,15 @@
                 </svg>
                 <span>จัดเรียง</span>
               </button>
-              <button class="refboard-btn btn-accent" id="refboard-add-btn">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
-                  <line x1="12" y1="5" x2="12" y2="19"></line>
-                  <line x1="5" y1="12" x2="19" y2="12"></line>
-                </svg>
-                <span>เพิ่มรูป</span>
-              </button>
-              <button class="refboard-btn" id="refboard-import-btn">
+              <button class="refboard-btn btn-accent" id="refboard-link-btn" title="วางลิงก์ YouTube, Shorts, Google Drive, TikTok, วิดีโอ, ภาพ">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+                  <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+                </svg>
+                <span>วางลิงก์</span>
+              </button>
+              <button class="refboard-btn btn-accent" id="refboard-import-btn" title="นำเข้าไฟล์รูปภาพ, วิดีโอ, GIF, PSD, PDF, SVG หรือไฟล์กระดานเรฟ (.refboard)">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
                   <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                   <polyline points="7 10 12 15 17 10"></polyline>
                   <line x1="12" y1="15" x2="12" y2="3"></line>
@@ -202,9 +202,9 @@
               <polyline points="21 15 16 10 5 21"></polyline>
             </svg>
             <div>
-              <strong>ลากรูปภาพ (.png, .jpg), ไฟล์ PSD (.psd) หรือไฟล์บอร์ด (.refboard) เข้ามาวางที่นี่</strong><br>
-              หรือกด <span class="refboard-kbd">Ctrl</span> + <span class="refboard-kbd">V</span> เพื่อวางรูปภาพจาก Clipboard<br>
-              <span style="font-size: 11px; opacity: 0.8;">ย่อ-ขยายรูปโดยคงอัตราส่วน | เลื่อนกระดานด้วย <span class="refboard-kbd">Space</span> + ลากเม้าส์</span>
+              <strong>ลากรูปภาพ / GIF (.gif, .png, .jpg), วิดีโอ (.mp4, .webm), PSD หรือ RefBoard วางที่นี่</strong><br>
+              หรือกด <span class="refboard-kbd">Ctrl</span> + <span class="refboard-kbd">V</span> เพื่อวางรูปภาพ/วิดีโอจาก Clipboard<br>
+              <span style="font-size: 11px; opacity: 0.8;">ย่อ-ขยายมีเดียโดยคงอัตราส่วน | เลื่อนกระดานด้วย <span class="refboard-kbd">Space</span> + ลากเม้าส์</span>
             </div>
           </div>
 
@@ -215,7 +215,7 @@
               <polyline points="17 8 12 3 7 8"></polyline>
               <line x1="12" y1="3" x2="12" y2="15"></line>
             </svg>
-            <span>วางไฟล์ลงบนกระดานเรฟ (รองรับ PNG, JPG, SVG, AI, PSD, PDF, RefBoard)</span>
+            <span>วางไฟล์ลงบนกระดานเรฟ (รองรับ PNG, JPG, GIF, วิดีโอ MP4/WebM, SVG, AI, PSD, PDF, RefBoard)</span>
           </div>
         </div>
 
@@ -350,6 +350,13 @@
               </div>
               <input type="range" id="ref-quality-slider" min="10" max="100" step="5" value="100">
             </div>
+
+            <div class="refboard-exp-group" id="ref-smart-embed-group" style="margin-top: 14px; margin-bottom: 0;">
+              <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer; user-select: none; color: var(--text, #fff);">
+                <input type="checkbox" id="ref-smart-embed-chk" checked style="width: 16px; height: 16px; accent-color: #38bdf8; cursor: pointer;">
+                <span>✨ <strong>ฝังข้อมูลกระดานเรฟ (Smart Embed)</strong> — ลากภาพกลับมาเปิดแก้ไขได้เสมอ</span>
+              </label>
+            </div>
           </div>
 
           <div class="refboard-exp-actions">
@@ -448,9 +455,30 @@
         </div>
       </div>
 
+      <!-- Link Import Dialog Modal -->
+      <div id="refboard-link-backdrop" class="refboard-exp-backdrop">
+        <div class="cg-modal-box" style="max-width: 480px; text-align: left;">
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;">
+            <h3 class="cg-modal-title" style="margin:0; font-size:18px; display:flex; align-items:center; gap:8px;">
+              <span>🔗</span> วางลิงก์มีเดีย (URL)
+            </h3>
+            <button class="refboard-icon-btn close-btn" id="refboard-link-close-btn" style="width:28px;height:28px;">✕</button>
+          </div>
+          <p style="font-size:13px; opacity:0.8; margin-bottom:14px; line-height:1.5;">
+            รองรับ <strong>YouTube, YouTube Shorts, Google Drive, TikTok, Vimeo, Giphy</strong> และลิงก์รูปภาพ / วิดีโอทั่วไป
+          </p>
+          <div style="margin-bottom:16px;">
+            <input type="text" id="refboard-link-input" placeholder="วางลิงก์ที่นี่ (https://...)" class="refboard-link-input-el">
+          </div>
+          <div class="cg-modal-actions" style="margin-top:10px;">
+            <button class="cg-modal-btn cg-modal-btn-cancel" id="refboard-link-cancel-btn">ยกเลิก</button>
+            <button class="cg-modal-btn cg-modal-btn-confirm" id="refboard-link-submit-btn" style="background:var(--text, #f0f0f0); color:var(--bg, #0d0d0d); font-weight:700;">ตกลงนำเข้า</button>
+          </div>
+        </div>
+      </div>
+
       <!-- Hidden File Inputs -->
-      <input type="file" id="refboard-file-add" class="refboard-file-input" accept="image/*,.svg,.ai,.eps,.pdf,.psd,.refboard,.json,application/illustrator,application/postscript,image/svg+xml,application/pdf" multiple>
-      <input type="file" id="refboard-file-import" class="refboard-file-input" accept="image/*,.svg,.ai,.eps,.pdf,.psd,.refboard,.json,application/illustrator,application/postscript,image/svg+xml,application/pdf" multiple>
+      <input type="file" id="refboard-file-import" class="refboard-file-input" accept="image/*,video/*,.gif,.mp4,.webm,.mov,.m4v,.ogg,.svg,.ai,.eps,.pdf,.psd,.refboard,.json,application/illustrator,application/postscript,image/svg+xml,application/pdf" multiple>
     `;
 
     document.body.insertAdjacentHTML('beforeend', modalHtml);
@@ -462,17 +490,19 @@
     canvasEl = document.getElementById('refboard-canvas');
     emptyHintEl = document.getElementById('refboard-empty-hint');
     dropOverlayEl = document.getElementById('refboard-drop-overlay');
-    addFileInput = document.getElementById('refboard-file-add');
     importFileInput = document.getElementById('refboard-file-import');
+    addFileInput = importFileInput;
     exportModalEl = document.getElementById('refboard-export-backdrop');
     alertModalEl = document.getElementById('refboard-alert-backdrop');
     arrangeModalEl = document.getElementById('refboard-arrange-backdrop');
+    linkModalEl = document.getElementById('refboard-link-backdrop');
+    linkInputEl = document.getElementById('refboard-link-input');
 
     if (emptyHintEl) {
       emptyHintEl.style.cursor = 'pointer';
       emptyHintEl.addEventListener('click', (e) => {
         e.stopPropagation();
-        addFileInput.click();
+        if (importFileInput) importFileInput.click();
       });
     }
 
@@ -499,6 +529,7 @@
     setupActionButtons();
     setupExportModal();
     setupArrangeModal();
+    setupLinkModal();
     setupResize();
     setupGroupEvents();
 
@@ -510,12 +541,18 @@
     const titleEl = document.getElementById('refboard-alert-title');
     const msgEl = document.getElementById('refboard-alert-msg');
     const actionsEl = document.getElementById('refboard-alert-actions');
+    const iconEl = document.getElementById('refboard-alert-icon');
 
-    titleEl.textContent = title;
-    msgEl.textContent = message;
+    if (iconEl) iconEl.textContent = 'ℹ️';
+    if (titleEl) titleEl.textContent = title;
+    if (msgEl) msgEl.innerHTML = message;
+
+    actionsEl.style.flexDirection = 'row';
+    actionsEl.style.width = '100%';
+    actionsEl.style.gap = '12px';
 
     actionsEl.innerHTML = `
-      <button class="cg-modal-btn cg-modal-btn-confirm" id="refboard-alert-close-btn" style="background:#38bdf8;color:#000">ตกลง</button>
+      <button class="cg-modal-btn cg-modal-btn-primary" id="refboard-alert-close-btn">ตกลง</button>
     `;
 
     alertModalEl.classList.add('open');
@@ -525,27 +562,142 @@
   }
 
   // Helper Custom Confirm Dialog
-  function showRefConfirm(title, message, onConfirm) {
+  function showRefConfirm(title, message, onConfirm, onCancel, confirmText = 'ตกลง', cancelText = 'ยกเลิก', isDanger = false) {
     const titleEl = document.getElementById('refboard-alert-title');
     const msgEl = document.getElementById('refboard-alert-msg');
     const actionsEl = document.getElementById('refboard-alert-actions');
+    const iconEl = document.getElementById('refboard-alert-icon');
 
-    titleEl.textContent = title;
-    msgEl.textContent = message;
+    if (iconEl) iconEl.textContent = isDanger ? '⚠️' : '❓';
+    if (titleEl) titleEl.textContent = title;
+    if (msgEl) msgEl.innerHTML = message;
+
+    const confirmClass = isDanger ? 'cg-modal-btn cg-modal-btn-confirm' : 'cg-modal-btn cg-modal-btn-primary';
+
+    actionsEl.style.flexDirection = 'row';
+    actionsEl.style.width = '100%';
+    actionsEl.style.gap = '12px';
 
     actionsEl.innerHTML = `
-      <button class="cg-modal-btn cg-modal-btn-cancel" id="refboard-alert-cancel-btn">ยกเลิก</button>
-      <button class="cg-modal-btn cg-modal-btn-confirm" id="refboard-alert-confirm-btn">ตกลง (ล้างรูปภาพ)</button>
+      <button class="cg-modal-btn cg-modal-btn-cancel" id="refboard-alert-cancel-btn">${cancelText}</button>
+      <button class="${confirmClass}" id="refboard-alert-confirm-btn">${confirmText}</button>
     `;
 
     alertModalEl.classList.add('open');
 
     document.getElementById('refboard-alert-cancel-btn').onclick = () => {
       alertModalEl.classList.remove('open');
+      if (onCancel) onCancel();
     };
     document.getElementById('refboard-alert-confirm-btn').onclick = () => {
       alertModalEl.classList.remove('open');
       if (onConfirm) onConfirm();
+    };
+  }
+
+  // Append / Merge imported items into current board without deleting existing items
+  function appendRefBoardItems(itemsList, targetX = null, targetY = null) {
+    if (!itemsList || itemsList.length === 0) return;
+    pushUndoState();
+
+    let minX = Infinity, minY = Infinity;
+    itemsList.forEach((it) => {
+      minX = Math.min(minX, it.x);
+      minY = Math.min(minY, it.y);
+    });
+
+    const hasTarget = targetX !== null && targetY !== null;
+    const offsetX = hasTarget ? (targetX - minX) : 0;
+    const offsetY = hasTarget ? (targetY - minY) : 0;
+
+    const newIds = [];
+    itemsList.forEach((it, idx) => {
+      const newId = 'item_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5) + '_' + idx;
+      const newItem = {
+        ...it,
+        id: newId,
+        x: it.x + offsetX,
+        y: it.y + offsetY,
+        zIndex: ++nextZIndex
+      };
+      createRefImageItem(newItem);
+      newIds.push(newId);
+    });
+
+    deselectAll();
+    newIds.forEach((id) => selectItem(id, true));
+    updateItemCount();
+    showToast(`✨ รวมรูปภาพกระดานเรฟ (${itemsList.length} รูป) เข้ากับกระดานเดิมแล้ว!`);
+  }
+
+  // Replace Entire Board with imported board data
+  function replaceRefBoard(boardData) {
+    pushUndoState();
+    clearBoard();
+    if (boardData.panX !== undefined) panX = boardData.panX;
+    if (boardData.panY !== undefined) panY = boardData.panY;
+    if (boardData.zoom !== undefined) zoom = boardData.zoom;
+    updateTransform();
+
+    (boardData.items || []).forEach((item) => {
+      createRefImageItem(item);
+      if (item.zIndex > nextZIndex) nextZIndex = item.zIndex;
+    });
+    updateItemCount();
+    showToast('✨ เปิดกระดานเรฟเรียบร้อย!');
+  }
+
+  // Smart RefBoard Import Choice Modal
+  function showSmartRefBoardImportModal(boardData, file, targetX, targetY, isImage = true) {
+    const titleEl = document.getElementById('refboard-alert-title');
+    const msgEl = document.getElementById('refboard-alert-msg');
+    const actionsEl = document.getElementById('refboard-alert-actions');
+    const iconEl = document.getElementById('refboard-alert-icon');
+
+    if (iconEl) iconEl.textContent = '✨';
+    if (titleEl) titleEl.textContent = `พบกระดานเรฟ (${(boardData.items || []).length} รูป)`;
+    if (msgEl) {
+      msgEl.innerHTML = `
+        กระดานปัจจุบันมีรูปภาพอยู่แล้ว <strong>(${itemsMap.size} รูป)</strong><br>
+        <span style="font-size: 13px; color: var(--text2, #94a3b8); margin-top: 6px; display: block;">คุณต้องการเปิดใช้งานแบบใด?</span>
+      `;
+    }
+
+    actionsEl.style.flexDirection = 'column';
+    actionsEl.style.width = '100%';
+    actionsEl.style.gap = '10px';
+
+    actionsEl.innerHTML = `
+      <button class="cg-modal-btn cg-modal-btn-primary" id="ref-smart-append-btn" style="width: 100%; padding: 12px; font-size: 14px; font-weight: 700; border-radius: 12px;">รวมเข้ากระดานเดิม</button>
+      <button class="cg-modal-btn cg-modal-btn-secondary" id="ref-smart-replace-btn" style="width: 100%; padding: 12px; font-size: 14px; font-weight: 700; border-radius: 12px;">แทนที่กระดานเดิม</button>
+      ${isImage ? `<button class="cg-modal-btn cg-modal-btn-secondary" id="ref-smart-normal-btn" style="width: 100%; padding: 12px; font-size: 14px; font-weight: 700; border-radius: 12px;">วางเป็นรูปภาพธรรมดา</button>` : ''}
+      <button class="cg-modal-btn cg-modal-btn-cancel" id="ref-smart-cancel-btn" style="width: 100%; padding: 11px; font-size: 14px; font-weight: 700; border-radius: 12px;">ยกเลิก</button>
+    `;
+
+    alertModalEl.classList.add('open');
+
+    document.getElementById('ref-smart-cancel-btn').onclick = () => {
+      alertModalEl.classList.remove('open');
+    };
+
+    if (isImage) {
+      const normalBtn = document.getElementById('ref-smart-normal-btn');
+      if (normalBtn) {
+        normalBtn.onclick = () => {
+          alertModalEl.classList.remove('open');
+          importMultipleImageFiles([file], targetX, targetY);
+        };
+      }
+    }
+
+    document.getElementById('ref-smart-replace-btn').onclick = () => {
+      alertModalEl.classList.remove('open');
+      replaceRefBoard(boardData);
+    };
+
+    document.getElementById('ref-smart-append-btn').onclick = () => {
+      alertModalEl.classList.remove('open');
+      appendRefBoardItems(boardData.items, targetX, targetY);
     };
   }
 
@@ -582,6 +734,7 @@
     if (exportModalEl) exportModalEl.classList.remove('open');
     if (alertModalEl) alertModalEl.classList.remove('open');
     if (arrangeModalEl) arrangeModalEl.classList.remove('open');
+    if (linkModalEl) linkModalEl.classList.remove('open');
     // Remove split-panel class
     const toolsPage = document.getElementById('page-tools');
     if (toolsPage) toolsPage.classList.remove('refboard-split');
@@ -596,6 +749,10 @@
 
   // Handle Browser Back Button (popstate)
   window.addEventListener('popstate', () => {
+    if (linkModalEl && linkModalEl.classList.contains('open')) {
+      linkModalEl.classList.remove('open');
+      return;
+    }
     if (arrangeModalEl && arrangeModalEl.classList.contains('open')) {
       arrangeModalEl.classList.remove('open');
       return;
@@ -1059,20 +1216,55 @@
   function setupPasteHandler() {
     window.addEventListener('paste', (e) => {
       if (!isModalOpen) return;
-      const isInput = e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable;
+      const isInput = e.target && (
+        e.target.tagName === 'INPUT' ||
+        e.target.tagName === 'TEXTAREA' ||
+        e.target.isContentEditable
+      );
       if (isInput) return;
 
-      const clipboardItems = (e.clipboardData || e.originalEvent.clipboardData).items;
+      const clipboardData = e.clipboardData || (e.originalEvent && e.originalEvent.clipboardData);
+      if (!clipboardData) return;
+
+      // 1. Check native clipboard files or image/video blobs FIRST
       const files = [];
-      for (let i = 0; i < clipboardItems.length; i++) {
-        if (clipboardItems[i].type.indexOf('image') !== -1) {
-          const blob = clipboardItems[i].getAsFile();
-          if (blob) files.push(blob);
+      if (clipboardData.files && clipboardData.files.length > 0) {
+        for (let i = 0; i < clipboardData.files.length; i++) {
+          files.push(clipboardData.files[i]);
         }
       }
+
+      if (files.length === 0 && clipboardData.items && clipboardData.items.length > 0) {
+        for (let i = 0; i < clipboardData.items.length; i++) {
+          const item = clipboardData.items[i];
+          if (item && (item.type.indexOf('image') !== -1 || item.type.indexOf('video') !== -1 || item.kind === 'file')) {
+            const blob = item.getAsFile();
+            if (blob) files.push(blob);
+          }
+        }
+      }
+
       if (files.length > 0) {
+        e.preventDefault();
+        e.stopPropagation();
         handleFiles(files);
-      } else if (internalClipboard.length > 0) {
+        return;
+      }
+
+      // 2. Check if user pasted a Web / Social Media URL
+      const pastedText = (clipboardData.getData && clipboardData.getData('text/plain')) || '';
+      const trimmedUrl = (pastedText || '').trim();
+      if (trimmedUrl.startsWith('http://') || trimmedUrl.startsWith('https://') || trimmedUrl.startsWith('data:image') || trimmedUrl.startsWith('data:video')) {
+        e.preventDefault();
+        e.stopPropagation();
+        importUrlToRefBoard(trimmedUrl);
+        return;
+      }
+
+      // 3. Internal clipboard paste (Ctrl+C / Ctrl+V within board)
+      if (internalClipboard.length > 0) {
+        e.preventDefault();
+        e.stopPropagation();
         pasteInternalClipboard();
       }
     });
@@ -1210,20 +1402,24 @@
     const closeBtn = document.getElementById('refboard-close-btn');
     if (closeBtn) {
       closeBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
+        if (e) { e.preventDefault(); e.stopPropagation(); }
         closeRefBoardInternal(true);
       });
     }
 
-    document.getElementById('refboard-max-btn').addEventListener('click', () => {
-      isMaximized = !isMaximized;
-      modalEl.classList.toggle('maximized', isMaximized);
-    });
+    const maxBtn = document.getElementById('refboard-max-btn');
+    if (maxBtn) {
+      maxBtn.addEventListener('click', (e) => {
+        if (e) { e.preventDefault(); e.stopPropagation(); }
+        isMaximized = !isMaximized;
+        modalEl.classList.toggle('maximized', isMaximized);
+      });
+    }
 
     const floatBtn = document.getElementById('refboard-float-btn');
     if (floatBtn) {
-      floatBtn.addEventListener('click', () => {
+      floatBtn.addEventListener('click', (e) => {
+        if (e) { e.preventDefault(); e.stopPropagation(); }
         isFloatingMode = !isFloatingMode;
         modalEl.classList.toggle('floating-mode', isFloatingMode);
 
@@ -1267,7 +1463,8 @@
 
     const bgBtn = document.getElementById('refboard-bg-btn');
     if (bgBtn) {
-      bgBtn.addEventListener('click', () => {
+      bgBtn.addEventListener('click', (e) => {
+        if (e) { e.preventDefault(); e.stopPropagation(); }
         isWhiteBg = !isWhiteBg;
         bgBtn.classList.toggle('active', isWhiteBg);
         if (viewportEl) viewportEl.classList.toggle('bg-white-mode', isWhiteBg);
@@ -1278,7 +1475,8 @@
 
     const gridBtn = document.getElementById('refboard-grid-btn');
     if (gridBtn) {
-      gridBtn.addEventListener('click', () => {
+      gridBtn.addEventListener('click', (e) => {
+        if (e) { e.preventDefault(); e.stopPropagation(); }
         isGridEnabled = !isGridEnabled;
         gridBtn.classList.toggle('active', isGridEnabled);
         if (viewportEl) viewportEl.classList.toggle('grid-active', isGridEnabled);
@@ -1318,35 +1516,45 @@
       });
     }
 
-    document.getElementById('refboard-add-btn').addEventListener('click', () => addFileInput.click());
-    addFileInput.addEventListener('change', (e) => {
-      if (e.target.files.length > 0) handleFiles(e.target.files);
-      e.target.value = '';
-    });
-
-    document.getElementById('refboard-import-btn').addEventListener('click', () => importFileInput.click());
-    importFileInput.addEventListener('change', (e) => {
-      if (e.target.files.length > 0) handleFiles(e.target.files);
-      e.target.value = '';
-    });
-
-    document.getElementById('refboard-export-btn').addEventListener('click', () => {
-      if (itemsMap.size === 0) {
-        showRefAlert('กระดานเรฟว่างเปล่า', 'ยังไม่มีรูปภาพบนกระดานเรฟ ไม่สามารถส่งออกไฟล์ได้ กรุณาเพิ่มรูปภาพก่อนครับ');
-        return;
-      }
-      openExportModal();
-    });
-
-    document.getElementById('refboard-clear-btn').addEventListener('click', () => {
-      if (itemsMap.size === 0) {
-        showRefAlert('กระดานเรฟว่างเปล่า', 'ไม่มีรูปภาพบนกระดานเรฟให้ล้างครับ');
-        return;
-      }
-      showRefConfirm('ยืนยันการล้างกระดาน', `คุณต้องการล้างรูปภาพทั้งหมด (${itemsMap.size} รูป) บนกระดานเรฟใช่หรือไม่?`, () => {
-        clearBoard();
+    const importBtn = document.getElementById('refboard-import-btn');
+    if (importBtn && importFileInput) {
+      importBtn.addEventListener('click', (e) => {
+        if (e) { e.preventDefault(); e.stopPropagation(); }
+        importFileInput.click();
       });
-    });
+    }
+    if (importFileInput) {
+      importFileInput.addEventListener('change', (e) => {
+        if (e.target.files && e.target.files.length > 0) handleFiles(e.target.files);
+        e.target.value = '';
+      });
+    }
+
+    const exportBtn = document.getElementById('refboard-export-btn');
+    if (exportBtn) {
+      exportBtn.addEventListener('click', (e) => {
+        if (e) { e.preventDefault(); e.stopPropagation(); }
+        if (itemsMap.size === 0) {
+          showRefAlert('กระดานเรฟว่างเปล่า', 'ยังไม่มีรูปภาพบนกระดานเรฟ ไม่สามารถส่งออกไฟล์ได้ กรุณาเพิ่มรูปภาพก่อนครับ');
+          return;
+        }
+        openExportModal();
+      });
+    }
+
+    const clearBtn = document.getElementById('refboard-clear-btn');
+    if (clearBtn) {
+      clearBtn.addEventListener('click', (e) => {
+        if (e) { e.preventDefault(); e.stopPropagation(); }
+        if (itemsMap.size === 0) {
+          showRefAlert('กระดานเรฟว่างเปล่า', 'ไม่มีรูปภาพบนกระดานเรฟให้ล้างครับ');
+          return;
+        }
+        showRefConfirm('ยืนยันการล้างกระดาน', `คุณต้องการล้างรูปภาพทั้งหมด (${itemsMap.size} รูป) บนกระดานเรฟใช่หรือไม่?`, () => {
+          clearBoard();
+        }, null, 'ล้างรูปทั้งหมด', 'ยกเลิก', true);
+      });
+    }
   }
 
   // Toggle Action Buttons Collapse State
@@ -1379,32 +1587,613 @@
     }
   }
 
+  // ── URL & Social Media Media Parser ──
+  function parseMediaUrl(rawUrl) {
+    if (!rawUrl) return null;
+    const url = rawUrl.trim();
+
+    // 1. YouTube & YouTube Shorts
+    const ytMatch = url.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?|shorts)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i);
+    if (ytMatch && ytMatch[1]) {
+      const id = ytMatch[1];
+      const isShorts = url.includes('/shorts/');
+      return {
+        type: 'youtube',
+        isEmbed: true,
+        id: id,
+        width: isShorts ? 360 : 540,
+        height: isShorts ? 640 : 304,
+        aspect: isShorts ? (360 / 640) : (16 / 9),
+        embedUrl: `https://www.youtube-nocookie.com/embed/${id}?autoplay=1&enablejsapi=1`,
+        thumbnailUrl: `https://img.youtube.com/vi/${id}/hqdefault.jpg`,
+        dataUrl: `https://img.youtube.com/vi/${id}/hqdefault.jpg`,
+        title: isShorts ? 'YouTube Shorts' : 'YouTube Video'
+      };
+    }
+
+    // 2. Google Drive Image File
+    const gdMatch = url.match(/drive\.google\.com\/(?:file\/d\/|open\?id=|uc\?id=)([a-zA-Z0-9_-]+)/i);
+    if (gdMatch && gdMatch[1]) {
+      const fileId = gdMatch[1];
+      const directImgUrl = `https://lh3.googleusercontent.com/d/${fileId}`;
+      return {
+        type: 'image',
+        dataUrl: directImgUrl,
+        title: 'Google Drive Image'
+      };
+    }
+
+    // 4. TikTok Video
+    const ttMatch = url.match(/tiktok\.com\/@?[^\/]+\/video\/([0-9]+)/i);
+    if (ttMatch && ttMatch[1]) {
+      const id = ttMatch[1];
+      return {
+        type: 'tiktok',
+        isEmbed: true,
+        id: id,
+        width: 340,
+        height: 600,
+        aspect: 340 / 600,
+        embedUrl: `https://www.tiktok.com/embed/v2/${id}`,
+        dataUrl: '',
+        title: 'TikTok Video'
+      };
+    }
+
+    // 5. Vimeo Video
+    const vimMatch = url.match(/vimeo\.com\/([0-9]+)/i);
+    if (vimMatch && vimMatch[1]) {
+      const id = vimMatch[1];
+      return {
+        type: 'vimeo',
+        isEmbed: true,
+        id: id,
+        width: 520,
+        height: 292,
+        aspect: 16 / 9,
+        embedUrl: `https://player.vimeo.com/video/${id}?autoplay=1`,
+        dataUrl: '',
+        title: 'Vimeo Video'
+      };
+    }
+
+    // 6. Direct Video URL
+    const lower = url.toLowerCase();
+    if (lower.match(/\.(mp4|webm|mov|m4v|ogg)(\?.*)?$/i) || url.startsWith('data:video/')) {
+      return {
+        type: 'video',
+        isVideo: true,
+        width: 480,
+        height: 320,
+        aspect: 480 / 320,
+        dataUrl: url,
+        title: 'Direct Video'
+      };
+    }
+
+    // 7. Direct Image / GIF URL
+    if (lower.match(/\.(png|jpg|jpeg|gif|webp|svg|bmp|avif)(\?.*)?$/i) || url.startsWith('data:image/') || url.includes('giphy.com') || url.includes('tenor.com') || url.includes('imgur.com')) {
+      return {
+        type: 'image',
+        width: 400,
+        height: 400,
+        aspect: 1,
+        dataUrl: url,
+        title: 'Image'
+      };
+    }
+
+    // 8. General fallback
+    return {
+      type: 'generic-url',
+      url: url,
+      dataUrl: url
+    };
+  }
+
+  // ── Import Media from URL ──
+  function importUrlToRefBoard(rawUrl, targetX = null, targetY = null) {
+    if (!rawUrl) return;
+    const parsed = parseMediaUrl(rawUrl);
+    if (!parsed) {
+      showToast('ลิงก์ไม่ถูกต้อง');
+      return;
+    }
+
+    pushUndoState();
+    const startX = targetX !== null ? targetX : (-panX / zoom + viewportEl.clientWidth / 2 - 200);
+    const startY = targetY !== null ? targetY : (-panY / zoom + viewportEl.clientHeight / 2 - 150);
+
+    let itemX = startX;
+    let itemY = startY;
+    if (isGridEnabled) {
+      itemX = Math.round(itemX / 24) * 24;
+      itemY = Math.round(itemY / 24) * 24;
+    }
+
+    if (parsed.type === 'generic-url') {
+      const img = new Image();
+      img.onload = () => {
+        let w = img.naturalWidth || 400;
+        let h = img.naturalHeight || 400;
+        const aspect = w / h;
+        const maxDim = 1500;
+        if (w > maxDim || h > maxDim) {
+          if (w > h) { w = maxDim; h = maxDim / aspect; }
+          else { h = maxDim; w = maxDim * aspect; }
+        }
+        createRefImageItem({
+          id: 'item_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+          dataUrl: parsed.url,
+          x: itemX,
+          y: itemY,
+          width: Math.round(w),
+          height: Math.round(h),
+          aspect: aspect,
+          rotation: 0,
+          zIndex: ++nextZIndex
+        });
+        showToast('นำเข้ารูปภาพจากลิงก์เรียบร้อย! 🖼️');
+      };
+      img.onerror = () => {
+        createRefImageItem({
+          id: 'item_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+          isEmbed: true,
+          embedType: 'web',
+          embedUrl: parsed.url,
+          dataUrl: '',
+          title: 'Web Link',
+          x: itemX,
+          y: itemY,
+          width: 500,
+          height: 400,
+          aspect: 500 / 400,
+          rotation: 0,
+          zIndex: ++nextZIndex
+        });
+        showToast('นำเข้าลิงก์เว็บเรียบร้อย! 🌐');
+      };
+      img.src = parsed.url;
+      return;
+    }
+
+    if (parsed.type === 'image') {
+      const img = new Image();
+      img.onload = () => {
+        let w = img.naturalWidth || 400;
+        let h = img.naturalHeight || 400;
+        const aspect = w / h;
+        const maxDim = 1500;
+        if (w > maxDim || h > maxDim) {
+          if (w > h) { w = maxDim; h = maxDim / aspect; }
+          else { h = maxDim; w = maxDim * aspect; }
+        }
+        createRefImageItem({
+          id: 'item_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+          dataUrl: parsed.dataUrl,
+          x: itemX,
+          y: itemY,
+          width: Math.round(w),
+          height: Math.round(h),
+          aspect: aspect,
+          rotation: 0,
+          zIndex: ++nextZIndex
+        });
+        showToast('นำเข้ารูปภาพ / GIF เรียบร้อย! 🖼️');
+      };
+      img.onerror = () => {
+        showToast('ไม่สามารถโหลดรูปภาพจากลิงก์นี้ได้');
+      };
+      img.src = parsed.dataUrl;
+      return;
+    }
+
+    if (parsed.type === 'video') {
+      const video = document.createElement('video');
+      video.preload = 'metadata';
+      video.src = parsed.dataUrl;
+      video.onloadedmetadata = () => {
+        let w = video.videoWidth || 480;
+        let h = video.videoHeight || 320;
+        const aspect = w / h;
+        createRefImageItem({
+          id: 'item_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+          dataUrl: parsed.dataUrl,
+          isVideo: true,
+          mediaType: 'video',
+          x: itemX,
+          y: itemY,
+          width: Math.round(w),
+          height: Math.round(h),
+          aspect: aspect,
+          rotation: 0,
+          zIndex: ++nextZIndex
+        });
+        showToast('นำเข้าวิดีโอจากลิงก์เรียบร้อย! 🎬');
+      };
+      video.onerror = () => {
+        showToast('ไม่สามารถโหลดวิดีโอจากลิงก์นี้ได้');
+      };
+      return;
+    }
+
+    // Embed Types (YouTube, TikTok, Vimeo)
+    const newItem = {
+      id: 'item_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+      isEmbed: true,
+      embedType: parsed.type,
+      embedUrl: parsed.embedUrl,
+      thumbnailUrl: parsed.thumbnailUrl || parsed.dataUrl || '',
+      dataUrl: parsed.dataUrl || parsed.thumbnailUrl || '',
+      title: parsed.title,
+      x: itemX,
+      y: itemY,
+      width: parsed.width,
+      height: parsed.height,
+      aspect: parsed.aspect,
+      rotation: 0,
+      zIndex: ++nextZIndex
+    };
+
+    // Pre-convert YouTube thumbnail to Base64 DataURL so export never encounters CORS taint
+    if (parsed.type === 'youtube' && parsed.thumbnailUrl) {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => {
+        try {
+          const cvs = document.createElement('canvas');
+          cvs.width = img.naturalWidth || img.width || 480;
+          cvs.height = img.naturalHeight || img.height || 360;
+          const c = cvs.getContext('2d');
+          c.drawImage(img, 0, 0);
+          const b64 = cvs.toDataURL('image/jpeg', 0.95);
+          if (b64 && b64.startsWith('data:image')) {
+            newItem.dataUrl = b64;
+            newItem.thumbnailUrl = b64;
+            const liveIt = itemsMap.get(newItem.id);
+            if (liveIt) {
+              liveIt.dataUrl = b64;
+              liveIt.thumbnailUrl = b64;
+            }
+          }
+        } catch (e) {
+          console.warn('Could not convert YouTube thumb to base64:', e);
+        }
+      };
+      img.src = parsed.thumbnailUrl;
+    }
+
+    createRefImageItem(newItem);
+
+    const nameMap = { youtube: 'YouTube 🔴', tiktok: 'TikTok 🎵', vimeo: 'Vimeo 🎬' };
+    showToast(`นำเข้า ${nameMap[parsed.type] || 'มีเดีย'} เรียบร้อย! ✨`);
+  }
+
+  // ── Smart PNG & JPEG Metadata Embedding & Extraction Engine ──
+  const crcTable = (function() {
+    let c;
+    const table = [];
+    for (let n = 0; n < 256; n++) {
+      c = n;
+      for (let k = 0; k < 8; k++) {
+        c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+      }
+      table[n] = c;
+    }
+    return table;
+  })();
+
+  function crc32(bytes) {
+    let crc = 0 ^ (-1);
+    for (let i = 0; i < bytes.length; i++) {
+      crc = (crc >>> 8) ^ crcTable[(crc ^ bytes[i]) & 0xFF];
+    }
+    return (crc ^ (-1)) >>> 0;
+  }
+
+  function embedRefBoardMetadataInPng(pngBuffer, boardJsonStr) {
+    try {
+      const keyword = 'refboard';
+      const encoder = new TextEncoder();
+      const keywordBytes = encoder.encode(keyword);
+      const dataBytes = encoder.encode(boardJsonStr);
+
+      const payloadLen = keywordBytes.length + 1 + dataBytes.length;
+      const chunkType = encoder.encode('tEXt');
+
+      const chunkData = new Uint8Array(4 + payloadLen);
+      chunkData.set(chunkType, 0);
+      chunkData.set(keywordBytes, 4);
+      chunkData[4 + keywordBytes.length] = 0;
+      chunkData.set(dataBytes, 4 + keywordBytes.length + 1);
+
+      const crcValue = crc32(chunkData);
+
+      const totalChunkBytes = new Uint8Array(4 + 4 + payloadLen + 4);
+      const view = new DataView(totalChunkBytes.buffer);
+      view.setUint32(0, payloadLen, false);
+      totalChunkBytes.set(chunkData, 4);
+      view.setUint32(4 + 4 + payloadLen, crcValue, false);
+
+      const origBytes = new Uint8Array(pngBuffer);
+      const iendPos = origBytes.length - 12;
+
+      const resultBytes = new Uint8Array(origBytes.length + totalChunkBytes.length);
+      resultBytes.set(origBytes.subarray(0, iendPos), 0);
+      resultBytes.set(totalChunkBytes, iendPos);
+      resultBytes.set(origBytes.subarray(iendPos), iendPos + totalChunkBytes.length);
+
+      return resultBytes.buffer;
+    } catch (e) {
+      console.warn('PNG metadata embed failed:', e);
+      return pngBuffer;
+    }
+  }
+
+  function extractRefBoardMetadataFromPng(arrayBuffer) {
+    try {
+      const bytes = new Uint8Array(arrayBuffer);
+      if (bytes[0] !== 0x89 || bytes[1] !== 0x50 || bytes[2] !== 0x4E || bytes[3] !== 0x47) return null;
+
+      let offset = 8;
+      const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+      const decoder = new TextDecoder('utf-8');
+
+      while (offset < bytes.length - 8) {
+        const length = view.getUint32(offset, false);
+        const type = String.fromCharCode(bytes[offset + 4], bytes[offset + 5], bytes[offset + 6], bytes[offset + 7]);
+
+        if (type === 'tEXt') {
+          const chunkData = bytes.subarray(offset + 8, offset + 8 + length);
+          let nullIdx = -1;
+          for (let i = 0; i < chunkData.length; i++) {
+            if (chunkData[i] === 0) { nullIdx = i; break; }
+          }
+          if (nullIdx > 0) {
+            const key = decoder.decode(chunkData.subarray(0, nullIdx));
+            if (key === 'refboard') {
+              const jsonText = decoder.decode(chunkData.subarray(nullIdx + 1));
+              return JSON.parse(jsonText);
+            }
+          }
+        }
+        if (type === 'IEND') break;
+        offset += 12 + length;
+      }
+    } catch (err) {
+      console.warn('Could not parse PNG metadata:', err);
+    }
+    return null;
+  }
+
+  function embedRefBoardMetadataInJpg(jpgBuffer, boardJsonStr) {
+    try {
+      const origBytes = new Uint8Array(jpgBuffer);
+      if (origBytes[0] !== 0xFF || origBytes[1] !== 0xD8) return jpgBuffer;
+
+      const encoder = new TextEncoder();
+      const payloadBytes = encoder.encode('refboard:' + boardJsonStr);
+      const commentLength = 2 + payloadBytes.length;
+
+      if (commentLength > 65535) {
+        console.warn('Metadata too large for single JPEG COM marker');
+        return jpgBuffer;
+      }
+
+      const comBytes = new Uint8Array(2 + 2 + payloadBytes.length);
+      comBytes[0] = 0xFF;
+      comBytes[1] = 0xFE;
+      comBytes[2] = (commentLength >> 8) & 0xFF;
+      comBytes[3] = commentLength & 0xFF;
+      comBytes.set(payloadBytes, 4);
+
+      const result = new Uint8Array(origBytes.length + comBytes.length);
+      result.set(origBytes.subarray(0, 2), 0);
+      result.set(comBytes, 2);
+      result.set(origBytes.subarray(2), 2 + comBytes.length);
+
+      return result.buffer;
+    } catch (e) {
+      console.warn('JPEG metadata embed failed:', e);
+      return jpgBuffer;
+    }
+  }
+
+  function extractRefBoardMetadataFromJpg(arrayBuffer) {
+    try {
+      const bytes = new Uint8Array(arrayBuffer);
+      if (bytes[0] !== 0xFF || bytes[1] !== 0xD8) return null;
+
+      let offset = 2;
+      const decoder = new TextDecoder('utf-8');
+
+      while (offset < bytes.length - 4) {
+        if (bytes[offset] !== 0xFF) {
+          offset++;
+          continue;
+        }
+        const marker = bytes[offset + 1];
+        if (marker === 0xD9 || marker === 0xDA) break;
+
+        const len = (bytes[offset + 2] << 8) | bytes[offset + 3];
+        if (marker === 0xFE) {
+          const commentData = bytes.subarray(offset + 4, offset + 2 + len);
+          const text = decoder.decode(commentData);
+          if (text.startsWith('refboard:')) {
+            return JSON.parse(text.substring(9));
+          }
+        }
+        offset += 2 + len;
+      }
+    } catch (err) {
+      console.warn('Could not parse JPG metadata:', err);
+    }
+    return null;
+  }
+
+  async function checkForEmbeddedRefBoard(file) {
+    if (!file) return null;
+    const fileName = (file.name || '').toLowerCase();
+    const fileType = (file.type || '').toLowerCase();
+    if (!fileName.endsWith('.png') && !fileName.endsWith('.jpg') && !fileName.endsWith('.jpeg') && !fileType.includes('png') && !fileType.includes('jpeg')) {
+      return null;
+    }
+
+    try {
+      const buffer = await file.arrayBuffer();
+      const pngMeta = extractRefBoardMetadataFromPng(buffer);
+      if (pngMeta && pngMeta.items && Array.isArray(pngMeta.items) && pngMeta.items.length > 0) {
+        return pngMeta;
+      }
+      const jpgMeta = extractRefBoardMetadataFromJpg(buffer);
+      if (jpgMeta && jpgMeta.items && Array.isArray(jpgMeta.items) && jpgMeta.items.length > 0) {
+        return jpgMeta;
+      }
+    } catch (e) {
+      console.warn('Embedded refboard check failed:', e);
+    }
+    return null;
+  }
+
   // Main File Dispatcher
-  function handleFiles(files, targetX = null, targetY = null) {
+  async function handleFiles(files, targetX = null, targetY = null) {
+    if (!files) return;
     const fileList = Array.from(files);
+    if (fileList.length === 0) return;
+
+    // Check if the single imported image file contains embedded RefBoard data
+    if (fileList.length === 1) {
+      const singleFile = fileList[0];
+      const embeddedBoard = await checkForEmbeddedRefBoard(singleFile);
+      if (embeddedBoard && embeddedBoard.items && embeddedBoard.items.length > 0) {
+        if (itemsMap.size === 0) {
+          replaceRefBoard(embeddedBoard);
+          return;
+        } else {
+          showSmartRefBoardImportModal(embeddedBoard, singleFile, targetX, targetY, true);
+          return;
+        }
+      }
+    }
+
     const imageFiles = [];
+    const videoFiles = [];
 
     fileList.forEach((file) => {
-      const fileName = file.name.toLowerCase();
+      if (!file) return;
+      const fileName = (file.name || '').toLowerCase();
+      const fileType = (file.type || '').toLowerCase();
 
       if (fileName.endsWith('.refboard') || fileName.endsWith('.json')) {
         importRefBoardFile(file);
       } else if (fileName.endsWith('.psd')) {
         importPsdFile(file);
-      } else if (fileName.endsWith('.svg')) {
+      } else if (fileName.endsWith('.svg') || fileType === 'image/svg+xml') {
         importSvgFile(file);
-      } else if (fileName.endsWith('.pdf') || fileName.endsWith('.ai') || fileName.endsWith('.eps')) {
+      } else if (fileName.endsWith('.pdf') || fileName.endsWith('.ai') || fileName.endsWith('.eps') || fileType === 'application/pdf') {
         importPdfFile(file);
-      } else if (file.type.startsWith('image/')) {
+      } else if (fileType.startsWith('video/') || fileName.endsWith('.mp4') || fileName.endsWith('.webm') || fileName.endsWith('.mov') || fileName.endsWith('.m4v') || fileName.endsWith('.ogg')) {
+        videoFiles.push(file);
+      } else if (fileType.startsWith('image/') || fileName.endsWith('.gif') || fileName.endsWith('.png') || fileName.endsWith('.jpg') || fileName.endsWith('.jpeg') || fileName.endsWith('.webp') || fileName.endsWith('.bmp') || fileName.endsWith('.avif')) {
+        imageFiles.push(file);
+      } else if (fileType.startsWith('image')) {
         imageFiles.push(file);
       } else {
-        importPdfFile(file);
+        // Fallback default: try as image
+        imageFiles.push(file);
       }
     });
 
     if (imageFiles.length > 0) {
       importMultipleImageFiles(imageFiles, targetX, targetY);
     }
+    if (videoFiles.length > 0) {
+      importMultipleVideoFiles(videoFiles, targetX, targetY);
+    }
+  }
+
+  // Import Video Files (.mp4, .webm, .mov, etc.)
+  function importMultipleVideoFiles(files, targetX = null, targetY = null) {
+    pushUndoState();
+    let loadedCount = 0;
+    const total = files.length;
+    const loadedVideos = [];
+
+    files.forEach((file, index) => {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const dataUrl = event.target.result;
+        const video = document.createElement('video');
+        video.preload = 'metadata';
+        video.src = dataUrl;
+
+        video.onloadedmetadata = () => {
+          let w = video.videoWidth || 480;
+          let h = video.videoHeight || 320;
+          const aspect = w / h;
+
+          const maxDim = 1500;
+          if (w > maxDim || h > maxDim) {
+            if (w > h) {
+              w = maxDim;
+              h = maxDim / aspect;
+            } else {
+              h = maxDim;
+              w = maxDim * aspect;
+            }
+          }
+
+          loadedVideos.push({ index, dataUrl, w, h, aspect });
+          loadedCount++;
+
+          if (loadedCount === total) {
+            loadedVideos.sort((a, b) => a.index - b.index);
+
+            const startX = targetX !== null ? targetX : (-panX / zoom + viewportEl.clientWidth / 2 - 150);
+            const startY = targetY !== null ? targetY : (-panY / zoom + viewportEl.clientHeight / 2 - 150);
+
+            loadedVideos.forEach((item, i) => {
+              const offset = (i % 8) * 30;
+              let itemX = startX + offset;
+              let itemY = startY + offset;
+
+              if (isGridEnabled) {
+                itemX = Math.round(itemX / 24) * 24;
+                itemY = Math.round(itemY / 24) * 24;
+              }
+
+              createRefImageItem({
+                id: 'item_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5) + '_' + i,
+                dataUrl: item.dataUrl,
+                isVideo: true,
+                mediaType: 'video',
+                x: itemX,
+                y: itemY,
+                width: Math.round(item.w),
+                height: Math.round(item.h),
+                fullWidth: Math.round(item.w),
+                fullHeight: Math.round(item.h),
+                aspect: item.aspect,
+                rotation: 0,
+                cropLeft: 0,
+                cropTop: 0,
+                cropRight: 0,
+                cropBottom: 0,
+                zIndex: ++nextZIndex
+              });
+            });
+            setTimeout(fitBoardToViewport, 50);
+            showToast(`นำเข้าวิดีโอเรียบร้อย (${total} ไฟล์) 🎬`);
+          }
+        };
+
+        video.onerror = () => {
+          loadedCount++;
+          showToast(`ไม่สามารถโหลดวิดีโอ: ${file.name}`);
+        };
+      };
+      reader.readAsDataURL(file);
+    });
   }
 
   // Import Regular Image Files (Freeform Drag & Drop with 24px Grid Snapping)
@@ -1643,7 +2432,6 @@
 
   // Import .refboard / JSON File
   function importRefBoardFile(file) {
-    pushUndoState();
     const reader = new FileReader();
     reader.onload = (e) => {
       try {
@@ -1653,17 +2441,11 @@
           return;
         }
 
-        clearBoard();
-
-        if (boardData.panX !== undefined) panX = boardData.panX;
-        if (boardData.panY !== undefined) panY = boardData.panY;
-        if (boardData.zoom !== undefined) zoom = boardData.zoom;
-        updateTransform();
-
-        boardData.items.forEach((item) => {
-          createRefImageItem(item);
-          if (item.zIndex > nextZIndex) nextZIndex = item.zIndex;
-        });
+        if (itemsMap.size === 0) {
+          replaceRefBoard(boardData);
+        } else {
+          showSmartRefBoardImportModal(boardData, file, null, null, false);
+        }
 
       } catch (err) {
         showRefAlert('เกิดข้อผิดพลาด', 'เกิดข้อผิดพลาดในการอ่านไฟล์นำเข้า: ' + err.message);
@@ -1942,7 +2724,110 @@
     }
   }
 
-  // Create Reference Image DOM Item
+  // Setup Link Dialog Modal Options Binding
+  function setupLinkModal() {
+    linkModalEl = document.getElementById('refboard-link-backdrop');
+    linkInputEl = document.getElementById('refboard-link-input');
+
+    function openLinkModal() {
+      if (linkModalEl) {
+        linkModalEl.classList.add('open');
+        linkModalEl.style.display = 'flex';
+        if (linkInputEl) {
+          linkInputEl.value = '';
+          setTimeout(() => linkInputEl.focus(), 50);
+        }
+      }
+    }
+
+    function closeLinkModal() {
+      if (linkModalEl) {
+        linkModalEl.classList.remove('open');
+        linkModalEl.style.display = 'none';
+      }
+    }
+
+    const linkBtn = document.getElementById('refboard-link-btn');
+    if (linkBtn) {
+      linkBtn.addEventListener('click', (e) => {
+        if (e) { e.preventDefault(); e.stopPropagation(); }
+        openLinkModal();
+      });
+    }
+
+    const linkCloseBtn = document.getElementById('refboard-link-close-btn');
+    if (linkCloseBtn) {
+      linkCloseBtn.addEventListener('click', (e) => {
+        if (e) { e.preventDefault(); e.stopPropagation(); }
+        closeLinkModal();
+      });
+    }
+
+    const linkCancelBtn = document.getElementById('refboard-link-cancel-btn');
+    if (linkCancelBtn) {
+      linkCancelBtn.addEventListener('click', (e) => {
+        if (e) { e.preventDefault(); e.stopPropagation(); }
+        closeLinkModal();
+      });
+    }
+
+    const linkSubmitBtn = document.getElementById('refboard-link-submit-btn');
+    if (linkSubmitBtn) {
+      linkSubmitBtn.addEventListener('click', (e) => {
+        if (e) { e.preventDefault(); e.stopPropagation(); }
+        if (linkInputEl && linkInputEl.value.trim()) {
+          importUrlToRefBoard(linkInputEl.value.trim());
+          closeLinkModal();
+        }
+      });
+    }
+
+    if (linkInputEl) {
+      linkInputEl.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          if (linkInputEl.value.trim()) {
+            importUrlToRefBoard(linkInputEl.value.trim());
+            closeLinkModal();
+          }
+        } else if (e.key === 'Escape') {
+          closeLinkModal();
+        }
+      });
+    }
+  }
+
+  // Interactive Mode for Video & Embed Players
+  let interactiveItemId = null;
+
+  function setInteractiveItem(itemDataOrId) {
+    const id = typeof itemDataOrId === 'string' ? itemDataOrId : (itemDataOrId && itemDataOrId.id);
+    if (interactiveItemId && interactiveItemId !== id) {
+      exitInteractiveMode();
+    }
+    interactiveItemId = id;
+    if (!id) return;
+    const it = itemsMap.get(id);
+    if (!it) return;
+    const el = it.el || document.getElementById(id);
+    if (el) {
+      el.classList.add('is-interactive');
+      selectItem(id);
+      showToast('✨ เข้าสู่โหมดโต้ตอบคลิปแล้ว (คลิกนอกกรอบเพื่อสิ้นสุด)');
+    }
+  }
+
+  function exitInteractiveMode() {
+    if (!interactiveItemId) return;
+    const it = itemsMap.get(interactiveItemId);
+    if (it) {
+      const el = it.el || document.getElementById(interactiveItemId);
+      if (el) el.classList.remove('is-interactive');
+    }
+    interactiveItemId = null;
+  }
+
+  // Create Reference Image / Video / GIF DOM Item
   function createRefImageItem(itemData) {
     itemsMap.set(itemData.id, itemData);
 
@@ -1953,8 +2838,8 @@
 
     const itemEl = document.createElement('div');
     itemEl.id = itemData.id;
-    itemEl.className = 'ref-item';
-    itemEl.style.transform = `translate(${itemData.x}px, ${itemData.y}px) rotate(${itemData.rotation}deg)`;
+    itemEl.className = 'ref-item' + (itemData.isVideo ? ' is-video' : '') + (itemData.isEmbed ? ' is-embed' : '');
+    itemEl.style.transform = `translate(${itemData.x}px, ${itemData.y}px) rotate(${itemData.rotation || 0}deg)`;
     itemEl.style.width = `${itemData.width}px`;
     itemEl.style.height = `${itemData.height}px`;
     itemEl.style.zIndex = itemData.zIndex;
@@ -1964,9 +2849,32 @@
       (itemData.originalItems && itemData.originalItems.length > 0)
     );
 
+    let mediaHtml = '';
+    if (itemData.isEmbed) {
+      if (itemData.showThumbnailOnly && itemData.thumbnailUrl) {
+        mediaHtml = `<img src="${itemData.thumbnailUrl}" class="ref-item-img" alt="thumbnail">`;
+      } else {
+        mediaHtml = `
+          <iframe src="${itemData.embedUrl}" class="ref-item-img ref-item-embed" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+          <div class="ref-embed-shield"></div>
+        `;
+      }
+    } else if (itemData.isVideo) {
+      mediaHtml = `<video src="${itemData.dataUrl}" class="ref-item-img ref-item-video" autoplay loop muted playsinline></video>`;
+    } else {
+      mediaHtml = `<img src="${itemData.dataUrl}" class="ref-item-img" alt="ref">`;
+    }
+
     itemEl.innerHTML = `
+      <div class="ref-interactive-badge" data-act="exit-interact" title="คลิกเพื่อสิ้นสุดโหมดโต้ตอบ">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <polygon points="5 3 19 12 5 21 5 3"></polygon>
+        </svg>
+        <span>โหมดโต้ตอบ (คลิกเพื่อเสร็จสิ้น)</span>
+        <span class="ref-badge-close">✕</span>
+      </div>
       <div class="ref-item-crop">
-        <img src="${itemData.dataUrl}" class="ref-item-img" alt="ref">
+        ${mediaHtml}
       </div>
       <div class="ref-handle ref-handle-tl" data-handle="tl"></div>
       <div class="ref-handle ref-handle-tr" data-handle="tr"></div>
@@ -1979,10 +2887,28 @@
       <div class="ref-handle ref-handle-rot" data-handle="rot"></div>
       
       <div class="ref-item-toolbar">
+        <button class="ref-tb-btn btn-palette" data-act="palette" title="สกัดชุดสีจากภาพหรือเฟรมวิดีโอนี้ (ส่งไปยัง Color Generator)">🎨 สกัดสี</button>
+        ${(itemData.isVideo || (itemData.isEmbed && !itemData.showThumbnailOnly)) ? `
+          <button class="ref-tb-btn btn-interact" data-act="toggle-interact" title="เปิดโหมดโต้ตอบ/ควบคุมคลิปนี้ (หรือดับเบิ้ลคลิกที่คลิป)">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align:-1px; margin-right:3px;">
+              <polygon points="5 3 19 12 5 21 5 3"></polygon>
+            </svg>โต้ตอบ
+          </button>
+        ` : ''}
+        ${itemData.isVideo ? `
+          <button class="ref-tb-btn btn-playpause" data-act="toggle-play" title="เล่น / พักวิดีโอ">⏸️ พัก</button>
+          <button class="ref-tb-btn btn-mute" data-act="toggle-mute" title="เปิด / ปิดเสียง">🔇 เสียง</button>
+        ` : ''}
+        ${itemData.embedType === 'youtube' ? `
+          <button class="ref-tb-btn" data-act="toggle-yt-mode" title="สลับระหว่างวิดีโอ YouTube และภาพปก">${itemData.showThumbnailOnly ? '🎬 ดูวิดีโอ' : '🖼️ ภาพปก'}</button>
+        ` : ''}
+        ${itemData.isEmbed && itemData.embedUrl ? `
+          <button class="ref-tb-btn" data-act="open-source-link" title="เปิดลิงก์ต้นทาง">🔗 เปิดลิงก์</button>
+        ` : ''}
         ${canUngroup ? '<button class="ref-tb-btn btn-ungroup" data-act="ungroup" title="แยกกลุ่มรูปภาพออกเป็นชิ้นย่อย">🧩 แยกกลุ่ม</button>' : ''}
         <button class="ref-tb-btn" data-act="front" title="นำขึ้นหน้าสุด">⬆ ขึ้นหน้า</button>
         <button class="ref-tb-btn" data-act="back" title="ส่งไปหลังสุด">⬇ ลงหลัง</button>
-        <button class="ref-tb-btn del-btn" data-act="del" title="ลบรูป">🗑️ ลบ</button>
+        <button class="ref-tb-btn del-btn" data-act="del" title="ลบ">🗑️ ลบ</button>
       </div>
     `;
 
@@ -2050,16 +2976,118 @@
     let initialX = 0, initialY = 0, initialW = 0, initialH = 0;
     let activeHandle = null;
 
+    // Double click to enter / exit interactive mode for video/embed
+    itemEl.addEventListener('dblclick', (e) => {
+      if (!isModalOpen) return;
+      if (itemData.isVideo || itemData.isEmbed) {
+        e.stopPropagation();
+        if (itemEl.classList.contains('is-interactive')) {
+          exitInteractiveMode();
+        } else {
+          setInteractiveItem(itemData);
+        }
+      }
+    });
+
     itemEl.addEventListener('mousedown', (e) => {
       if (!isModalOpen || spacePressed) return;
 
       const handleBtn = e.target.closest('.ref-handle');
       const tbBtn = e.target.closest('.ref-tb-btn');
+      const interactBadge = e.target.closest('.ref-interactive-badge');
+
+      if (interactBadge) {
+        e.stopPropagation();
+        exitInteractiveMode();
+        return;
+      }
+
+      if (itemEl.classList.contains('is-interactive')) {
+        if (!handleBtn && !tbBtn) {
+          // Allow direct user interaction with video / YouTube controls
+          return;
+        }
+      }
 
       if (tbBtn) {
         e.stopPropagation();
         const act = tbBtn.dataset.act;
-        if (act === 'front') {
+        if (act === 'toggle-interact') {
+          if (itemEl.classList.contains('is-interactive')) {
+            exitInteractiveMode();
+          } else {
+            setInteractiveItem(itemData);
+          }
+          return;
+        } else if (act === 'toggle-play') {
+          const video = itemEl.querySelector('video');
+          if (video) {
+            if (video.paused) {
+              video.play();
+              tbBtn.textContent = '⏸️ พัก';
+            } else {
+              video.pause();
+              tbBtn.textContent = '▶️ เล่น';
+            }
+          }
+          return;
+        } else if (act === 'toggle-mute') {
+          const video = itemEl.querySelector('video');
+          if (video) {
+            video.muted = !video.muted;
+            tbBtn.textContent = video.muted ? '🔇 เสียง' : '🔊 เปิดเสียง';
+          }
+          return;
+        } else if (act === 'toggle-yt-mode') {
+          itemData.showThumbnailOnly = !itemData.showThumbnailOnly;
+          const crop = itemEl.querySelector('.ref-item-crop');
+          if (crop) {
+            if (itemData.showThumbnailOnly) {
+              crop.innerHTML = `<img src="${itemData.thumbnailUrl}" class="ref-item-img" alt="thumbnail">`;
+              tbBtn.textContent = '🎬 ดูวิดีโอ';
+            } else {
+              crop.innerHTML = `
+                <iframe src="${itemData.embedUrl}" class="ref-item-img ref-item-embed" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+                <div class="ref-embed-shield"></div>
+              `;
+              tbBtn.textContent = '🖼️ ภาพปก';
+            }
+            itemData.imgEl = crop.querySelector('.ref-item-img');
+            updateItemDom(itemData);
+          }
+          return;
+        } else if (act === 'open-source-link') {
+          const targetUrl = itemData.embedUrl || itemData.url || itemData.dataUrl;
+          if (targetUrl) {
+            window.open(targetUrl, '_blank', 'noopener,noreferrer');
+          }
+          return;
+        } else if (act === 'palette') {
+          let imgSrc = itemData.thumbnailUrl || itemData.src || (itemData.imgEl && itemData.imgEl.src) || itemData.dataUrl;
+          if (itemData.isVideo) {
+            const video = itemEl.querySelector('video') || itemData.imgEl;
+            if (video) {
+              try {
+                const tempCanvas = document.createElement('canvas');
+                tempCanvas.width = video.videoWidth || video.clientWidth || 300;
+                tempCanvas.height = video.videoHeight || video.clientHeight || 300;
+                const ctx = tempCanvas.getContext('2d');
+                ctx.drawImage(video, 0, 0, tempCanvas.width, tempCanvas.height);
+                imgSrc = tempCanvas.toDataURL('image/png');
+              } catch (err) {
+                console.warn('Cannot snapshot video frame:', err);
+              }
+            }
+          }
+          if (imgSrc && typeof window.extractPaletteFromImageSource === 'function') {
+            const cpModal = document.getElementById('color-palette-modal');
+            if (cpModal && !cpModal.classList.contains('open') && typeof window.toggleColorPalette === 'function') {
+              window.toggleColorPalette();
+            }
+            window.extractPaletteFromImageSource(imgSrc);
+          }
+          return;
+        } else if (act === 'front') {
           pushUndoState();
           selectedItemIds.forEach((sid) => {
             const sit = itemsMap.get(sid);
@@ -2170,6 +3198,18 @@
         if (activeMode === 'move') {
           const dx = (me.clientX - startX) / zoom;
           const dy = (me.clientY - startY) / zoom;
+
+          // Drag-over visual hint for Color Palette Modal & FAB
+          const cpModal = document.getElementById('color-palette-modal');
+          if (cpModal && cpModal.classList.contains('open')) {
+            const cpRect = cpModal.getBoundingClientRect();
+            if (me.clientX >= cpRect.left && me.clientX <= cpRect.right &&
+                me.clientY >= cpRect.top && me.clientY <= cpRect.bottom) {
+              cpModal.classList.add('cp-dragover');
+            } else {
+              cpModal.classList.remove('cp-dragover');
+            }
+          }
 
           if (selectedItemIds.size > 1) {
             selectedItemIds.forEach((sid) => {
@@ -2316,13 +3356,88 @@
         updateSelectionBox();
       }
 
-      function onMouseUp() {
+      function onMouseUp(ue) {
         clearSmartGuides();
+
+        let droppedOnPalette = false;
+        const cpModal = document.getElementById('color-palette-modal');
+        if (cpModal) {
+          if (activeMode === 'move') {
+            const endX = (ue && ue.clientX !== undefined) ? ue.clientX : startX;
+            const endY = (ue && ue.clientY !== undefined) ? ue.clientY : startY;
+
+            if (cpModal.classList.contains('open')) {
+              const cpRect = cpModal.getBoundingClientRect();
+              if (endX >= cpRect.left && endX <= cpRect.right &&
+                  endY >= cpRect.top && endY <= cpRect.bottom) {
+                droppedOnPalette = true;
+                let imgSrc = itemData.src || (itemData.imgEl && itemData.imgEl.src) || itemData.dataUrl;
+                if (itemData.isVideo) {
+                  const video = itemData.imgEl || (itemData.el && itemData.el.querySelector('video'));
+                  if (video) {
+                    try {
+                      const tempCanvas = document.createElement('canvas');
+                      tempCanvas.width = video.videoWidth || video.clientWidth || 300;
+                      tempCanvas.height = video.videoHeight || video.clientHeight || 300;
+                      const ctx = tempCanvas.getContext('2d');
+                      ctx.drawImage(video, 0, 0, tempCanvas.width, tempCanvas.height);
+                      imgSrc = tempCanvas.toDataURL('image/png');
+                    } catch (err) {}
+                  }
+                }
+                if (imgSrc && typeof window.extractPaletteFromImageSource === 'function') {
+                  window.extractPaletteFromImageSource(imgSrc);
+                }
+              }
+            } else {
+              const fab = document.getElementById('palette-fab');
+              if (fab) {
+                const fabRect = fab.getBoundingClientRect();
+                if (endX >= fabRect.left && endX <= fabRect.right &&
+                    endY >= fabRect.top && endY <= fabRect.bottom) {
+                  droppedOnPalette = true;
+                  if (typeof window.toggleColorPalette === 'function') window.toggleColorPalette();
+                  let imgSrc = itemData.src || (itemData.imgEl && itemData.imgEl.src) || itemData.dataUrl;
+                  if (itemData.isVideo) {
+                    const video = itemData.imgEl || (itemData.el && itemData.el.querySelector('video'));
+                    if (video) {
+                      try {
+                        const tempCanvas = document.createElement('canvas');
+                        tempCanvas.width = video.videoWidth || video.clientWidth || 300;
+                        tempCanvas.height = video.videoHeight || video.clientHeight || 300;
+                        const ctx = tempCanvas.getContext('2d');
+                        ctx.drawImage(video, 0, 0, tempCanvas.width, tempCanvas.height);
+                        imgSrc = tempCanvas.toDataURL('image/png');
+                      } catch (err) {}
+                    }
+                  }
+                  if (imgSrc && typeof window.extractPaletteFromImageSource === 'function') {
+                    window.extractPaletteFromImageSource(imgSrc);
+                  }
+                }
+              }
+            }
+          }
+          cpModal.classList.remove('cp-dragover');
+        }
+
+        if (droppedOnPalette) {
+          // Restore item position on reference board so it stays cleanly in place
+          if (preDragSnapshot) {
+            restoreSnapshot(preDragSnapshot);
+          } else {
+            itemData.x = initialX;
+            itemData.y = initialY;
+            updateItemDom(itemData);
+          }
+        } else {
+          commitDragState();
+        }
+
         isInteracting = false;
         activeMode = null;
         window.removeEventListener('mousemove', onMouseMove);
         window.removeEventListener('mouseup', onMouseUp);
-        commitDragState();
       }
 
       window.addEventListener('mousemove', onMouseMove);
@@ -2400,6 +3515,18 @@
         if (activeMode === 'move') {
           const dx = (t.clientX - startX) / zoom;
           const dy = (t.clientY - startY) / zoom;
+
+          // Drag-over visual hint for Color Palette Modal
+          const cpModal = document.getElementById('color-palette-modal');
+          if (cpModal && cpModal.classList.contains('open')) {
+            const cpRect = cpModal.getBoundingClientRect();
+            if (t.clientX >= cpRect.left && t.clientX <= cpRect.right &&
+                t.clientY >= cpRect.top && t.clientY <= cpRect.bottom) {
+              cpModal.classList.add('cp-dragover');
+            } else {
+              cpModal.classList.remove('cp-dragover');
+            }
+          }
 
           if (selectedItemIds.size > 1) {
             selectedItemIds.forEach((sid) => {
@@ -2544,14 +3671,88 @@
         updateSelectionBox();
       }
 
-      function onTouchEnd() {
+      function onTouchEnd(te) {
         clearSmartGuides();
+
+        let droppedOnPalette = false;
+        const cpModal = document.getElementById('color-palette-modal');
+        if (cpModal) {
+          if (activeMode === 'move') {
+            const endX = (te && te.changedTouches && te.changedTouches[0]) ? te.changedTouches[0].clientX : startX;
+            const endY = (te && te.changedTouches && te.changedTouches[0]) ? te.changedTouches[0].clientY : startY;
+
+            if (cpModal.classList.contains('open')) {
+              const cpRect = cpModal.getBoundingClientRect();
+              if (endX >= cpRect.left && endX <= cpRect.right &&
+                  endY >= cpRect.top && endY <= cpRect.bottom) {
+                droppedOnPalette = true;
+                let imgSrc = itemData.src || (itemData.imgEl && itemData.imgEl.src) || itemData.dataUrl;
+                if (itemData.isVideo) {
+                  const video = itemData.imgEl || (itemData.el && itemData.el.querySelector('video'));
+                  if (video) {
+                    try {
+                      const tempCanvas = document.createElement('canvas');
+                      tempCanvas.width = video.videoWidth || video.clientWidth || 300;
+                      tempCanvas.height = video.videoHeight || video.clientHeight || 300;
+                      const ctx = tempCanvas.getContext('2d');
+                      ctx.drawImage(video, 0, 0, tempCanvas.width, tempCanvas.height);
+                      imgSrc = tempCanvas.toDataURL('image/png');
+                    } catch (err) {}
+                  }
+                }
+                if (imgSrc && typeof window.extractPaletteFromImageSource === 'function') {
+                  window.extractPaletteFromImageSource(imgSrc);
+                }
+              }
+            } else {
+              const fab = document.getElementById('palette-fab');
+              if (fab) {
+                const fabRect = fab.getBoundingClientRect();
+                if (endX >= fabRect.left && endX <= fabRect.right &&
+                    endY >= fabRect.top && endY <= fabRect.bottom) {
+                  droppedOnPalette = true;
+                  if (typeof window.toggleColorPalette === 'function') window.toggleColorPalette();
+                  let imgSrc = itemData.src || (itemData.imgEl && itemData.imgEl.src) || itemData.dataUrl;
+                  if (itemData.isVideo) {
+                    const video = itemData.imgEl || (itemData.el && itemData.el.querySelector('video'));
+                    if (video) {
+                      try {
+                        const tempCanvas = document.createElement('canvas');
+                        tempCanvas.width = video.videoWidth || video.clientWidth || 300;
+                        tempCanvas.height = video.videoHeight || video.clientHeight || 300;
+                        const ctx = tempCanvas.getContext('2d');
+                        ctx.drawImage(video, 0, 0, tempCanvas.width, tempCanvas.height);
+                        imgSrc = tempCanvas.toDataURL('image/png');
+                      } catch (err) {}
+                    }
+                  }
+                  if (imgSrc && typeof window.extractPaletteFromImageSource === 'function') {
+                    window.extractPaletteFromImageSource(imgSrc);
+                  }
+                }
+              }
+            }
+          }
+          cpModal.classList.remove('cp-dragover');
+        }
+
+        if (droppedOnPalette) {
+          if (preDragSnapshot) {
+            restoreSnapshot(preDragSnapshot);
+          } else {
+            itemData.x = initialX;
+            itemData.y = initialY;
+            updateItemDom(itemData);
+          }
+        } else {
+          commitDragState();
+        }
+
         isInteracting = false;
         activeMode = null;
         window.removeEventListener('touchmove', onTouchMove);
         window.removeEventListener('touchend', onTouchEnd);
         window.removeEventListener('touchcancel', onTouchEnd);
-        commitDragState();
       }
 
       window.addEventListener('touchmove', onTouchMove, { passive: false });
@@ -2612,6 +3813,7 @@
   }
 
   function deselectAll() {
+    exitInteractiveMode();
     selectedItemIds.forEach((id) => {
       const el = document.getElementById(id);
       if (el) el.classList.remove('selected');
@@ -2973,6 +4175,8 @@
 
     internalClipboard = selected.map((it) => ({
       dataUrl: it.dataUrl,
+      isVideo: Boolean(it.isVideo),
+      mediaType: it.mediaType || (it.isVideo ? 'video' : 'image'),
       x: it.x,
       y: it.y,
       width: it.width,
@@ -2987,7 +4191,7 @@
       fullHeight: it.fullHeight || it.height
     }));
 
-    if (selected.length === 1 && navigator.clipboard && window.ClipboardItem) {
+    if (selected.length === 1 && navigator.clipboard && window.ClipboardItem && !selected[0].isVideo) {
       try {
         fetch(selected[0].dataUrl)
           .then((res) => res.blob())
@@ -3031,6 +4235,8 @@
       const newItem = {
         id: newId,
         dataUrl: it.dataUrl,
+        isVideo: Boolean(it.isVideo),
+        mediaType: it.mediaType || (it.isVideo ? 'video' : 'image'),
         x: newX,
         y: newY,
         width: it.width,
@@ -3059,6 +4265,14 @@
     return Array.from(itemsMap.values()).map((item) => ({
       id: item.id,
       dataUrl: item.dataUrl,
+      isVideo: Boolean(item.isVideo),
+      isEmbed: Boolean(item.isEmbed),
+      embedType: item.embedType || null,
+      embedUrl: item.embedUrl || null,
+      thumbnailUrl: item.thumbnailUrl || null,
+      showThumbnailOnly: Boolean(item.showThumbnailOnly),
+      title: item.title || null,
+      mediaType: item.mediaType || (item.isVideo ? 'video' : (item.isEmbed ? 'embed' : 'image')),
       svgContent: item.svgContent || null,
       isVector: Boolean(item.isVector),
       isPdfPage: Boolean(item.isPdfPage),
@@ -3195,7 +4409,7 @@
 
     const itemEl = document.createElement('div');
     itemEl.id = cloned.id;
-    itemEl.className = 'ref-item';
+    itemEl.className = 'ref-item' + (cloned.isVideo ? ' is-video' : '') + (cloned.isEmbed ? ' is-embed' : '');
     itemEl.style.transform = `translate(${cloned.x}px, ${cloned.y}px) rotate(${cloned.rotation || 0}deg)`;
     itemEl.style.width = `${cloned.width}px`;
     itemEl.style.height = `${cloned.height}px`;
@@ -3206,9 +4420,32 @@
       (cloned.originalItems && cloned.originalItems.length > 0)
     );
 
+    let mediaHtml = '';
+    if (cloned.isEmbed) {
+      if (cloned.showThumbnailOnly && cloned.thumbnailUrl) {
+        mediaHtml = `<img src="${cloned.thumbnailUrl}" class="ref-item-img" alt="thumbnail">`;
+      } else {
+        mediaHtml = `
+          <iframe src="${cloned.embedUrl}" class="ref-item-img ref-item-embed" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+          <div class="ref-embed-shield"></div>
+        `;
+      }
+    } else if (cloned.isVideo) {
+      mediaHtml = `<video src="${cloned.dataUrl}" class="ref-item-img ref-item-video" autoplay loop muted playsinline></video>`;
+    } else {
+      mediaHtml = `<img src="${cloned.dataUrl}" class="ref-item-img" alt="ref">`;
+    }
+
     itemEl.innerHTML = `
+      <div class="ref-interactive-badge" data-act="exit-interact" title="คลิกเพื่อสิ้นสุดโหมดโต้ตอบ">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <polygon points="5 3 19 12 5 21 5 3"></polygon>
+        </svg>
+        <span>โหมดโต้ตอบ (คลิกเพื่อเสร็จสิ้น)</span>
+        <span class="ref-badge-close">✕</span>
+      </div>
       <div class="ref-item-crop">
-        <img src="${cloned.dataUrl}" class="ref-item-img" alt="ref">
+        ${mediaHtml}
       </div>
       <div class="ref-handle ref-handle-tl" data-handle="tl"></div>
       <div class="ref-handle ref-handle-tr" data-handle="tr"></div>
@@ -3221,10 +4458,28 @@
       <div class="ref-handle ref-handle-rot" data-handle="rot"></div>
       
       <div class="ref-item-toolbar">
+        <button class="ref-tb-btn btn-palette" data-act="palette" title="สกัดชุดสีจากภาพหรือเฟรมวิดีโอนี้ (ส่งไปยัง Color Generator)">🎨 สกัดสี</button>
+        ${(cloned.isVideo || (cloned.isEmbed && !cloned.showThumbnailOnly)) ? `
+          <button class="ref-tb-btn btn-interact" data-act="toggle-interact" title="เปิดโหมดโต้ตอบ/ควบคุมคลิปนี้ (หรือดับเบิ้ลคลิกที่คลิป)">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align:-1px; margin-right:3px;">
+              <polygon points="5 3 19 12 5 21 5 3"></polygon>
+            </svg>โต้ตอบ
+          </button>
+        ` : ''}
+        ${cloned.isVideo ? `
+          <button class="ref-tb-btn btn-playpause" data-act="toggle-play" title="เล่น / พักวิดีโอ">⏸️ พัก</button>
+          <button class="ref-tb-btn btn-mute" data-act="toggle-mute" title="เปิด / ปิดเสียง">🔇 เสียง</button>
+        ` : ''}
+        ${cloned.embedType === 'youtube' ? `
+          <button class="ref-tb-btn" data-act="toggle-yt-mode" title="สลับระหว่างวิดีโอ YouTube และภาพปก">${cloned.showThumbnailOnly ? '🎬 ดูวิดีโอ' : '🖼️ ภาพปก'}</button>
+        ` : ''}
+        ${cloned.isEmbed && cloned.embedUrl ? `
+          <button class="ref-tb-btn" data-act="open-source-link" title="เปิดลิงก์ต้นทาง">🔗 เปิดลิงก์</button>
+        ` : ''}
         ${canUngroup ? '<button class="ref-tb-btn btn-ungroup" data-act="ungroup" title="แยกกลุ่มรูปภาพออกเป็นชิ้นย่อย">🧩 แยกกลุ่ม</button>' : ''}
         <button class="ref-tb-btn" data-act="front" title="นำขึ้นหน้าสุด">⬆ ขึ้นหน้า</button>
         <button class="ref-tb-btn" data-act="back" title="ส่งไปหลังสุด">⬇ ลงหลัง</button>
-        <button class="ref-tb-btn del-btn" data-act="del" title="ลบรูป">🗑️ ลบ</button>
+        <button class="ref-tb-btn del-btn" data-act="del" title="ลบ">🗑️ ลบ</button>
       </div>
     `;
 
@@ -3429,6 +4684,68 @@
     triggerDownload(blob, generateExportFilename('refboard'));
   }
 
+  // Helper: Draw Embed Fallback Card on Export Canvas
+  function drawEmbedFallbackCard(ctx, it, x, y, w, h) {
+    // Elegant Dark Card
+    ctx.fillStyle = '#141414';
+    ctx.fillRect(x, y, w, h);
+
+    // Border
+    ctx.strokeStyle = '#2a2a2a';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(x, y, w, h);
+
+    const cx = x + w / 2;
+    const cy = y + h / 2 - (h > 120 ? 12 : 0);
+    const iconSize = Math.max(16, Math.min(36, Math.min(w, h) * 0.25));
+
+    if (it.embedType === 'youtube' || it.isVideo) {
+      // Draw Red YouTube Badge
+      ctx.fillStyle = '#ef4444';
+      const bw = iconSize * 2.2;
+      const bh = iconSize * 1.5;
+      const r = 6;
+      ctx.beginPath();
+      ctx.moveTo(cx - bw / 2 + r, cy - bh / 2);
+      ctx.lineTo(cx + bw / 2 - r, cy - bh / 2);
+      ctx.quadraticCurveTo(cx + bw / 2, cy - bh / 2, cx + bw / 2, cy - bh / 2 + r);
+      ctx.lineTo(cx + bw / 2, cy + bh / 2 - r);
+      ctx.quadraticCurveTo(cx + bw / 2, cy + bh / 2, cx + bw / 2 - r, cy + bh / 2);
+      ctx.lineTo(cx - bw / 2 + r, cy + bh / 2);
+      ctx.quadraticCurveTo(cx - bw / 2, cy + bh / 2, cx - bw / 2, cy + bh / 2 - r);
+      ctx.lineTo(cx - bw / 2, cy - bh / 2 + r);
+      ctx.quadraticCurveTo(cx - bw / 2, cy - bh / 2, cx - bw / 2 + r, cy - bh / 2);
+      ctx.closePath();
+      ctx.fill();
+
+      // White Play Triangle
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.moveTo(cx - iconSize * 0.35, cy - iconSize * 0.45);
+      ctx.lineTo(cx + iconSize * 0.45, cy);
+      ctx.lineTo(cx - iconSize * 0.35, cy + iconSize * 0.45);
+      ctx.closePath();
+      ctx.fill();
+    } else {
+      // General Media Icon
+      ctx.fillStyle = '#38bdf8';
+      ctx.beginPath();
+      ctx.arc(cx, cy, iconSize, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    if (h > 90) {
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 13px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      const maxTextLen = Math.floor(w / 8);
+      let titleStr = it.title || (it.embedType === 'youtube' ? 'YouTube Video' : 'Media Clip');
+      if (titleStr.length > maxTextLen) titleStr = titleStr.substring(0, maxTextLen - 2) + '...';
+      ctx.fillText(titleStr, cx, cy + iconSize + 14);
+    }
+  }
+
   // Export 2 & 3: PNG / JPG Image Render
   function exportAsImageFile(fmt, scaleMultiplier, quality) {
     const items = Array.from(itemsMap.values());
@@ -3465,10 +4782,77 @@
 
     const sortedItems = items.slice().sort((a, b) => a.zIndex - b.zIndex);
     let loaded = 0;
+    let isCompleted = false;
+
+    const finishExport = () => {
+      if (isCompleted) return;
+      isCompleted = true;
+      updateExportProgress(95, 'บีบอัดไฟล์ภาพและฝังข้อมูล...', 'กำลังสร้างไฟล์เพื่อดาวน์โหลด...');
+      const mime = fmt === 'jpg' ? 'image/jpeg' : 'image/png';
+
+      const downloadBlobOrFallback = () => {
+        try {
+          renderCanvas.toBlob(async (blob) => {
+            if (blob) {
+              let finalBlob = blob;
+              const smartEmbedChk = document.getElementById('ref-smart-embed-chk');
+              if (smartEmbedChk && smartEmbedChk.checked) {
+                try {
+                  const boardSnapshot = {
+                    version: 1.0,
+                    timestamp: new Date().toISOString(),
+                    panX: panX,
+                    panY: panY,
+                    zoom: zoom,
+                    items: captureSnapshot()
+                  };
+                  const jsonStr = JSON.stringify(boardSnapshot);
+                  const arrayBuf = await blob.arrayBuffer();
+
+                  let embeddedBuf = null;
+                  if (fmt === 'png') {
+                    embeddedBuf = embedRefBoardMetadataInPng(arrayBuf, jsonStr);
+                  } else if (fmt === 'jpg') {
+                    embeddedBuf = embedRefBoardMetadataInJpg(arrayBuf, jsonStr);
+                  }
+
+                  if (embeddedBuf) {
+                    finalBlob = new Blob([embeddedBuf], { type: mime });
+                  }
+                } catch (embedErr) {
+                  console.warn('Smart embed error during export, saving clean image:', embedErr);
+                }
+              }
+
+              updateExportProgress(100, 'สร้างไฟล์เสร็จสมบูรณ์!', 'กำลังดาวน์โหลด...');
+              triggerDownload(finalBlob, generateExportFilename(fmt));
+            } else {
+              tryDataUrlDownload();
+            }
+          }, mime, quality);
+        } catch (err) {
+          console.warn('Canvas toBlob SecurityError, trying toDataURL fallback:', err);
+          tryDataUrlDownload();
+        }
+      };
+
+      const tryDataUrlDownload = () => {
+        try {
+          const dataUrl = renderCanvas.toDataURL(mime, quality);
+          updateExportProgress(100, 'สร้างไฟล์เสร็จสมบูรณ์!', 'กำลังดาวน์โหลด...');
+          triggerDownload(dataUrl, generateExportFilename(fmt));
+        } catch (e2) {
+          console.error('Canvas export error:', e2);
+          hideExportLoading();
+          showRefAlert('ส่งออกไม่สำเร็จ', 'ไม่สามารถสร้างไฟล์รูปภาพได้ กรุณาลองใหม่อีกครั้งครับ');
+        }
+      };
+
+      downloadBlobOrFallback();
+    };
 
     sortedItems.forEach((it) => {
-      const img = new Image();
-      img.onload = () => {
+      const renderItemMedia = (mediaEl) => {
         ctx.save();
 
         const itemCenterX = (it.x - minX) + it.width / 2;
@@ -3484,13 +4868,18 @@
         const fullW = it.fullWidth || (it.width + cropLeft + cropRight);
         const fullH = it.fullHeight || (it.height + cropTop + cropBottom);
 
-        if (cropLeft > 0 || cropTop > 0 || cropRight > 0 || cropBottom > 0) {
-          ctx.beginPath();
-          ctx.rect(-it.width / 2, -it.height / 2, it.width, it.height);
-          ctx.clip();
-          ctx.drawImage(img, -it.width / 2 - cropLeft, -it.height / 2 - cropTop, fullW, fullH);
+        if (mediaEl) {
+          if (cropLeft > 0 || cropTop > 0 || cropRight > 0 || cropBottom > 0) {
+            ctx.beginPath();
+            ctx.rect(-it.width / 2, -it.height / 2, it.width, it.height);
+            ctx.clip();
+            ctx.drawImage(mediaEl, -it.width / 2 - cropLeft, -it.height / 2 - cropTop, fullW, fullH);
+          } else {
+            ctx.drawImage(mediaEl, -it.width / 2, -it.height / 2, it.width, it.height);
+          }
         } else {
-          ctx.drawImage(img, -it.width / 2, -it.height / 2, it.width, it.height);
+          // Draw fallback card for tainted or unavailable media
+          drawEmbedFallbackCard(ctx, it, -it.width / 2, -it.height / 2, it.width, it.height);
         }
         ctx.restore();
 
@@ -3499,15 +4888,39 @@
         updateExportProgress(p, `กำลังเรนเดอร์รูปภาพ (${loaded}/${sortedItems.length})...`, `จัดวางรูปภาพสำเร็จแล้ว ${p}%`);
 
         if (loaded === sortedItems.length) {
-          updateExportProgress(95, 'บีบอัดไฟล์ภาพ...', 'กำลังสร้างไฟล์เพื่อดาวน์โหลด...');
-          const mime = fmt === 'jpg' ? 'image/jpeg' : 'image/png';
-          renderCanvas.toBlob((blob) => {
-            updateExportProgress(100, 'สร้างไฟล์เสร็จสมบูรณ์!', 'กำลังดาวน์โหลด...');
-            triggerDownload(blob, generateExportFilename(fmt));
-          }, mime, quality);
+          finishExport();
         }
       };
-      img.src = it.dataUrl;
+
+      if (it.isVideo) {
+        const video = it.el ? it.el.querySelector('video') : null;
+        if (video) {
+          renderItemMedia(video);
+          return;
+        }
+      }
+
+      const rawSrc = it.dataUrl || it.thumbnailUrl || '';
+      if (!rawSrc) {
+        renderItemMedia(null);
+        return;
+      }
+
+      const img = new Image();
+      if (!rawSrc.startsWith('data:') && !rawSrc.startsWith('blob:')) {
+        img.crossOrigin = 'anonymous';
+      }
+
+      img.onload = () => {
+        renderItemMedia(img);
+      };
+
+      img.onerror = () => {
+        console.warn('Image load with CORS failed for export, using fallback card:', rawSrc);
+        renderItemMedia(null);
+      };
+
+      img.src = rawSrc;
     });
   }
 
@@ -3543,8 +4956,7 @@
     let loaded = 0;
 
     sortedItems.forEach((it, idx) => {
-      const img = new Image();
-      img.onload = () => {
+      const finishPsdLayer = (imgOrCanvas) => {
         const itemW = Math.round(it.width * scaleMultiplier);
         const itemH = Math.round(it.height * scaleMultiplier);
         const itemX = Math.round((it.x - minX) * scaleMultiplier);
@@ -3555,15 +4967,30 @@
         lCanvas.height = itemH;
         const lCtx = lCanvas.getContext('2d');
 
-        if (it.rotation) {
-          lCtx.translate(itemW / 2, itemH / 2);
-          lCtx.rotate((it.rotation * Math.PI) / 180);
-          lCtx.drawImage(img, -itemW / 2, -itemH / 2, itemW, itemH);
+        if (imgOrCanvas) {
+          if (it.rotation) {
+            lCtx.translate(itemW / 2, itemH / 2);
+            lCtx.rotate((it.rotation * Math.PI) / 180);
+            lCtx.drawImage(imgOrCanvas, -itemW / 2, -itemH / 2, itemW, itemH);
+          } else {
+            lCtx.drawImage(imgOrCanvas, 0, 0, itemW, itemH);
+          }
         } else {
-          lCtx.drawImage(img, 0, 0, itemW, itemH);
+          drawEmbedFallbackCard(lCtx, it, 0, 0, itemW, itemH);
         }
 
-        const imgData = lCtx.getImageData(0, 0, itemW, itemH);
+        let imgData = null;
+        try {
+          imgData = lCtx.getImageData(0, 0, itemW, itemH);
+        } catch (e) {
+          // If tainted, redraw clean fallback card
+          const cleanCanvas = document.createElement('canvas');
+          cleanCanvas.width = itemW;
+          cleanCanvas.height = itemH;
+          const cleanCtx = cleanCanvas.getContext('2d');
+          drawEmbedFallbackCard(cleanCtx, it, 0, 0, itemW, itemH);
+          imgData = cleanCtx.getImageData(0, 0, itemW, itemH);
+        }
 
         layers.push({
           name: `Ref Image ${idx + 1}`,
@@ -3614,7 +5041,35 @@
           }
         }
       };
-      img.src = it.dataUrl;
+
+      if (it.isVideo) {
+        const video = it.el ? it.el.querySelector('video') : null;
+        if (video) {
+          finishPsdLayer(video);
+          return;
+        }
+      }
+
+      const rawSrc = it.dataUrl || it.thumbnailUrl || '';
+      if (!rawSrc) {
+        finishPsdLayer(null);
+        return;
+      }
+
+      const img = new Image();
+      if (!rawSrc.startsWith('data:') && !rawSrc.startsWith('blob:')) {
+        img.crossOrigin = 'anonymous';
+      }
+
+      img.onload = () => {
+        finishPsdLayer(img);
+      };
+
+      img.onerror = () => {
+        finishPsdLayer(null);
+      };
+
+      img.src = rawSrc;
     });
   }
 
@@ -3768,7 +5223,7 @@
     const groupW = Math.max(40, maxX - minX);
     const groupH = Math.max(40, maxY - minY);
 
-    // Save complete original items metadata to restore 100% exact dimensions on Ungroup
+    // Save complete original items metadata to restore 100% exact dimensions and media types on Ungroup
     const originalItems = selected.map((it) => ({
       x: it.x,
       y: it.y,
@@ -3782,7 +5237,15 @@
       cropBottom: it.cropBottom || 0,
       fullWidth: it.fullWidth || it.width,
       fullHeight: it.fullHeight || it.height,
-      dataUrl: it.dataUrl,
+      dataUrl: it.dataUrl || '',
+      isVideo: Boolean(it.isVideo),
+      isEmbed: Boolean(it.isEmbed),
+      embedType: it.embedType || null,
+      embedUrl: it.embedUrl || null,
+      thumbnailUrl: it.thumbnailUrl || null,
+      showThumbnailOnly: Boolean(it.showThumbnailOnly),
+      title: it.title || null,
+      mediaType: it.mediaType || (it.isVideo ? 'video' : (it.isEmbed ? 'embed' : 'image')),
       svgContent: it.svgContent || null,
       isVector: Boolean(it.isVector),
       isPdfPage: Boolean(it.isPdfPage),
@@ -3828,10 +5291,11 @@
           svgInner += `<g transform="translate(${relX}, ${relY}) rotate(${rot}, ${w / 2}, ${h / 2})">${content}</g>`;
         }
       } else {
+        const imgSrc = it.thumbnailUrl || it.dataUrl || '';
         if (hasCrop) {
-          svgInner += `<g transform="translate(${relX}, ${relY}) rotate(${rot}, ${w / 2}, ${h / 2})"><g clip-path="url(#${clipId})"><image href="${it.dataUrl}" x="-${cL}" y="-${cT}" width="${fullW}" height="${fullH}" preserveAspectRatio="none" /></g></g>`;
+          svgInner += `<g transform="translate(${relX}, ${relY}) rotate(${rot}, ${w / 2}, ${h / 2})"><g clip-path="url(#${clipId})"><image href="${imgSrc}" x="-${cL}" y="-${cT}" width="${fullW}" height="${fullH}" preserveAspectRatio="none" /></g></g>`;
         } else {
-          svgInner += `<g transform="translate(${relX}, ${relY}) rotate(${rot}, ${w / 2}, ${h / 2})"><image href="${it.dataUrl}" width="${w}" height="${h}" preserveAspectRatio="none" /></g>`;
+          svgInner += `<g transform="translate(${relX}, ${relY}) rotate(${rot}, ${w / 2}, ${h / 2})"><image href="${imgSrc}" width="${w}" height="${h}" preserveAspectRatio="none" /></g>`;
         }
       }
     });

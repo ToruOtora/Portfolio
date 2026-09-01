@@ -2704,6 +2704,90 @@
                 </button>
               </div>
             </div>
+            <!-- Custom Tone Selector Dropdown -->
+            <div class="cp-tone-dropdown-wrap" id="cp-tone-dropdown-wrap">
+              <button class="cp-tone-btn" id="cp-tone-btn" onclick="toggleToneMenu(event)" title="เลือกโทนสีเฉพาะ (Light, Pastel, Vivid, Muted, Dark, Deep, Neutral)">
+                <span class="cp-tone-btn-icon" id="cp-tone-current-icon">✨</span>
+                <span class="cp-tone-btn-label" id="cp-tone-current-label">ทั้งหมด</span>
+                <svg class="cp-tone-arrow" width="10" height="6" viewBox="0 0 10 6"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>
+              </button>
+
+              <!-- Tone Dropdown Menu -->
+              <div class="cp-tone-menu" id="cp-tone-menu">
+                <button class="cp-tone-item active" data-tone="all" onclick="selectTone('all')">
+                  <span class="cp-tone-item-icon">✨</span>
+                  <div class="cp-tone-item-info">
+                    <span class="cp-tone-item-name">ทั้งหมด (Auto)</span>
+                    <span class="cp-tone-item-sub">สุ่มอิสระตามทฤษฎีสี</span>
+                  </div>
+                </button>
+
+                <button class="cp-tone-item" data-tone="light" onclick="selectTone('light')">
+                  <span class="cp-tone-item-icon">☀️</span>
+                  <div class="cp-tone-item-info">
+                    <span class="cp-tone-item-name">Light</span>
+                    <span class="cp-tone-item-sub">สว่างอ่อนนุ่ม คลีนโปร่ง</span>
+                  </div>
+                </button>
+
+                <button class="cp-tone-item" data-tone="pastel" onclick="selectTone('pastel')">
+                  <span class="cp-tone-item-icon">🌸</span>
+                  <div class="cp-tone-item-info">
+                    <span class="cp-tone-item-name">Pastel</span>
+                    <span class="cp-tone-item-sub">สีหวานละมุน นุ่มนวล</span>
+                  </div>
+                </button>
+
+                <button class="cp-tone-item" data-tone="bright" onclick="selectTone('bright')">
+                  <span class="cp-tone-item-icon">🌈</span>
+                  <div class="cp-tone-item-info">
+                    <span class="cp-tone-item-name">Bright</span>
+                    <span class="cp-tone-item-sub">สว่างสดใส มีพลังชัดเจน</span>
+                  </div>
+                </button>
+
+                <button class="cp-tone-item" data-tone="vivid" onclick="selectTone('vivid')">
+                  <span class="cp-tone-item-icon">⚡</span>
+                  <div class="cp-tone-item-info">
+                    <span class="cp-tone-item-name">Vivid</span>
+                    <span class="cp-tone-item-sub">สดจัดจ้าน อิ่มตัวสูง</span>
+                  </div>
+                </button>
+
+                <button class="cp-tone-item" data-tone="muted" onclick="selectTone('muted')">
+                  <span class="cp-tone-item-icon">🌫️</span>
+                  <div class="cp-tone-item-info">
+                    <span class="cp-tone-item-name">Muted</span>
+                    <span class="cp-tone-item-sub">เอิร์ธโทน มัวคลาสสิก</span>
+                  </div>
+                </button>
+
+                <button class="cp-tone-item" data-tone="dark" onclick="selectTone('dark')">
+                  <span class="cp-tone-item-icon">🌑</span>
+                  <div class="cp-tone-item-info">
+                    <span class="cp-tone-item-name">Dark</span>
+                    <span class="cp-tone-item-sub">โทนมืด ลึกลับ ดาร์ก</span>
+                  </div>
+                </button>
+
+                <button class="cp-tone-item" data-tone="deep" onclick="selectTone('deep')">
+                  <span class="cp-tone-item-icon">🌌</span>
+                  <div class="cp-tone-item-info">
+                    <span class="cp-tone-item-name">Deep</span>
+                    <span class="cp-tone-item-sub">เข้มลึก อัญมณี Jewel</span>
+                  </div>
+                </button>
+
+                <button class="cp-tone-item" data-tone="neutral" onclick="selectTone('neutral')">
+                  <span class="cp-tone-item-icon">🪨</span>
+                  <div class="cp-tone-item-info">
+                    <span class="cp-tone-item-name">Neutral</span>
+                    <span class="cp-tone-item-sub">โมโนโทน ธรรมชาติ เทา</span>
+                  </div>
+                </button>
+              </div>
+            </div>
+
             <button class="cp-btn-icon" onclick="minimizeColorPalette()" title="ย่อหน้าต่าง">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/></svg>
             </button>

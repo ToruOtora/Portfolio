@@ -9,6 +9,7 @@
 
   // ── State ──
   let activeHarmony = 'analogous';
+  let activeTone = 'all'; // 'all' | 'light' | 'pastel' | 'bright' | 'vivid' | 'muted' | 'dark' | 'deep' | 'neutral'
   let historyStack = [];
   let inspectorIdx = 0;
   let paletteTargetMode = 'graphic'; // 'graphic' | 'painting'
@@ -19,15 +20,18 @@
   let highestZ = 100;
   let activeSlider = null; // { type: 'h'|'s'|'v', idx: number }
 
-  // ── Curated Hue Zones (designer-approved beautiful zones) ──
+  // ── Curated Hue Zones (full 0-360° coverage with beautiful zones) ──
   const HUE_ZONES = [
-    { min: 0, max: 25, name: 'Coral' },
-    { min: 25, max: 50, name: 'Amber' },
-    { min: 80, max: 140, name: 'Green' },
-    { min: 160, max: 200, name: 'Teal' },
-    { min: 200, max: 240, name: 'Blue' },
-    { min: 250, max: 280, name: 'Lavender' },
-    { min: 310, max: 350, name: 'Rose' }
+    { min: 0, max: 25, name: 'Coral / Red' },
+    { min: 25, max: 55, name: 'Amber / Orange' },
+    { min: 55, max: 80, name: 'Gold / Yellow' },
+    { min: 80, max: 140, name: 'Lime / Green' },
+    { min: 140, max: 165, name: 'Mint / Spring' },
+    { min: 165, max: 200, name: 'Teal / Cyan' },
+    { min: 200, max: 240, name: 'Blue / Azure' },
+    { min: 240, max: 280, name: 'Indigo / Lavender' },
+    { min: 280, max: 310, name: 'Purple / Magenta' },
+    { min: 310, max: 360, name: 'Rose / Crimson' }
   ];
 
   // ── Named Color Lookup (approximate) ──
@@ -294,80 +298,248 @@
     return rand(zone.min, zone.max);
   }
 
-  // Generate a beautiful palette using 60-30-10 rule (Graphic) or Hue Shifting (Painting)
+  // ─── Tone Slot S & V Generator (Light, Pastel, Bright, Vivid, Muted, Dark, Deep, Neutral) ───
+  function getToneSlotSV(tone, role, isDark, harmony) {
+    if (paletteTargetMode === 'painting') {
+      switch (tone) {
+        case 'light':
+          switch (role) {
+            case 'deepShadow': return { s: rand(18, 35), v: rand(28, 45) };
+            case 'coreShadow': return { s: rand(15, 30), v: rand(52, 68) };
+            case 'baseTone':   return { s: rand(22, 42), v: rand(78, 90) };
+            case 'keyLight':   return { s: rand(8, 20),  v: rand(92, 98) };
+            case 'rimLight':   return { s: rand(22, 45), v: rand(88, 97) };
+            default:           return { s: rand(15, 35), v: rand(60, 85) };
+          }
+        case 'pastel':
+          switch (role) {
+            case 'deepShadow': return { s: rand(22, 38), v: rand(32, 48) };
+            case 'coreShadow': return { s: rand(18, 32), v: rand(58, 74) };
+            case 'baseTone':   return { s: rand(20, 36), v: rand(85, 94) };
+            case 'keyLight':   return { s: rand(8, 18),  v: rand(95, 99) };
+            case 'rimLight':   return { s: rand(25, 42), v: rand(90, 98) };
+            default:           return { s: rand(18, 35), v: rand(75, 92) };
+          }
+        case 'bright':
+          switch (role) {
+            case 'deepShadow': return { s: rand(45, 70), v: rand(15, 28) };
+            case 'coreShadow': return { s: rand(40, 65), v: rand(32, 50) };
+            case 'baseTone':   return { s: rand(58, 82), v: rand(72, 88) };
+            case 'keyLight':   return { s: rand(20, 40), v: rand(90, 98) };
+            case 'rimLight':   return { s: rand(65, 90), v: rand(85, 98) };
+            default:           return { s: rand(45, 75), v: rand(50, 80) };
+          }
+        case 'vivid':
+          switch (role) {
+            case 'deepShadow': return { s: rand(65, 90), v: rand(10, 22) };
+            case 'coreShadow': return { s: rand(60, 85), v: rand(26, 44) };
+            case 'baseTone':   return { s: rand(78, 98), v: rand(62, 85) };
+            case 'keyLight':   return { s: rand(35, 60), v: rand(88, 98) };
+            case 'rimLight':   return { s: rand(85, 100),v: rand(80, 100) };
+            default:           return { s: rand(60, 90), v: rand(40, 75) };
+          }
+        case 'muted':
+          switch (role) {
+            case 'deepShadow': return { s: rand(25, 45), v: rand(14, 25) };
+            case 'coreShadow': return { s: rand(22, 40), v: rand(28, 44) };
+            case 'baseTone':   return { s: rand(24, 44), v: rand(50, 68) };
+            case 'keyLight':   return { s: rand(12, 25), v: rand(78, 88) };
+            case 'rimLight':   return { s: rand(28, 48), v: rand(65, 80) };
+            default:           return { s: rand(20, 40), v: rand(35, 65) };
+          }
+        case 'dark':
+          switch (role) {
+            case 'deepShadow': return { s: rand(35, 65), v: rand(5, 14) };
+            case 'coreShadow': return { s: rand(30, 60), v: rand(15, 25) };
+            case 'baseTone':   return { s: rand(40, 70), v: rand(28, 45) };
+            case 'keyLight':   return { s: rand(20, 45), v: rand(55, 72) };
+            case 'rimLight':   return { s: rand(45, 75), v: rand(65, 82) };
+            default:           return { s: rand(30, 60), v: rand(20, 40) };
+          }
+        case 'deep':
+          switch (role) {
+            case 'deepShadow': return { s: rand(55, 80), v: rand(8, 16) };
+            case 'coreShadow': return { s: rand(60, 85), v: rand(18, 32) };
+            case 'baseTone':   return { s: rand(72, 96), v: rand(38, 58) };
+            case 'keyLight':   return { s: rand(40, 65), v: rand(70, 88) };
+            case 'rimLight':   return { s: rand(72, 96), v: rand(58, 82) };
+            default:           return { s: rand(50, 80), v: rand(25, 50) };
+          }
+        case 'neutral':
+          switch (role) {
+            case 'deepShadow': return { s: rand(4, 12), v: rand(8, 18) };
+            case 'coreShadow': return { s: rand(3, 10), v: rand(24, 38) };
+            case 'baseTone':   return { s: rand(4, 14), v: rand(48, 65) };
+            case 'keyLight':   return { s: rand(2, 8),  v: rand(78, 90) };
+            case 'rimLight':   return { s: rand(3, 10), v: rand(88, 97) };
+            default:           return { s: rand(2, 10), v: rand(40, 70) };
+          }
+        case 'all':
+        default:
+          switch (role) {
+            case 'deepShadow': return { s: (harmony === 'monochromatic') ? rand(30, 55) : rand(45, 80), v: rand(8, 22) };
+            case 'coreShadow': return { s: (harmony === 'monochromatic') ? rand(25, 50) : rand(40, 72), v: rand(24, 42) };
+            case 'baseTone':   return { s: rand(35, 65), v: rand(55, 85) };
+            case 'keyLight':   return { s: rand(22, 50), v: rand(82, 96) };
+            case 'rimLight':   return { s: (harmony === 'monochromatic') ? rand(50, 80) : rand(55, 95), v: (harmony === 'shades') ? rand(50, 72) : rand(68, 95) };
+            default:           return { s: rand(40, 80), v: rand(20, 50) };
+          }
+      }
+    } else {
+      // 📐 GRAPHIC MODE
+      switch (tone) {
+        case 'light':
+          switch (role) {
+            case 'bg':        return { s: rand(4, 12),  v: rand(96, 99) };
+            case 'surface':   return { s: rand(10, 22), v: rand(90, 95) };
+            case 'primary':   return { s: rand(25, 45), v: rand(86, 96) };
+            case 'secondary': return { s: rand(22, 42), v: rand(85, 95) };
+            case 'text':      return { s: rand(15, 30), v: rand(18, 30) };
+            default:          return { s: rand(15, 35), v: rand(85, 95) };
+          }
+        case 'pastel':
+          switch (role) {
+            case 'bg':        return { s: rand(6, 14),  v: rand(97, 100) };
+            case 'surface':   return { s: rand(14, 25), v: rand(92, 96) };
+            case 'primary':   return { s: rand(22, 38), v: rand(90, 98) };
+            case 'secondary': return { s: rand(18, 35), v: rand(90, 97) };
+            case 'text':      return { s: rand(20, 40), v: rand(22, 38) };
+            default:          return { s: rand(15, 35), v: rand(90, 98) };
+          }
+        case 'bright':
+          switch (role) {
+            case 'bg':        return { s: rand(6, 16),  v: rand(94, 98) };
+            case 'surface':   return { s: rand(25, 45), v: rand(86, 94) };
+            case 'primary':   return { s: rand(62, 88), v: rand(85, 98) };
+            case 'secondary': return { s: rand(58, 85), v: rand(82, 96) };
+            case 'text':      return { s: rand(70, 92), v: rand(15, 28) };
+            default:          return { s: rand(50, 80), v: rand(75, 95) };
+          }
+        case 'vivid':
+          switch (role) {
+            case 'bg':        return { s: rand(25, 55), v: rand(10, 18) };
+            case 'surface':   return { s: rand(60, 85), v: rand(25, 45) };
+            case 'primary':   return { s: rand(85, 100),v: rand(85, 100) };
+            case 'secondary': return { s: rand(82, 100),v: rand(80, 100) };
+            case 'text':      return { s: rand(90, 100),v: rand(92, 100) };
+            default:          return { s: rand(80, 100),v: rand(75, 98) };
+          }
+        case 'muted':
+          switch (role) {
+            case 'bg':        return { s: rand(8, 18),  v: rand(88, 94) };
+            case 'surface':   return { s: rand(15, 28), v: rand(75, 85) };
+            case 'primary':   return { s: rand(25, 48), v: rand(55, 75) };
+            case 'secondary': return { s: rand(22, 45), v: rand(50, 72) };
+            case 'text':      return { s: rand(12, 28), v: rand(18, 30) };
+            default:          return { s: rand(20, 42), v: rand(45, 70) };
+          }
+        case 'dark':
+          switch (role) {
+            case 'bg':        return { s: rand(15, 35), v: rand(6, 14) };
+            case 'surface':   return { s: rand(20, 45), v: rand(14, 24) };
+            case 'primary':   return { s: rand(45, 75), v: rand(28, 48) };
+            case 'secondary': return { s: rand(40, 70), v: rand(22, 42) };
+            case 'text':      return { s: rand(10, 25), v: rand(86, 96) };
+            default:          return { s: rand(35, 65), v: rand(20, 40) };
+          }
+        case 'deep':
+          switch (role) {
+            case 'bg':        return { s: rand(35, 60), v: rand(8, 16) };
+            case 'surface':   return { s: rand(50, 75), v: rand(18, 30) };
+            case 'primary':   return { s: rand(75, 98), v: rand(38, 58) };
+            case 'secondary': return { s: rand(70, 95), v: rand(32, 52) };
+            case 'text':      return { s: rand(60, 90), v: rand(78, 96) };
+            default:          return { s: rand(65, 95), v: rand(30, 55) };
+          }
+        case 'neutral':
+          switch (role) {
+            case 'bg':        return { s: rand(2, 8),   v: rand(94, 98) };
+            case 'surface':   return { s: rand(4, 12),  v: rand(82, 90) };
+            case 'primary':   return { s: rand(6, 16),  v: rand(48, 68) };
+            case 'secondary': return { s: rand(5, 14),  v: rand(28, 44) };
+            case 'text':      return { s: rand(2, 10),  v: rand(10, 20) };
+            default:          return { s: rand(3, 12),  v: rand(35, 75) };
+          }
+        case 'all':
+        default:
+          switch (role) {
+            case 'bg':        return { s: isDark ? rand(5, 18) : rand(3, 12), v: isDark ? rand(6, 14) : rand(95, 99) };
+            case 'surface':   return { s: isDark ? rand(8, 22) : rand(5, 18), v: isDark ? rand(16, 28) : rand(88, 95) };
+            case 'primary':   return { s: rand(65, 92), v: rand(70, 95) };
+            case 'secondary': return { s: (harmony === 'monochromatic') ? rand(40, 65) : rand(55, 85), v: (harmony === 'shades') ? rand(40, 60) : rand(60, 88) };
+            case 'text':      return { s: isDark ? rand(2, 10) : rand(10, 25), v: isDark ? rand(88, 97) : rand(10, 22) };
+            default:          return { s: isDark ? rand(30, 85) : rand(25, 80), v: isDark ? rand(45, 90) : rand(40, 95) };
+          }
+      }
+    }
+  }
+
+  // Generate a beautiful palette using 60-30-10 rule (Graphic) or Hue Shifting (Painting) + Tone Mode
   function generateSmartPalette(count = 5, overrideBaseHue = null) {
     const baseHue = (overrideBaseHue !== null) ? overrideBaseHue : pickCuratedHue();
-    const isDark = Math.random() > 0.5; // Random light/dark theme
+    const isDark = (activeTone === 'dark' || activeTone === 'vivid' || activeTone === 'deep') ? true :
+      (activeTone === 'light' || activeTone === 'pastel' || activeTone === 'bright') ? false :
+      (Math.random() > 0.5);
 
     const colors = [];
 
-    // Slot 0: Background
-    if (isDark) {
-      colors.push({ h: baseHue, s: rand(5, 18), v: rand(6, 14) });
-    } else {
-      colors.push({ h: baseHue, s: rand(3, 12), v: rand(95, 99) });
-    }
-
-    // Slot 1: Surface
-    if (isDark) {
-      colors.push({ h: (baseHue + rand(-10, 10) + 360) % 360, s: rand(8, 22), v: rand(16, 28) });
-    } else {
-      colors.push({ h: (baseHue + rand(-10, 10) + 360) % 360, s: rand(5, 18), v: rand(88, 95) });
-    }
-
-    // Slot 2: Primary Accent / Base Color
-    if (paletteTargetMode === 'painting') {
-      colors.push({ h: baseHue, s: rand(35, 65), v: rand(55, 85) });
-    } else {
-      colors.push({ h: baseHue, s: rand(65, 92), v: rand(70, 95) });
+    // Helper for harmony offset
+    function harmonyOffset(mode, angles) {
+      switch (mode) {
+        case 'complementary': return 180 + rand(-10, 10);
+        case 'triad': return (angles || [120, 240])[0] + rand(-8, 8);
+        case 'split': return (Math.random() > 0.5 ? 150 : 210) + rand(-8, 8);
+        case 'square': return (angles || [90, 180, 270])[0] + rand(-8, 8);
+        case 'monochromatic': return 0;
+        case 'shades': return 0;
+        case 'custom': return rand(30, 330);
+        case 'analogous':
+        default: return rand(18, 42);
+      }
     }
 
     if (paletteTargetMode === 'painting') {
-      // 🎨 PAINTING MODE — Full Lighting Environment with Harmony
-      // ─── Slot 0: Atmosphere Background (influenced by harmony) ───
-      let atmosHueOffset = 0;
-      switch (activeHarmony) {
-        case 'complementary': atmosHueOffset = 180; break;
-        case 'triad': atmosHueOffset = 240; break;
-        case 'split': atmosHueOffset = 210; break;
-        case 'square': atmosHueOffset = 270; break;
-        case 'monochromatic': atmosHueOffset = 0; break;
-        case 'shades': atmosHueOffset = 0; break;
-        case 'custom': atmosHueOffset = rand(60, 300); break;
-        case 'analogous':
-        default: atmosHueOffset = rand(15, 35); break;
-      }
-      const atmosH = (baseHue + atmosHueOffset + 360) % 360;
-      colors[0] = { h: atmosH, s: rand(10, 25), v: isDark ? rand(12, 25) : rand(86, 95) };
+      // 🎨 PAINTING MODE — Beautiful Lighting Environment + Tone Constraints
+      // Slot 0: Deep Shadow (Coolest, saturated dark)
+      const dsHue = (activeTone === 'neutral') ? baseHue : (baseHue + rand(25, 45)) % 360;
+      const dsSV = getToneSlotSV(activeTone, 'deepShadow', isDark, activeHarmony);
+      colors.push({ h: dsHue, s: dsSV.s, v: dsSV.v });
 
-      // ─── Slot 1: Shadow (Cool Hue Shift +20~35°) ───
-      const shadowH = (baseHue + rand(20, 35)) % 360;
-      const shadowS = (activeHarmony === 'monochromatic') ? rand(20, 50) : rand(40, 75);
-      const shadowV = (activeHarmony === 'shades') ? rand(10, 25) : rand(18, 38);
-      colors[1] = { h: shadowH, s: shadowS, v: shadowV };
+      // Slot 1: Core Shadow (Moderate dark with harmony influence)
+      const csOff = harmonyOffset(activeHarmony, [120]);
+      const csHue = (activeTone === 'neutral') ? baseHue : (baseHue + Math.round(csOff * 0.15) + rand(15, 30) + 360) % 360;
+      const csSV = getToneSlotSV(activeTone, 'coreShadow', isDark, activeHarmony);
+      colors.push({ h: csHue, s: csSV.s, v: csSV.v });
 
-      // ─── Slot 3: Key Light (Warm Hue Shift -12~20°) ───
-      colors.push({ h: (baseHue - rand(12, 20) + 360) % 360, s: rand(12, 38), v: rand(84, 98) });
+      // Slot 2: Base Tone / Local Color
+      const btSV = getToneSlotSV(activeTone, 'baseTone', isDark, activeHarmony);
+      colors.push({ h: baseHue, s: btSV.s, v: btSV.v });
 
-      // ─── Slot 4: Rim Light / Accent (Calculated from activeHarmony!) ───
-      let rimHue = baseHue;
-      switch (activeHarmony) {
-        case 'complementary': rimHue = (baseHue + 180 + rand(-8, 8)) % 360; break;
-        case 'triad': rimHue = (baseHue + 120 + rand(-8, 8)) % 360; break;
-        case 'split': rimHue = (baseHue + 150 + rand(-8, 8)) % 360; break;
-        case 'square': rimHue = (baseHue + 90 + rand(-8, 8)) % 360; break;
-        case 'monochromatic': rimHue = baseHue; break;
-        case 'shades': rimHue = baseHue; break;
-        case 'custom': rimHue = pickCuratedHue(); break;
-        case 'analogous':
-        default: rimHue = (baseHue + rand(28, 48)) % 360; break;
-      }
-      const rimS = (activeHarmony === 'monochromatic') ? rand(60, 90) : rand(50, 85);
-      const rimV = (activeHarmony === 'shades') ? rand(55, 75) : rand(72, 95);
-      colors.push({ h: rimHue, s: rimS, v: rimV });
+      // Slot 3: Key Light (Warm hue shift, brighter)
+      const klHue = (activeTone === 'neutral') ? baseHue : (baseHue - rand(15, 30) + 360) % 360;
+      const klSV = getToneSlotSV(activeTone, 'keyLight', isDark, activeHarmony);
+      colors.push({ h: klHue, s: klSV.s, v: klSV.v });
+
+      // Slot 4: Rim Light / Accent (Harmony-driven)
+      const rimOff = harmonyOffset(activeHarmony, [120, 240]);
+      const rimHue = (activeTone === 'neutral') ? baseHue : (baseHue + rimOff + 360) % 360;
+      const rimSV = getToneSlotSV(activeTone, 'rimLight', isDark, activeHarmony);
+      colors.push({ h: rimHue, s: rimSV.s, v: rimSV.v });
     } else {
-      // 📐 GRAPHIC MODE — 60-30-10 Rule
-      // Slot 3: Secondary — harmony-based offset
+      // 📐 GRAPHIC MODE — 60-30-10 Rule + Tone Constraints
+      // Slot 0: Background
+      const bgSV = getToneSlotSV(activeTone, 'bg', isDark, activeHarmony);
+      colors.push({ h: baseHue, s: bgSV.s, v: bgSV.v });
+
+      // Slot 1: Surface
+      const surfSV = getToneSlotSV(activeTone, 'surface', isDark, activeHarmony);
+      colors.push({ h: (baseHue + rand(-10, 10) + 360) % 360, s: surfSV.s, v: surfSV.v });
+
+      // Slot 2: Primary Accent / Base Color
+      const priSV = getToneSlotSV(activeTone, 'primary', isDark, activeHarmony);
+      colors.push({ h: baseHue, s: priSV.s, v: priSV.v });
+
+      // Slot 3: Secondary Accent (harmony-based)
       let secHue = baseHue;
       switch (activeHarmony) {
         case 'complementary': secHue = (baseHue + 180 + rand(-10, 10) + 360) % 360; break;
@@ -380,14 +552,16 @@
         case 'analogous':
         default: secHue = (baseHue + rand(25, 45)) % 360; break;
       }
-      const secS = (activeHarmony === 'monochromatic') ? rand(40, 65) : rand(55, 85);
-      const secV = (activeHarmony === 'shades') ? rand(40, 60) : rand(60, 88);
-      colors.push({ h: secHue, s: secS, v: secV });
+      if (activeTone === 'neutral') secHue = (baseHue + 180) % 360;
+      const secSV = getToneSlotSV(activeTone, 'secondary', isDark, activeHarmony);
+      colors.push({ h: secHue, s: secSV.s, v: secSV.v });
 
-      // Slot 4: Text Accent (60-30-10 contrast)
-      const txtS = isDark ? rand(2, 10) : rand(10, 25);
-      const txtV = isDark ? rand(88, 97) : rand(10, 22);
-      colors.push({ h: baseHue, s: txtS, v: txtV });
+      // Slot 4: Text / Accent
+      const txtHue = (activeTone === 'pastel' || activeTone === 'vivid' || activeTone === 'deep')
+        ? (baseHue + 180) % 360
+        : baseHue;
+      const txtSV = getToneSlotSV(activeTone, 'text', isDark, activeHarmony);
+      colors.push({ h: txtHue, s: txtSV.s, v: txtSV.v });
     }
 
     // Slots 5+: Generate additional harmonious colors if count > 5
@@ -398,9 +572,13 @@
       else if (activeHarmony === 'triad') extraHue = (baseHue + 240 + (idx - 4) * 30) % 360;
       else extraHue = (baseHue + (idx - 4) * 50 + rand(-15, 15) + 360) % 360;
 
-      const extraS = isDark ? rand(30, 85) : rand(25, 80);
-      const extraV = isDark ? rand(45, 90) : rand(40, 95);
-      colors.push({ h: extraHue, s: extraS, v: extraV });
+      const extraSV = getToneSlotSV(activeTone, 'extra', isDark, activeHarmony);
+      colors.push({ h: extraHue, s: extraSV.s, v: extraSV.v });
+    }
+
+    // 🎨 Painting mode: sort all colors by Value (dark → light)
+    if (paletteTargetMode === 'painting') {
+      colors.sort((a, b) => a.v - b.v);
     }
 
     return colors;
@@ -433,6 +611,24 @@
         col.hex = hsvToHex(col.h, col.s, col.v);
       }
     });
+
+    // 🎨 Painting mode: re-sort unlocked colors dark → light
+    if (paletteTargetMode === 'painting') {
+      const unlocked = [];
+      const lockedMap = {};
+      palette.forEach((col, i) => {
+        if (col.locked) lockedMap[i] = col;
+        else unlocked.push(col);
+      });
+      unlocked.sort((a, b) => a.v - b.v);
+      let ui = 0;
+      for (let i = 0; i < palette.length; i++) {
+        if (!lockedMap[i]) {
+          palette[i] = unlocked[ui++];
+        }
+      }
+    }
+
     renderBars();
     updateInspector();
   }
@@ -501,69 +697,63 @@
       const isDarkBg = palette[0].v < 50;
 
       if (paletteTargetMode === 'painting') {
-        // 🎨 PAINTING HARMONY ENGINE (restructured)
+        // 🎨 PAINTING HARMONY ENGINE — Lighting Roles + Tone
+        // Helper for harmony offset
+        function _harmonyOff(mode, angles) {
+          switch (mode) {
+            case 'complementary': return 180 + rand(-10, 10);
+            case 'triad': return (angles || [120, 240])[0] + rand(-8, 8);
+            case 'split': return (Math.random() > 0.5 ? 150 : 210) + rand(-8, 8);
+            case 'square': return (angles || [90, 180, 270])[0] + rand(-8, 8);
+            case 'monochromatic': return 0;
+            case 'shades': return 0;
+            case 'custom': return rand(30, 330);
+            case 'analogous':
+            default: return rand(18, 42);
+          }
+        }
+
         if (i === 0) {
-          // ─── Atmosphere Background (influenced by harmony) ───
-          let atmosOffset = 0;
-          switch (activeHarmony) {
-            case 'complementary': atmosOffset = 180; break;
-            case 'triad': atmosOffset = 240; break;
-            case 'split': atmosOffset = 210; break;
-            case 'square': atmosOffset = 270; break;
-            case 'monochromatic': atmosOffset = 0; break;
-            case 'shades': atmosOffset = 0; break;
-            case 'custom': atmosOffset = rand(60, 300); break;
-            case 'analogous':
-            default: atmosOffset = rand(15, 35); break;
-          }
-          col.h = (base.h + atmosOffset + 360) % 360;
-          col.s = rand(10, 25);
-          col.v = isDarkBg ? rand(12, 25) : rand(86, 95);
+          // ─── Deep Shadow (Coolest, saturated dark) ───
+          col.h = (activeTone === 'neutral') ? base.h : (base.h + rand(25, 45)) % 360;
+          const sv = getToneSlotSV(activeTone, 'deepShadow', isDarkBg, activeHarmony);
+          col.s = sv.s; col.v = sv.v;
         } else if (i === 1) {
-          // ─── Shadow (Cool Hue Shift +20~35°) ───
-          col.h = (base.h + rand(20, 35)) % 360;
-          col.s = (activeHarmony === 'monochromatic') ? rand(20, 50) : rand(40, 75);
-          col.v = (activeHarmony === 'shades') ? rand(10, 25) : rand(18, 38);
+          // ─── Core Shadow (Moderate dark with harmony influence) ───
+          const off = _harmonyOff(activeHarmony, [120]);
+          col.h = (activeTone === 'neutral') ? base.h : (base.h + Math.round(off * 0.15) + rand(15, 30) + 360) % 360;
+          const sv = getToneSlotSV(activeTone, 'coreShadow', isDarkBg, activeHarmony);
+          col.s = sv.s; col.v = sv.v;
         } else if (i === 3) {
-          // ─── Key Light (Warm Hue Shift -12~20°) ───
-          col.h = (base.h - rand(12, 20) + 360) % 360;
-          col.s = rand(12, 38);
-          col.v = rand(84, 98);
+          // ─── Key Light (Warm hue shift, brighter) ───
+          col.h = (activeTone === 'neutral') ? base.h : (base.h - rand(15, 30) + 360) % 360;
+          const sv = getToneSlotSV(activeTone, 'keyLight', isDarkBg, activeHarmony);
+          col.s = sv.s; col.v = sv.v;
         } else if (i === 4) {
-          // ─── Rim Light (Calculated from activeHarmony!) ───
-          let rimHue = base.h;
-          switch (activeHarmony) {
-            case 'complementary': rimHue = (base.h + 180 + rand(-8, 8)) % 360; break;
-            case 'triad': rimHue = (base.h + 120 + rand(-8, 8)) % 360; break;
-            case 'split': rimHue = (base.h + 150 + rand(-8, 8)) % 360; break;
-            case 'square': rimHue = (base.h + 90 + rand(-8, 8)) % 360; break;
-            case 'monochromatic': rimHue = base.h; break;
-            case 'shades': rimHue = base.h; break;
-            case 'custom': rimHue = pickCuratedHue(); break;
-            case 'analogous':
-            default: rimHue = (base.h + rand(28, 48)) % 360; break;
-          }
-          col.h = rimHue;
-          col.s = (activeHarmony === 'monochromatic') ? rand(60, 90) : rand(50, 85);
-          col.v = (activeHarmony === 'shades') ? rand(55, 75) : rand(72, 95);
+          // ─── Rim Light / Accent (Harmony-driven, vivid) ───
+          const rimOff = _harmonyOff(activeHarmony, [120, 240]);
+          col.h = (activeTone === 'neutral') ? base.h : (base.h + rimOff + 360) % 360;
+          const sv = getToneSlotSV(activeTone, 'rimLight', isDarkBg, activeHarmony);
+          col.s = sv.s; col.v = sv.v;
         } else if (i >= 5) {
-          // ─── Extra Shadow / Accent (Cool Hue Shift) ───
-          col.h = (base.h + 25 + (i - 5) * 35 + 360) % 360;
-          col.s = rand(45, 80);
-          col.v = rand(20, 42);
+          // ─── Extra Accent (Harmony-shifted) ───
+          const extraOff = _harmonyOff(activeHarmony, [120]);
+          col.h = (base.h + extraOff + (i - 5) * 35 + 360) % 360;
+          const sv = getToneSlotSV(activeTone, 'extra', isDarkBg, activeHarmony);
+          col.s = sv.s; col.v = sv.v;
         }
       } else {
-        // 📐 GRAPHIC HARMONY ENGINE
+        // 📐 GRAPHIC HARMONY ENGINE + Tone
         if (i === 0) {
           // Background
           col.h = base.h;
-          col.s = isDarkBg ? rand(5, 18) : rand(3, 12);
-          col.v = isDarkBg ? rand(6, 14) : rand(95, 99);
+          const sv = getToneSlotSV(activeTone, 'bg', isDarkBg, activeHarmony);
+          col.s = sv.s; col.v = sv.v;
         } else if (i === 1) {
           // Surface
           col.h = (base.h + rand(-10, 10) + 360) % 360;
-          col.s = isDarkBg ? rand(8, 22) : rand(5, 18);
-          col.v = isDarkBg ? rand(16, 28) : rand(88, 95);
+          const sv = getToneSlotSV(activeTone, 'surface', isDarkBg, activeHarmony);
+          col.s = sv.s; col.v = sv.v;
         } else if (i === 3) {
           // Secondary
           let secHue = base.h;
@@ -578,24 +768,44 @@
             case 'analogous':
             default: secHue = (base.h + rand(25, 45)) % 360; break;
           }
+          if (activeTone === 'neutral') secHue = (base.h + 180) % 360;
           col.h = secHue;
-          col.s = (activeHarmony === 'monochromatic') ? rand(40, 65) : rand(55, 85);
-          col.v = (activeHarmony === 'shades') ? rand(40, 60) : rand(60, 88);
+          const sv = getToneSlotSV(activeTone, 'secondary', isDarkBg, activeHarmony);
+          col.s = sv.s; col.v = sv.v;
         } else if (i === 4) {
-          // Text
-          col.h = base.h;
-          col.s = isDarkBg ? rand(2, 10) : rand(10, 25);
-          col.v = isDarkBg ? rand(88, 97) : rand(10, 22);
+          // Text / Accent
+          col.h = (activeTone === 'pastel' || activeTone === 'vivid' || activeTone === 'deep')
+            ? (base.h + 180) % 360
+            : base.h;
+          const sv = getToneSlotSV(activeTone, 'text', isDarkBg, activeHarmony);
+          col.s = sv.s; col.v = sv.v;
         } else if (i >= 5) {
           // Extra color slots
           col.h = (base.h + (i - 4) * 45 + rand(-15, 15) + 360) % 360;
-          col.s = isDarkBg ? rand(30, 85) : rand(25, 80);
-          col.v = isDarkBg ? rand(45, 90) : rand(40, 95);
+          const sv = getToneSlotSV(activeTone, 'extra', isDarkBg, activeHarmony);
+          col.s = sv.s; col.v = sv.v;
         }
       }
 
       col.hex = hsvToHex(col.h, col.s, col.v);
     });
+
+    // 🎨 Painting mode: re-sort by Value (dark → light), preserving locked positions
+    if (paletteTargetMode === 'painting') {
+      const unlocked = [];
+      const lockedMap = {};
+      palette.forEach((col, i) => {
+        if (col.locked) lockedMap[i] = col;
+        else unlocked.push(col);
+      });
+      unlocked.sort((a, b) => a.v - b.v);
+      let ui = 0;
+      for (let i = 0; i < palette.length; i++) {
+        if (!lockedMap[i]) {
+          palette[i] = unlocked[ui++];
+        }
+      }
+    }
 
     renderBars();
     updateInspector();
@@ -613,7 +823,7 @@
       const txtCol = textColorFor(col.hex);
       const colorName = getColorName(col.h, col.s, col.v);
       const roleNames = (paletteTargetMode === 'painting')
-        ? []
+        ? ['Deep Shadow', 'Core Shadow', 'Base Tone ⭐', 'Key Light', 'Rim / Accent']
         : ['Background', 'Surface', 'Primary ⭐', 'Secondary', 'Text'];
 
       const bar = document.createElement('div');
@@ -1290,116 +1500,189 @@
     `;
   }
 
-  // ── Main Extract Function (rewritten) ──
+  // ── Main Extract Functions (supports File, URL, DataURL, Blob, and Ref Board Drag) ──
+  window.extractPaletteFromImageSource = function (imgSrc) {
+    if (!imgSrc) return;
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = function () {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      const sampleSize = 120;
+      canvas.width = sampleSize;
+      canvas.height = sampleSize;
+      ctx.drawImage(img, 0, 0, sampleSize, sampleSize);
+
+      const imgData = ctx.getImageData(0, 0, sampleSize, sampleSize).data;
+      const pixels = [];
+
+      // Sample every 2nd pixel (skip pure transparent)
+      for (let i = 0; i < imgData.length; i += 8) {
+        const a = imgData[i + 3];
+        if (a < 128) continue; // skip transparent
+        pixels.push([imgData[i], imgData[i + 1], imgData[i + 2]]);
+      }
+
+      if (pixels.length === 0) {
+        showToast('ไม่พบข้อมูลสีในรูปภาพ');
+        return;
+      }
+
+      // Median Cut → get candidate buckets
+      const targetBuckets = Math.max(palette.length * 3, 15);
+      const buckets = medianCut(pixels, targetBuckets);
+
+      // Convert to HSV + hex, sort by pixel count
+      const candidates = buckets
+        .map(b => {
+          const hex = rgbToHex(b.r, b.g, b.b);
+          const hsv = rgbToHsv(b.r, b.g, b.b);
+          return { hex, hsv, count: b.count };
+        })
+        .sort((a, b) => b.count - a.count);
+
+      // Select distinct colors
+      const distinct = selectDistinctColors(candidates, palette.length, 0.22);
+
+      // Assign roles based on current mode
+      const assigned = assignColorRoles(distinct, paletteTargetMode);
+
+      // Apply to palette (preserving locked slots)
+      assigned.forEach((item, idx) => {
+        if (palette[idx] && !palette[idx].locked) {
+          palette[idx] = {
+            hex: item.hex, h: item.hsv.h, s: item.hsv.s, v: item.hsv.v, locked: false
+          };
+        }
+      });
+
+      // If in painting mode, sort dark → light
+      if (paletteTargetMode === 'painting') {
+        const unlocked = [];
+        const lockedMap = {};
+        palette.forEach((col, i) => {
+          if (col.locked) lockedMap[i] = col;
+          else unlocked.push(col);
+        });
+        unlocked.sort((a, b) => a.v - b.v);
+        let ui = 0;
+        for (let i = 0; i < palette.length; i++) {
+          if (!lockedMap[i]) {
+            palette[i] = unlocked[ui++];
+          }
+        }
+      }
+
+      // Show preview badge
+      showImagePreview(imgSrc, assigned.map(c => ({ hex: c.hex })));
+
+      renderBars();
+      updateInspector();
+
+      // Ensure modal is open
+      const modal = document.getElementById('color-palette-modal');
+      if (modal && !modal.classList.contains('open') && typeof window.toggleColorPalette === 'function') {
+        window.toggleColorPalette();
+      }
+
+      showToast('สกัดสีจากรูปภาพเรียบร้อย! 🎨');
+    };
+    img.onerror = function () {
+      showToast('ไม่สามารถโหลดภาพเพื่อสกัดสีได้');
+    };
+    img.src = imgSrc;
+  };
+
   window.extractPaletteFromImageFile = function (file) {
     if (!file) return;
+    if (typeof file === 'string') {
+      window.extractPaletteFromImageSource(file);
+      return;
+    }
     const reader = new FileReader();
     reader.onload = function (e) {
-      const imgSrc = e.target.result;
-      const img = new Image();
-      img.onload = function () {
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        const sampleSize = 120;
-        canvas.width = sampleSize;
-        canvas.height = sampleSize;
-        ctx.drawImage(img, 0, 0, sampleSize, sampleSize);
-
-        const imgData = ctx.getImageData(0, 0, sampleSize, sampleSize).data;
-        const pixels = [];
-
-        // Sample every 2nd pixel (skip pure transparent)
-        for (let i = 0; i < imgData.length; i += 8) {
-          const a = imgData[i + 3];
-          if (a < 128) continue; // skip transparent
-          pixels.push([imgData[i], imgData[i + 1], imgData[i + 2]]);
-        }
-
-        // Median Cut → get ~palette.length * 3 candidates for better selection
-        const targetBuckets = Math.max(palette.length * 3, 15);
-        const buckets = medianCut(pixels, targetBuckets);
-
-        // Convert to HSV + hex, sort by pixel count
-        const candidates = buckets
-          .map(b => {
-            const hex = rgbToHex(b.r, b.g, b.b);
-            const hsv = rgbToHsv(b.r, b.g, b.b);
-            return { hex, hsv, count: b.count };
-          })
-          .sort((a, b) => b.count - a.count);
-
-        // Select distinct colors
-        const distinct = selectDistinctColors(candidates, palette.length, 0.22);
-
-        // Assign roles based on current mode
-        const assigned = assignColorRoles(distinct, paletteTargetMode);
-
-        // Apply to palette
-        assigned.forEach((item, idx) => {
-          if (palette[idx] && !palette[idx].locked) {
-            palette[idx] = {
-              hex: item.hex, h: item.hsv.h, s: item.hsv.s, v: item.hsv.v, locked: false
-            };
-          }
-        });
-
-        // Show preview
-        showImagePreview(imgSrc, assigned.map(c => ({ hex: c.hex })));
-
-        renderBars();
-        updateInspector();
-        showToast('สกัดสีจากรูปภาพเรียบร้อย!');
-      };
-      img.src = imgSrc;
+      window.extractPaletteFromImageSource(e.target.result);
     };
     reader.readAsDataURL(file);
   };
 
-  // ── Drag & Drop Support ──
+  // ── Drag & Drop Support for Files & Reference Board Images ──
   (function initDragDrop() {
     const modal = document.getElementById('color-palette-modal');
-    if (!modal) return;
+    const fab = document.getElementById('palette-fab');
 
-    let dragCounter = 0;
+    function attachDropTarget(targetEl) {
+      if (!targetEl) return;
+      let dragCounter = 0;
 
-    modal.addEventListener('dragenter', function (e) {
-      e.preventDefault();
-      e.stopPropagation();
-      dragCounter++;
-      modal.classList.add('cp-dragover');
-    });
+      targetEl.addEventListener('dragenter', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        dragCounter++;
+        targetEl.classList.add('cp-dragover');
+      });
 
-    modal.addEventListener('dragleave', function (e) {
-      e.preventDefault();
-      e.stopPropagation();
-      dragCounter--;
-      if (dragCounter <= 0) {
-        dragCounter = 0;
-        modal.classList.remove('cp-dragover');
-      }
-    });
-
-    modal.addEventListener('dragover', function (e) {
-      e.preventDefault();
-      e.stopPropagation();
-    });
-
-    modal.addEventListener('drop', function (e) {
-      e.preventDefault();
-      e.stopPropagation();
-      dragCounter = 0;
-      modal.classList.remove('cp-dragover');
-
-      const files = e.dataTransfer && e.dataTransfer.files;
-      if (files && files.length > 0) {
-        const file = files[0];
-        if (file.type.startsWith('image/')) {
-          window.extractPaletteFromImageFile(file);
-        } else {
-          showToast('กรุณาลากไฟล์รูปภาพเท่านั้น');
+      targetEl.addEventListener('dragleave', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        dragCounter--;
+        if (dragCounter <= 0) {
+          dragCounter = 0;
+          targetEl.classList.remove('cp-dragover');
         }
-      }
-    });
+      });
+
+      targetEl.addEventListener('dragover', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy';
+      });
+
+      targetEl.addEventListener('drop', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        dragCounter = 0;
+        targetEl.classList.remove('cp-dragover');
+
+        // 1. Check native dropped files
+        const files = e.dataTransfer && e.dataTransfer.files;
+        if (files && files.length > 0) {
+          const file = files[0];
+          if (file.type.startsWith('image/')) {
+            window.extractPaletteFromImageFile(file);
+            return;
+          } else {
+            showToast('กรุณาลากไฟล์รูปภาพเท่านั้น');
+            return;
+          }
+        }
+
+        // 2. Check Reference Board Custom Drag or URLs / DataURLs
+        if (e.dataTransfer) {
+          const refImg = e.dataTransfer.getData('application/x-toruo-ref-image') ||
+                         e.dataTransfer.getData('text/uri-list') ||
+                         e.dataTransfer.getData('text/plain');
+
+          if (refImg && (refImg.startsWith('data:image') || refImg.startsWith('blob:') || refImg.startsWith('http') || refImg.startsWith('./') || refImg.startsWith('/'))) {
+            window.extractPaletteFromImageSource(refImg);
+            return;
+          }
+
+          // 3. Check HTML snippet (e.g. dragging an <img> element)
+          const html = e.dataTransfer.getData('text/html');
+          if (html) {
+            const m = html.match(/src=["']([^"']+)["']/i);
+            if (m && m[1]) {
+              window.extractPaletteFromImageSource(m[1]);
+              return;
+            }
+          }
+        }
+      });
+    }
+
+    attachDropTarget(modal);
+    attachDropTarget(fab);
   })();
 
   // ═══ COPY / EXPORT ═══
@@ -1895,12 +2178,63 @@
     applyHarmonyFromBase();
   };
 
+  // ── Tone Metadata Dictionary ──
+  const TONE_DATA = {
+    all: { name: 'ทั้งหมด', sub: 'สุ่มอิสระตามทฤษฎีสี', icon: '✨' },
+    light: { name: 'Light', sub: 'สว่างอ่อนนุ่ม คลีนโปร่ง', icon: '☀️' },
+    pastel: { name: 'Pastel', sub: 'สีหวานละมุน นุ่มนวล', icon: '🌸' },
+    bright: { name: 'Bright', sub: 'สว่างสดใส มีพลังชัดเจน', icon: '🌈' },
+    vivid: { name: 'Vivid', sub: 'สดจัดจ้าน อิ่มตัวสูง', icon: '⚡' },
+    muted: { name: 'Muted', sub: 'เอิร์ธโทน มัวคลาสสิก', icon: '🌫️' },
+    dark: { name: 'Dark', sub: 'โทนมืด ลึกลับ ดาร์ก', icon: '🌑' },
+    deep: { name: 'Deep', sub: 'เข้มลึก อัญมณี Jewel', icon: '🌌' },
+    neutral: { name: 'Neutral', sub: 'โมโนโทน ธรรมชาติ เทา', icon: '🪨' }
+  };
+
+  window.toggleToneMenu = function (e) {
+    if (e) e.stopPropagation();
+    const menu = document.getElementById('cp-tone-menu');
+    if (menu) menu.classList.toggle('open');
+    const harmMenu = document.getElementById('cp-harmony-menu');
+    if (harmMenu) harmMenu.classList.remove('open');
+    const modeMenu = document.getElementById('cp-target-mode-menu');
+    if (modeMenu) modeMenu.classList.remove('open');
+  };
+
+  window.selectTone = function (tone) {
+    if (!TONE_DATA[tone]) return;
+    activeTone = tone;
+
+    const iconEl = document.getElementById('cp-tone-current-icon');
+    const labelEl = document.getElementById('cp-tone-current-label');
+    if (iconEl) iconEl.textContent = TONE_DATA[tone].icon;
+    if (labelEl) labelEl.textContent = TONE_DATA[tone].name;
+
+    document.querySelectorAll('.cp-tone-item').forEach(item => {
+      item.classList.toggle('active', item.dataset.tone === tone);
+    });
+
+    const menu = document.getElementById('cp-tone-menu');
+    if (menu) menu.classList.remove('open');
+
+    showToast(`เลือกโทนสี "${TONE_DATA[tone].icon} ${TONE_DATA[tone].name}"`);
+    randomizePalette();
+  };
+
   document.addEventListener('click', function (e) {
     const menu = document.getElementById('cp-harmony-menu');
     const btn = document.getElementById('cp-harmony-btn');
     if (menu && menu.classList.contains('open')) {
       if (!menu.contains(e.target) && (!btn || !btn.contains(e.target))) {
         menu.classList.remove('open');
+      }
+    }
+
+    const toneMenu = document.getElementById('cp-tone-menu');
+    const toneBtn = document.getElementById('cp-tone-btn');
+    if (toneMenu && toneMenu.classList.contains('open')) {
+      if (!toneMenu.contains(e.target) && (!toneBtn || !toneBtn.contains(e.target))) {
+        toneMenu.classList.remove('open');
       }
     }
 
