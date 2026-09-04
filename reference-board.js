@@ -2108,23 +2108,31 @@
 
     const playPauseBtn = itemEl.querySelector('[data-act="yt-toggle-play"]');
     const muteBtn = itemEl.querySelector('[data-act="yt-toggle-mute"]');
+    if (muteBtn) {
+      muteBtn.textContent = '🔇 ปิดเสียง';
+      muteBtn.title = 'คลิกเพื่อปิดเสียง';
+    }
+
+    function sendSoundOn() {
+      if (!itemData.ytMuted) {
+        sendYouTubeCommand(iframeEl, 'unMute');
+        sendYouTubeCommand(iframeEl, 'setVolume', [100]);
+        if (muteBtn) {
+          muteBtn.textContent = '🔇 ปิดเสียง';
+          muteBtn.title = 'คลิกเพื่อปิดเสียง';
+        }
+      }
+    }
 
     iframeEl.addEventListener('load', () => {
       sendYouTubeCommand(iframeEl, 'listening');
+      sendSoundOn();
       if (itemData.autoplay) {
         sendYouTubeCommand(iframeEl, 'playVideo');
-        // Browser autoplay policy fallback:
-        // If unmuted playback is blocked by browser policy without user error,
-        // mute and trigger playVideo after 800ms so it plays smoothly regardless
-        setTimeout(() => {
-          if (!itemData.ytPlaying) {
-            sendYouTubeCommand(iframeEl, 'mute');
-            sendYouTubeCommand(iframeEl, 'playVideo');
-            itemData.ytMuted = true;
-            if (muteBtn) muteBtn.textContent = '🔊 เปิดเสียง';
-          }
-        }, 800);
       }
+      setTimeout(sendSoundOn, 400);
+      setTimeout(sendSoundOn, 1000);
+      setTimeout(sendSoundOn, 2200);
     });
   }
 
@@ -2134,6 +2142,23 @@
     try {
       data = JSON.parse(e.data);
     } catch (err) {
+      return;
+    }
+    if (data.event === 'onReady') {
+      itemsMap.forEach((item) => {
+        if (item.embedType === 'youtube' && item.el) {
+          const iframe = item.el.querySelector('iframe');
+          if (iframe && iframe.contentWindow === e.source) {
+            if (!item.ytMuted) {
+              sendYouTubeCommand(iframe, 'unMute');
+              sendYouTubeCommand(iframe, 'setVolume', [100]);
+            }
+            if (item.autoplay) {
+              sendYouTubeCommand(iframe, 'playVideo');
+            }
+          }
+        }
+      });
       return;
     }
     if (data.event === 'infoDelivery' && data.info) {
@@ -2155,8 +2180,15 @@
               }
             }
             if (typeof info.muted !== 'undefined') {
-              item.ytMuted = Boolean(info.muted);
-              if (muteBtn) muteBtn.textContent = item.ytMuted ? '🔊 เปิดเสียง' : '🔇 เสียง';
+              if (!item.ytMuted && info.muted) {
+                sendYouTubeCommand(iframe, 'unMute');
+                sendYouTubeCommand(iframe, 'setVolume', [100]);
+              } else if (item.ytMuted) {
+                if (muteBtn) {
+                  muteBtn.textContent = '🔊 เปิดเสียง';
+                  muteBtn.title = 'คลิกเพื่อเปิดเสียง';
+                }
+              }
             }
           }
         }
@@ -2585,7 +2617,7 @@
     if (ytMatch && ytMatch[1]) {
       const vidId = ytMatch[1];
       const hasAutoplay = extraOptions.autoplay || url.includes('autoplay=1');
-      const hasMute = extraOptions.mute || url.includes('mute=1');
+      const hasMute = extraOptions.mute === true || (extraOptions.mute !== false && url.includes('mute=1'));
       const params = new URLSearchParams();
       params.set('rel', '0');
       params.set('playsinline', '1');
@@ -2595,6 +2627,8 @@
       }
       if (hasMute) {
         params.set('mute', '1');
+      } else {
+        params.set('mute', '0');
       }
       const timeMatch = url.match(/[?&](?:t|start)=([0-9hms]+)/i);
       if (timeMatch && timeMatch[1]) {
@@ -2627,7 +2661,7 @@
       const id = ytMatch[1];
       const isShorts = url.includes('/shorts/');
       const isNormal = isBoardNormalMode();
-      const sanitizedUrl = sanitizeEmbedUrl(url, { autoplay: isNormal });
+      const sanitizedUrl = sanitizeEmbedUrl(url, { autoplay: isNormal, mute: false });
       return {
         type: 'youtube',
         isEmbed: true,
@@ -2857,7 +2891,7 @@
       id: 'item_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
       isEmbed: true,
       embedType: parsed.type,
-      embedUrl: parsed.embedUrl || sanitizeEmbedUrl(parsed.url || rawUrl, { autoplay: shouldAutoplayYt }),
+      embedUrl: parsed.embedUrl || sanitizeEmbedUrl(parsed.url || rawUrl, { autoplay: shouldAutoplayYt, mute: false }),
       autoplay: shouldAutoplayYt,
       thumbnailUrl: parsed.thumbnailUrl || parsed.dataUrl || '',
       dataUrl: parsed.dataUrl || parsed.thumbnailUrl || '',
@@ -3941,7 +3975,7 @@
         ` : ''}
         ${(itemData.embedType === 'youtube' && !itemData.showThumbnailOnly) ? `
           <button class="ref-tb-btn btn-playpause btn-yt-playpause" data-act="yt-toggle-play" title="เล่น / พัก YouTube">⏸️ พัก</button>
-          <button class="ref-tb-btn btn-mute btn-yt-mute" data-act="yt-toggle-mute" title="เปิด / ปิดเสียง">🔇 เสียง</button>
+          <button class="ref-tb-btn btn-mute btn-yt-mute" data-act="yt-toggle-mute" title="คลิกเพื่อปิดเสียง">🔇 ปิดเสียง</button>
         ` : ''}
         ${itemData.embedType === 'youtube' ? `
           <button class="ref-tb-btn" data-act="toggle-yt-mode" title="สลับระหว่างวิดีโอ YouTube และภาพปก">${itemData.showThumbnailOnly ? '🎬 ดูวิดีโอ' : '🖼️ ภาพปก'}</button>
@@ -4112,6 +4146,10 @@
               itemData.ytPlaying = false;
               tbBtn.textContent = '▶️ เล่น';
             } else {
+              if (!itemData.ytMuted) {
+                sendYouTubeCommand(iframe, 'unMute');
+                sendYouTubeCommand(iframe, 'setVolume', [100]);
+              }
               sendYouTubeCommand(iframe, 'playVideo');
               itemData.ytPlaying = true;
               tbBtn.textContent = '⏸️ พัก';
@@ -4125,11 +4163,13 @@
               sendYouTubeCommand(iframe, 'unMute');
               sendYouTubeCommand(iframe, 'setVolume', [100]);
               itemData.ytMuted = false;
-              tbBtn.textContent = '🔇 เสียง';
+              tbBtn.textContent = '🔇 ปิดเสียง';
+              tbBtn.title = 'คลิกเพื่อปิดเสียง';
             } else {
               sendYouTubeCommand(iframe, 'mute');
               itemData.ytMuted = true;
               tbBtn.textContent = '🔊 เปิดเสียง';
+              tbBtn.title = 'คลิกเพื่อเปิดเสียง';
             }
           }
           return;
@@ -4147,7 +4187,7 @@
             } else {
               const shouldAutoplay = isBoardNormalMode();
               itemData.autoplay = shouldAutoplay;
-              const embedSrc = sanitizeEmbedUrl(itemData.embedUrl, { autoplay: shouldAutoplay });
+              const embedSrc = sanitizeEmbedUrl(itemData.embedUrl, { autoplay: shouldAutoplay, mute: false });
               crop.innerHTML = `
                 <iframe src="${embedSrc}" class="ref-item-img ref-item-embed" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
                 <div class="ref-embed-shield"></div>
@@ -4156,7 +4196,11 @@
               const ytPlay = itemEl.querySelector('[data-act="yt-toggle-play"]');
               const ytMute = itemEl.querySelector('[data-act="yt-toggle-mute"]');
               if (ytPlay) ytPlay.style.display = '';
-              if (ytMute) ytMute.style.display = '';
+              if (ytMute) {
+                ytMute.style.display = '';
+                ytMute.textContent = itemData.ytMuted ? '🔊 เปิดเสียง' : '🔇 ปิดเสียง';
+                ytMute.title = itemData.ytMuted ? 'คลิกเพื่อเปิดเสียง' : 'คลิกเพื่อปิดเสียง';
+              }
               const newIframe = crop.querySelector('iframe');
               if (newIframe) {
                 setupYouTubeIframeController(itemEl, itemData, newIframe);
@@ -5582,7 +5626,7 @@
         ` : ''}
         ${(cloned.embedType === 'youtube' && !cloned.showThumbnailOnly) ? `
           <button class="ref-tb-btn btn-playpause btn-yt-playpause" data-act="yt-toggle-play" title="เล่น / พัก YouTube">⏸️ พัก</button>
-          <button class="ref-tb-btn btn-mute btn-yt-mute" data-act="yt-toggle-mute" title="เปิด / ปิดเสียง">🔇 เสียง</button>
+          <button class="ref-tb-btn btn-mute btn-yt-mute" data-act="yt-toggle-mute" title="คลิกเพื่อปิดเสียง">🔇 ปิดเสียง</button>
         ` : ''}
         ${cloned.embedType === 'youtube' ? `
           <button class="ref-tb-btn" data-act="toggle-yt-mode" title="สลับระหว่างวิดีโอ YouTube และภาพปก">${cloned.showThumbnailOnly ? '🎬 ดูวิดีโอ' : '🖼️ ภาพปก'}</button>
