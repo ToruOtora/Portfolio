@@ -6,6 +6,46 @@
 (function () {
   'use strict';
 
+  // Active Document Proxy: Automatically resolves document.getElementById, querySelector,
+  // createElement, and event targets to whichever window (Main Tab or PiP Window) currently hosts the board!
+  const realDocument = (typeof window !== 'undefined' && window.document) ? window.document : {};
+  const document = new Proxy(realDocument, {
+    get(target, prop) {
+      const active = (modalEl && modalEl.ownerDocument) ? modalEl.ownerDocument : ((pipWindow && !pipWindow.closed) ? pipWindow.document : target);
+      if (prop === 'getElementById') {
+        return function (id) {
+          return active.getElementById(id) || target.getElementById(id);
+        };
+      }
+      if (prop === 'querySelector') {
+        return function (sel) {
+          return active.querySelector(sel) || target.querySelector(sel);
+        };
+      }
+      if (prop === 'querySelectorAll') {
+        return function (sel) {
+          const res = active.querySelectorAll(sel);
+          return (res && res.length > 0) ? res : target.querySelectorAll(sel);
+        };
+      }
+      if (prop === 'createElement') {
+        return function (tagName, options) {
+          return active.createElement(tagName, options);
+        };
+      }
+      if (prop === 'elementFromPoint') {
+        return function (x, y) {
+          return active.elementFromPoint(x, y) || target.elementFromPoint(x, y);
+        };
+      }
+      const val = active[prop];
+      if (typeof val === 'function') {
+        return val.bind(active);
+      }
+      return val;
+    }
+  });
+
   // State Management
   let isModalOpen = false;
   let isMaximized = false;
@@ -23,6 +63,11 @@
   let selectedItemId = null;
   const selectedItemIds = new Set();
   let nextZIndex = 1;
+
+  // Document Picture-in-Picture State (Always on Top)
+  let pipWindow = null;
+  let pipPlaceholders = [];
+  let pipThemeObserver = null;
 
   // Marquee Drag Selection State
   let isMarqueeSelecting = false;
@@ -74,7 +119,7 @@
                 </svg>
                 <span id="refboard-toggle-text">ซ้อนปุ่ม</span>
               </button>
-              <button class="refboard-btn btn-accent" id="refboard-palette-toggle-btn" onclick="window.toggleColorPalette()" title="เปิด/ปิด สุ่มคู่สี">
+              <button class="refboard-btn btn-accent" id="refboard-palette-toggle-btn" title="เปิด/ปิด สุ่มคู่สี">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <circle cx="12" cy="12" r="10" />
                   <path d="M12 2a10 10 0 0 1 10 10c0 2.5-2 4.5-4.5 4.5H16a2 2 0 0 0-2 2v.5c0 1.4-1.1 2.5-2.5 2.5A10 10 0 0 1 12 2z" />
@@ -152,11 +197,12 @@
             </div>
 
             <div class="refboard-window-btns">
-              <button class="refboard-icon-btn" id="refboard-float-btn" title="เปลี่ยนเป็นหน้าต่างลอย / Split">
+              <button class="refboard-icon-btn" id="refboard-float-btn" title="แยกหน้าต่างลอยนอกจอ (Always on Top)">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M15 3h6v6"></path>
-                  <path d="M10 14L21 3"></path>
-                  <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                  <rect x="2" y="2" width="20" height="20" rx="3" ry="3"></rect>
+                  <rect x="11" y="11" width="9" height="9" rx="1.5" ry="1.5" fill="currentColor" opacity="0.3"></rect>
+                  <path d="M11 15h9"></path>
+                  <path d="M15 11v9"></path>
                 </svg>
               </button>
               <button class="refboard-icon-btn" id="refboard-max-btn" title="ขยายเต็มจอ">
@@ -222,15 +268,15 @@
         <!-- Footer -->
         <div class="refboard-footer">
           <div class="refboard-footer-info">
-            <span id="refboard-zoom-text">ซูม: 100%</span>
-            <span>|</span>
-            <span>ย้อนกลับ <span class="refboard-kbd">Ctrl</span>+<span class="refboard-kbd">Z</span> | ทำซ้ำ <span class="refboard-kbd">Ctrl</span>+<span class="refboard-kbd">Y</span></span>
-            <span>|</span>
-            <span>คัดลอก <span class="refboard-kbd">Ctrl</span>+<span class="refboard-kbd">C</span> | ตัด <span class="refboard-kbd">Ctrl</span>+<span class="refboard-kbd">X</span> | วาง <span class="refboard-kbd">Ctrl</span>+<span class="refboard-kbd">V</span></span>
-            <span>|</span>
-            <span>ลบรูปกด <span class="refboard-kbd">Del</span></span>
+            <span id="refboard-zoom-text" class="ref-footer-zoom">ซูม: 100%</span>
+            <span class="ref-footer-sep-undo">|</span>
+            <span class="ref-footer-undo">ย้อนกลับ <span class="refboard-kbd notranslate" translate="no">Ctrl</span> + <span class="refboard-kbd notranslate" translate="no">Z</span> | ทำซ้ำ <span class="refboard-kbd notranslate" translate="no">Ctrl</span> + <span class="refboard-kbd notranslate" translate="no">Y</span></span>
+            <span class="ref-footer-sep-clip">|</span>
+            <span class="ref-footer-clip">คัดลอก <span class="refboard-kbd notranslate" translate="no">Ctrl</span> + <span class="refboard-kbd notranslate" translate="no">C</span> | ตัด <span class="refboard-kbd notranslate" translate="no">Ctrl</span> + <span class="refboard-kbd notranslate" translate="no">X</span> | วาง <span class="refboard-kbd notranslate" translate="no">Ctrl</span> + <span class="refboard-kbd notranslate" translate="no">V</span></span>
+            <span class="ref-footer-sep-del">|</span>
+            <span class="ref-footer-del">ลบรูปกด <span class="refboard-kbd notranslate" translate="no">Del</span></span>
           </div>
-          <div>
+          <div class="ref-footer-brand">
             <span>Reference Board System</span>
           </div>
         </div>
@@ -663,42 +709,53 @@
       `;
     }
 
-    actionsEl.style.flexDirection = 'column';
-    actionsEl.style.width = '100%';
-    actionsEl.style.gap = '10px';
+    if (actionsEl) {
+      actionsEl.style.flexDirection = 'column';
+      actionsEl.style.width = '100%';
+      actionsEl.style.gap = '10px';
 
-    actionsEl.innerHTML = `
-      <button class="cg-modal-btn cg-modal-btn-primary" id="ref-smart-append-btn" style="width: 100%; padding: 12px; font-size: 14px; font-weight: 700; border-radius: 12px;">รวมเข้ากระดานเดิม</button>
-      <button class="cg-modal-btn cg-modal-btn-secondary" id="ref-smart-replace-btn" style="width: 100%; padding: 12px; font-size: 14px; font-weight: 700; border-radius: 12px;">แทนที่กระดานเดิม</button>
-      ${isImage ? `<button class="cg-modal-btn cg-modal-btn-secondary" id="ref-smart-normal-btn" style="width: 100%; padding: 12px; font-size: 14px; font-weight: 700; border-radius: 12px;">วางเป็นรูปภาพธรรมดา</button>` : ''}
-      <button class="cg-modal-btn cg-modal-btn-cancel" id="ref-smart-cancel-btn" style="width: 100%; padding: 11px; font-size: 14px; font-weight: 700; border-radius: 12px;">ยกเลิก</button>
-    `;
+      actionsEl.innerHTML = `
+        <button class="cg-modal-btn cg-modal-btn-primary" id="ref-smart-append-btn" style="width: 100%; padding: 12px; font-size: 14px; font-weight: 700; border-radius: 12px;">รวมเข้ากระดานเดิม</button>
+        <button class="cg-modal-btn cg-modal-btn-secondary" id="ref-smart-replace-btn" style="width: 100%; padding: 12px; font-size: 14px; font-weight: 700; border-radius: 12px;">แทนที่กระดานเดิม</button>
+        ${isImage ? `<button class="cg-modal-btn cg-modal-btn-secondary" id="ref-smart-normal-btn" style="width: 100%; padding: 12px; font-size: 14px; font-weight: 700; border-radius: 12px;">วางเป็นรูปภาพธรรมดา</button>` : ''}
+        <button class="cg-modal-btn cg-modal-btn-cancel" id="ref-smart-cancel-btn" style="width: 100%; padding: 11px; font-size: 14px; font-weight: 700; border-radius: 12px;">ยกเลิก</button>
+      `;
+    }
 
-    alertModalEl.classList.add('open');
+    if (alertModalEl) alertModalEl.classList.add('open');
 
-    document.getElementById('ref-smart-cancel-btn').onclick = () => {
-      alertModalEl.classList.remove('open');
-    };
+    const cancelBtn = document.getElementById('ref-smart-cancel-btn');
+    if (cancelBtn) {
+      cancelBtn.onclick = () => {
+        if (alertModalEl) alertModalEl.classList.remove('open');
+      };
+    }
 
     if (isImage) {
       const normalBtn = document.getElementById('ref-smart-normal-btn');
       if (normalBtn) {
         normalBtn.onclick = () => {
-          alertModalEl.classList.remove('open');
+          if (alertModalEl) alertModalEl.classList.remove('open');
           importMultipleImageFiles([file], targetX, targetY);
         };
       }
     }
 
-    document.getElementById('ref-smart-replace-btn').onclick = () => {
-      alertModalEl.classList.remove('open');
-      replaceRefBoard(boardData);
-    };
+    const replaceBtn = document.getElementById('ref-smart-replace-btn');
+    if (replaceBtn) {
+      replaceBtn.onclick = () => {
+        if (alertModalEl) alertModalEl.classList.remove('open');
+        replaceRefBoard(boardData);
+      };
+    }
 
-    document.getElementById('ref-smart-append-btn').onclick = () => {
-      alertModalEl.classList.remove('open');
-      appendRefBoardItems(boardData.items, targetX, targetY);
-    };
+    const appendBtn = document.getElementById('ref-smart-append-btn');
+    if (appendBtn) {
+      appendBtn.onclick = () => {
+        if (alertModalEl) alertModalEl.classList.remove('open');
+        appendRefBoardItems(boardData.items, targetX, targetY);
+      };
+    }
   }
 
   // Helper: check if desktop split-panel mode is active
@@ -709,6 +766,11 @@
   // Toggle Window Visibility & Push History State
   window.toggleRefBoard = function () {
     if (!modalEl) initRefBoardUI();
+    if (pipWindow && !pipWindow.closed) {
+      try { pipWindow.focus(); } catch (err) {}
+      showToast('📌 กระดานเรฟกำลังลอยอยู่หน้าจอ (Always on Top)');
+      return;
+    }
     isModalOpen = !isModalOpen;
     if (isModalOpen) {
       modalEl.classList.add('open');
@@ -728,6 +790,9 @@
   };
 
   function closeRefBoardInternal(fromUserAction = false) {
+    if (pipWindow && !pipWindow.closed) {
+      pipWindow.close();
+    }
     if (!isModalOpen) return;
     isModalOpen = false;
     if (modalEl) modalEl.classList.remove('open');
@@ -943,6 +1008,89 @@
     });
   }
 
+  // Active Window Event Helpers (Handles both Main Window & Picture-in-Picture Window)
+  function addActiveWindowListener(event, handler, options) {
+    window.addEventListener(event, handler, options);
+    if (pipWindow && !pipWindow.closed) {
+      pipWindow.addEventListener(event, handler, options);
+    }
+  }
+
+  function removeActiveWindowListener(event, handler, options) {
+    window.removeEventListener(event, handler, options);
+    if (pipWindow && !pipWindow.closed) {
+      pipWindow.removeEventListener(event, handler, options);
+    }
+  }
+
+  function handleGlobalMouseMove(e) {
+    if (!isModalOpen) return;
+
+    if (isPanning) {
+      panX = e.clientX - startPanX;
+      panY = e.clientY - startPanY;
+      updateTransform();
+    } else if (isMarqueeSelecting) {
+      const rect = viewportEl.getBoundingClientRect();
+      const curCanvasX = (e.clientX - rect.left - panX) / zoom;
+      const curCanvasY = (e.clientY - rect.top - panY) / zoom;
+
+      const rectX = Math.min(marqueeStartX, curCanvasX);
+      const rectY = Math.min(marqueeStartY, curCanvasY);
+      const rectW = Math.abs(curCanvasX - marqueeStartX);
+      const rectH = Math.abs(curCanvasY - marqueeStartY);
+
+      const marqueeBoxEl = document.getElementById('refboard-marquee-box');
+      if (marqueeBoxEl) {
+        marqueeBoxEl.style.transform = `translate(${rectX}px, ${rectY}px)`;
+        marqueeBoxEl.style.width = `${rectW}px`;
+        marqueeBoxEl.style.height = `${rectH}px`;
+      }
+
+      itemsMap.forEach((it) => {
+        const rotDeg = it.rotation || 0;
+        const rotRad = (rotDeg * Math.PI) / 180;
+        const cos = Math.abs(Math.cos(rotRad));
+        const sin = Math.abs(Math.sin(rotRad));
+        const boundingW = it.width * cos + it.height * sin;
+        const boundingH = it.width * sin + it.height * cos;
+        const centerShiftX = (it.width - boundingW) / 2;
+        const centerShiftY = (it.height - boundingH) / 2;
+        const itemL = it.x + centerShiftX;
+        const itemT = it.y + centerShiftY;
+        const itemR = itemL + boundingW;
+        const itemB = itemT + boundingH;
+
+        const intersects = !(itemR < rectX || itemL > rectX + rectW || itemB < rectY || itemT > rectY + rectH);
+        const el = it.el || document.getElementById(it.id);
+
+        if (intersects) {
+          selectedItemIds.add(it.id);
+          if (el) el.classList.add('selected');
+        } else if (!e.shiftKey) {
+          selectedItemIds.delete(it.id);
+          if (el) el.classList.remove('selected');
+        }
+      });
+
+      selectedItemId = selectedItemIds.size > 0 ? (selectedItemIds.has(selectedItemId) ? selectedItemId : Array.from(selectedItemIds)[0]) : null;
+      updateSelectionBox();
+    }
+  }
+
+  function handleGlobalMouseUp() {
+    if (isPanning) {
+      isPanning = false;
+      viewportEl.classList.remove('panning');
+    }
+    if (isMarqueeSelecting) {
+      isMarqueeSelecting = false;
+      const marqueeBoxEl = document.getElementById('refboard-marquee-box');
+      if (marqueeBoxEl) marqueeBoxEl.classList.remove('active');
+      updateSelectionBox();
+    }
+  }
+
   // Canvas Pan & Zoom
   function setupCanvasPanZoom() {
     viewportEl.addEventListener('wheel', (e) => {
@@ -1002,73 +1150,8 @@
       }
     });
 
-    window.addEventListener('mousemove', (e) => {
-      if (!isModalOpen) return;
-
-      if (isPanning) {
-        panX = e.clientX - startPanX;
-        panY = e.clientY - startPanY;
-        updateTransform();
-      } else if (isMarqueeSelecting) {
-        const rect = viewportEl.getBoundingClientRect();
-        const curCanvasX = (e.clientX - rect.left - panX) / zoom;
-        const curCanvasY = (e.clientY - rect.top - panY) / zoom;
-
-        const rectX = Math.min(marqueeStartX, curCanvasX);
-        const rectY = Math.min(marqueeStartY, curCanvasY);
-        const rectW = Math.abs(curCanvasX - marqueeStartX);
-        const rectH = Math.abs(curCanvasY - marqueeStartY);
-
-        const marqueeBoxEl = document.getElementById('refboard-marquee-box');
-        if (marqueeBoxEl) {
-          marqueeBoxEl.style.transform = `translate(${rectX}px, ${rectY}px)`;
-          marqueeBoxEl.style.width = `${rectW}px`;
-          marqueeBoxEl.style.height = `${rectH}px`;
-        }
-
-        itemsMap.forEach((it) => {
-          const rotDeg = it.rotation || 0;
-          const rotRad = (rotDeg * Math.PI) / 180;
-          const cos = Math.abs(Math.cos(rotRad));
-          const sin = Math.abs(Math.sin(rotRad));
-          const boundingW = it.width * cos + it.height * sin;
-          const boundingH = it.width * sin + it.height * cos;
-          const centerShiftX = (it.width - boundingW) / 2;
-          const centerShiftY = (it.height - boundingH) / 2;
-          const itemL = it.x + centerShiftX;
-          const itemT = it.y + centerShiftY;
-          const itemR = itemL + boundingW;
-          const itemB = itemT + boundingH;
-
-          const intersects = !(itemR < rectX || itemL > rectX + rectW || itemB < rectY || itemT > rectY + rectH);
-          const el = it.el || document.getElementById(it.id);
-
-          if (intersects) {
-            selectedItemIds.add(it.id);
-            if (el) el.classList.add('selected');
-          } else if (!e.shiftKey) {
-            selectedItemIds.delete(it.id);
-            if (el) el.classList.remove('selected');
-          }
-        });
-
-        selectedItemId = selectedItemIds.size > 0 ? (selectedItemIds.has(selectedItemId) ? selectedItemId : Array.from(selectedItemIds)[0]) : null;
-        updateSelectionBox();
-      }
-    });
-
-    window.addEventListener('mouseup', () => {
-      if (isPanning) {
-        isPanning = false;
-        viewportEl.classList.remove('panning');
-      }
-      if (isMarqueeSelecting) {
-        isMarqueeSelecting = false;
-        const marqueeBoxEl = document.getElementById('refboard-marquee-box');
-        if (marqueeBoxEl) marqueeBoxEl.classList.remove('active');
-        updateSelectionBox();
-      }
-    });
+    window.addEventListener('mousemove', handleGlobalMouseMove);
+    window.addEventListener('mouseup', handleGlobalMouseUp);
 
     // Touch Events for Mobile Panning (1 finger) and Pinch-to-Zoom (2 fingers)
     let initialTouchDist = 0;
@@ -1169,105 +1252,107 @@
 
   // Drag & Drop File Handling
   function setupDragAndDrop() {
-    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach((eventName) => {
-      modalEl.addEventListener(eventName, (e) => {
-        if (!isModalOpen) return;
-        e.preventDefault();
-        e.stopPropagation();
-      }, false);
-    });
-
-    viewportEl.addEventListener('dragenter', () => {
-      if (isModalOpen) dropOverlayEl.classList.add('active');
-    });
-
-    dropOverlayEl.addEventListener('dragleave', (e) => {
-      if (e.target === dropOverlayEl) {
-        dropOverlayEl.classList.remove('active');
+    function onDragOver(e) {
+      if (!isModalOpen) return;
+      e.preventDefault();
+      if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy';
+      if (dropOverlayEl && !dropOverlayEl.classList.contains('active')) {
+        dropOverlayEl.classList.add('active');
       }
-    });
+    }
 
-    let lastDropTime = 0;
+    function onDragLeave(e) {
+      if (!isModalOpen) return;
+      if (!e.relatedTarget || (modalEl && !modalEl.contains(e.relatedTarget))) {
+        if (dropOverlayEl) dropOverlayEl.classList.remove('active');
+      }
+    }
 
     function onDrop(e) {
       if (!isModalOpen) return;
       e.preventDefault();
       e.stopPropagation();
 
-      dropOverlayEl.classList.remove('active');
-
-      const now = Date.now();
-      if (now - lastDropTime < 300) return;
-      lastDropTime = now;
+      if (dropOverlayEl) dropOverlayEl.classList.remove('active');
 
       const files = e.dataTransfer ? e.dataTransfer.files : null;
-      if (files && files.length > 0) {
-        const rect = viewportEl.getBoundingClientRect();
-        const dropX = (e.clientX - rect.left - panX) / zoom;
-        const dropY = (e.clientY - rect.top - panY) / zoom;
-        handleFiles(files, dropX, dropY);
-      }
+      if (!files || files.length === 0) return;
+
+      const rect = viewportEl ? viewportEl.getBoundingClientRect() : { left: 0, top: 0 };
+      const dropX = (e.clientX - rect.left - panX) / zoom;
+      const dropY = (e.clientY - rect.top - panY) / zoom;
+      handleFiles(files, dropX, dropY);
     }
 
+    modalEl.addEventListener('dragenter', onDragOver);
+    modalEl.addEventListener('dragover', onDragOver);
+    modalEl.addEventListener('dragleave', onDragLeave);
+    modalEl.addEventListener('drop', onDrop);
+
+    viewportEl.addEventListener('dragenter', onDragOver);
+    viewportEl.addEventListener('dragover', onDragOver);
+    viewportEl.addEventListener('dragleave', onDragLeave);
     viewportEl.addEventListener('drop', onDrop);
   }
 
   // Copy / Cut / Paste Handling
+  function handleGlobalPaste(e) {
+    if (!isModalOpen) return;
+    const isInput = e.target && (
+      e.target.tagName === 'INPUT' ||
+      e.target.tagName === 'TEXTAREA' ||
+      e.target.isContentEditable
+    );
+    if (isInput) return;
+
+    const clipboardData = e.clipboardData || (e.originalEvent && e.originalEvent.clipboardData);
+    if (!clipboardData) return;
+
+    // 1. Check native clipboard files or image/video blobs FIRST
+    const files = [];
+    if (clipboardData.files && clipboardData.files.length > 0) {
+      for (let i = 0; i < clipboardData.files.length; i++) {
+        files.push(clipboardData.files[i]);
+      }
+    }
+
+    if (files.length === 0 && clipboardData.items && clipboardData.items.length > 0) {
+      for (let i = 0; i < clipboardData.items.length; i++) {
+        const item = clipboardData.items[i];
+        if (item && (item.type.indexOf('image') !== -1 || item.type.indexOf('video') !== -1 || item.kind === 'file')) {
+          const blob = item.getAsFile();
+          if (blob) files.push(blob);
+        }
+      }
+    }
+
+    if (files.length > 0) {
+      e.preventDefault();
+      e.stopPropagation();
+      handleFiles(files);
+      return;
+    }
+
+    // 2. Check if user pasted a Web / Social Media URL
+    const pastedText = (clipboardData.getData && clipboardData.getData('text/plain')) || '';
+    const trimmedUrl = (pastedText || '').trim();
+    if (trimmedUrl.startsWith('http://') || trimmedUrl.startsWith('https://') || trimmedUrl.startsWith('data:image') || trimmedUrl.startsWith('data:video')) {
+      e.preventDefault();
+      e.stopPropagation();
+      importUrlToRefBoard(trimmedUrl);
+      return;
+    }
+
+    // 3. Internal clipboard paste (Ctrl+C / Ctrl+V within board)
+    if (internalClipboard.length > 0) {
+      e.preventDefault();
+      e.stopPropagation();
+      pasteInternalClipboard();
+    }
+  }
+
   function setupPasteHandler() {
-    window.addEventListener('paste', (e) => {
-      if (!isModalOpen) return;
-      const isInput = e.target && (
-        e.target.tagName === 'INPUT' ||
-        e.target.tagName === 'TEXTAREA' ||
-        e.target.isContentEditable
-      );
-      if (isInput) return;
-
-      const clipboardData = e.clipboardData || (e.originalEvent && e.originalEvent.clipboardData);
-      if (!clipboardData) return;
-
-      // 1. Check native clipboard files or image/video blobs FIRST
-      const files = [];
-      if (clipboardData.files && clipboardData.files.length > 0) {
-        for (let i = 0; i < clipboardData.files.length; i++) {
-          files.push(clipboardData.files[i]);
-        }
-      }
-
-      if (files.length === 0 && clipboardData.items && clipboardData.items.length > 0) {
-        for (let i = 0; i < clipboardData.items.length; i++) {
-          const item = clipboardData.items[i];
-          if (item && (item.type.indexOf('image') !== -1 || item.type.indexOf('video') !== -1 || item.kind === 'file')) {
-            const blob = item.getAsFile();
-            if (blob) files.push(blob);
-          }
-        }
-      }
-
-      if (files.length > 0) {
-        e.preventDefault();
-        e.stopPropagation();
-        handleFiles(files);
-        return;
-      }
-
-      // 2. Check if user pasted a Web / Social Media URL
-      const pastedText = (clipboardData.getData && clipboardData.getData('text/plain')) || '';
-      const trimmedUrl = (pastedText || '').trim();
-      if (trimmedUrl.startsWith('http://') || trimmedUrl.startsWith('https://') || trimmedUrl.startsWith('data:image') || trimmedUrl.startsWith('data:video')) {
-        e.preventDefault();
-        e.stopPropagation();
-        importUrlToRefBoard(trimmedUrl);
-        return;
-      }
-
-      // 3. Internal clipboard paste (Ctrl+C / Ctrl+V within board)
-      if (internalClipboard.length > 0) {
-        e.preventDefault();
-        e.stopPropagation();
-        pasteInternalClipboard();
-      }
-    });
+    window.addEventListener('paste', handleGlobalPaste);
   }
 
   // Select All Items on Board
@@ -1283,118 +1368,538 @@
   }
 
   // Keyboard Shortcuts (Bilingual Thai/English Physical Key Code Support)
-  function setupKeyboardShortcuts() {
-    window.addEventListener('keydown', (e) => {
-      if (!isModalOpen) return;
+  function handleGlobalKeyDown(e) {
+    if (!isModalOpen) return;
 
-      const isInput = e.target && (
-        e.target.tagName === 'INPUT' ||
-        e.target.tagName === 'TEXTAREA' ||
-        e.target.isContentEditable
-      );
-      if (isInput) return;
+    const isInput = e.target && (
+      e.target.tagName === 'INPUT' ||
+      e.target.tagName === 'TEXTAREA' ||
+      e.target.isContentEditable
+    );
+    if (isInput) return;
 
-      const isCtrlOrCmd = e.ctrlKey || e.metaKey;
-      const key = (e.key || '').toLowerCase();
-      const code = e.code || '';
+    const isCtrlOrCmd = e.ctrlKey || e.metaKey;
+    const key = (e.key || '').toLowerCase();
+    const code = e.code || '';
 
-      if (isCtrlOrCmd) {
-        // Ctrl + Z / Cmd + Z -> Undo (or Redo if Shift is held)
-        if (code === 'KeyZ' || key === 'z') {
-          e.preventDefault();
-          if (e.shiftKey) {
-            redo();
-          } else {
-            undo();
-          }
-          return;
-        }
-
-        // Ctrl + Y / Cmd + Y -> Redo
-        if (code === 'KeyY' || key === 'y') {
-          e.preventDefault();
+    if (isCtrlOrCmd) {
+      // Ctrl + Z / Cmd + Z -> Undo (or Redo if Shift is held)
+      if (code === 'KeyZ' || key === 'z') {
+        e.preventDefault();
+        if (e.shiftKey) {
           redo();
-          return;
-        }
-
-        // Ctrl + C / Cmd + C -> Copy Selected Items
-        if (code === 'KeyC' || key === 'c') {
-          if (selectedItemIds.size > 0) {
-            e.preventDefault();
-            copySelectedItems();
-          }
-          return;
-        }
-
-        // Ctrl + X / Cmd + X -> Cut Selected Items
-        if (code === 'KeyX' || key === 'x') {
-          if (selectedItemIds.size > 0) {
-            e.preventDefault();
-            cutSelectedItems();
-          }
-          return;
-        }
-
-        // Ctrl + V / Cmd + V -> Paste Items
-        if (code === 'KeyV' || key === 'v') {
-          if (internalClipboard.length > 0) {
-            e.preventDefault();
-            pasteInternalClipboard();
-          }
-          return;
-        }
-
-        // Ctrl + A / Cmd + A -> Select All Items
-        if (code === 'KeyA' || key === 'a') {
-          e.preventDefault();
-          selectAllItems();
-          return;
-        }
-      }
-
-      // Space Key -> Canvas Panning Mode
-      if (code === 'Space' || key === ' ' || e.keyCode === 32) {
-        e.preventDefault();
-        if (!spacePressed) {
-          spacePressed = true;
-          viewportEl.classList.add('panning');
-        }
-      }
-
-      // Delete / Backspace Key -> Delete Selected Items
-      if (code === 'Delete' || code === 'Backspace' || key === 'delete' || key === 'backspace') {
-        if (selectedItemId || selectedItemIds.size > 0) {
-          e.preventDefault();
-          deleteItem(selectedItemId || Array.from(selectedItemIds)[0]);
-        }
-      }
-
-      // Escape Key -> Deselect / Close Modals
-      if (code === 'Escape' || key === 'escape') {
-        e.preventDefault();
-        if (alertModalEl && alertModalEl.classList.contains('open')) {
-          alertModalEl.classList.remove('open');
-        } else if (exportModalEl && exportModalEl.classList.contains('open')) {
-          closeExportModal();
-        } else if (selectedItemId || selectedItemIds.size > 0) {
-          deselectAll();
         } else {
-          toggleRefBoard();
+          undo();
         }
+        return;
       }
-    });
 
-    window.addEventListener('keyup', (e) => {
-      if (!isModalOpen) return;
-      const code = e.code || '';
-      const key = (e.key || '').toLowerCase();
-
-      if (code === 'Space' || key === ' ' || e.keyCode === 32) {
+      // Ctrl + Y / Cmd + Y -> Redo
+      if (code === 'KeyY' || key === 'y') {
         e.preventDefault();
-        spacePressed = false;
-        if (!isPanning) viewportEl.classList.remove('panning');
+        redo();
+        return;
+      }
+
+      // Ctrl + C / Cmd + C -> Copy Selected Items
+      if (code === 'KeyC' || key === 'c') {
+        if (selectedItemIds.size > 0) {
+          e.preventDefault();
+          copySelectedItems();
+        }
+        return;
+      }
+
+      // Ctrl + X / Cmd + X -> Cut Selected Items
+      if (code === 'KeyX' || key === 'x') {
+        if (selectedItemIds.size > 0) {
+          e.preventDefault();
+          cutSelectedItems();
+        }
+        return;
+      }
+
+      // Ctrl + V / Cmd + V -> Paste Items
+      if (code === 'KeyV' || key === 'v') {
+        if (internalClipboard.length > 0) {
+          e.preventDefault();
+          pasteInternalClipboard();
+        }
+        return;
+      }
+
+      // Ctrl + A / Cmd + A -> Select All Items
+      if (code === 'KeyA' || key === 'a') {
+        e.preventDefault();
+        selectAllItems();
+        return;
+      }
+    }
+
+    // Space Key -> Canvas Panning Mode
+    if (code === 'Space' || key === ' ' || e.keyCode === 32) {
+      e.preventDefault();
+      if (!spacePressed) {
+        spacePressed = true;
+        viewportEl.classList.add('panning');
+      }
+    }
+
+    // Delete / Backspace Key -> Delete Selected Items
+    if (code === 'Delete' || code === 'Backspace' || key === 'delete' || key === 'backspace') {
+      if (selectedItemId || selectedItemIds.size > 0) {
+        e.preventDefault();
+        deleteItem(selectedItemId || Array.from(selectedItemIds)[0]);
+      }
+    }
+
+    // Escape Key -> Deselect / Close Modals
+    if (code === 'Escape' || key === 'escape') {
+      e.preventDefault();
+      if (alertModalEl && alertModalEl.classList.contains('open')) {
+        alertModalEl.classList.remove('open');
+      } else if (exportModalEl && exportModalEl.classList.contains('open')) {
+        closeExportModal();
+      } else if (selectedItemId || selectedItemIds.size > 0) {
+        deselectAll();
+      } else {
+        toggleRefBoard();
+      }
+    }
+  }
+
+  function handleGlobalKeyUp(e) {
+    if (!isModalOpen) return;
+    const code = e.code || '';
+    const key = (e.key || '').toLowerCase();
+
+    if (code === 'Space' || key === ' ' || e.keyCode === 32) {
+      e.preventDefault();
+      spacePressed = false;
+      if (!isPanning) viewportEl.classList.remove('panning');
+    }
+  }
+
+  function setupKeyboardShortcuts() {
+    window.addEventListener('keydown', handleGlobalKeyDown);
+    window.addEventListener('keyup', handleGlobalKeyUp);
+  }
+
+  // ═══ DOCUMENT PICTURE-IN-PICTURE (ALWAYS ON TOP) ═══
+  async function toggleAlwaysOnTop() {
+    // 1. If PiP is already open, close it to return to main tab
+    if (pipWindow && !pipWindow.closed) {
+      pipWindow.close();
+      return;
+    }
+
+    // 2. Check Document Picture-in-Picture API support
+    if (!('documentPictureInPicture' in window)) {
+      showRefConfirm(
+        'หน้าต่างลอยนอกจอ',
+        'เบราว์เซอร์นี้ยังไม่รองรับการแยกหน้าต่างลอยออกมานอกหน้าจอครับ<br><br>' +
+        '💡 <strong>คำแนะนำ:</strong><br>' +
+        '• แนะนำให้เปิดใช้งานผ่าน <strong>Google Chrome</strong> หรือ <strong>Microsoft Edge</strong> บนคอมพิวเตอร์<br>' +
+        '• หรือสามารถใช้ <strong>หน้าต่างลอยบนหน้าเว็บ</strong> เพื่อลากย้ายและปรับขนาดบนหน้านี้ได้ตามปกติครับ<br><br>' +
+        'ต้องการเปิดใช้งานโหมดหน้าต่างลอยบนหน้าเว็บแทนหรือไม่?',
+        () => {
+          fallbackToggleFloatingMode();
+        },
+        null,
+        'ใช้หน้าต่างลอยบนหน้าเว็บ',
+        'ปิด'
+      );
+      return;
+    }
+
+    try {
+      const pipW = Math.min(880, Math.round(window.innerWidth * 0.85));
+      const pipH = Math.min(640, Math.round(window.innerHeight * 0.85));
+
+      pipWindow = await window.documentPictureInPicture.requestWindow({
+        width: pipW,
+        height: pipH,
+      });
+
+      // Copy Stylesheets & Style tags
+      copyStylesToPip(pipWindow);
+
+      // Setup PiP Window Document
+      pipWindow.document.title = 'กระดานเรฟ (Always on Top)';
+      const mainTheme = window.document.documentElement.getAttribute('data-theme') || 'dark';
+      pipWindow.document.documentElement.setAttribute('data-theme', mainTheme);
+      pipWindow.document.documentElement.className = window.document.documentElement.className;
+      pipWindow.document.body.className = window.document.body.className;
+      if (isWhiteBg) {
+        pipWindow.document.body.classList.add('bg-white-mode');
+      }
+
+      // Sync theme live when user toggles theme on main page
+      if (pipThemeObserver) {
+        pipThemeObserver.disconnect();
+        pipThemeObserver = null;
+      }
+      pipThemeObserver = new MutationObserver((mutations) => {
+        for (const m of mutations) {
+          if (m.type === 'attributes' && (m.attributeName === 'data-theme' || m.attributeName === 'class')) {
+            if (pipWindow && !pipWindow.closed) {
+              const curTheme = window.document.documentElement.getAttribute('data-theme') || 'dark';
+              pipWindow.document.documentElement.setAttribute('data-theme', curTheme);
+              pipWindow.document.documentElement.className = window.document.documentElement.className;
+            }
+            break;
+          }
+        }
+      });
+      pipThemeObserver.observe(window.document.documentElement, { attributes: true, attributeFilter: ['data-theme', 'class'] });
+
+      // Bridge global functions for PiP scope
+      pipWindow.toggleColorPalette = () => {
+        if (typeof window.toggleColorPalette === 'function') window.toggleColorPalette();
+      };
+      pipWindow.showToast = (msg, icon) => {
+        if (typeof window.showToast === 'function') window.showToast(msg, icon);
+      };
+      pipWindow.toggleRefBoard = () => {
+        if (typeof window.toggleRefBoard === 'function') window.toggleRefBoard();
+      };
+
+      // Placeholders before moving DOM
+      pipPlaceholders = [];
+      const dialogsToMove = [
+        modalEl,
+        exportModalEl,
+        window.document.getElementById('refboard-export-loading-backdrop'),
+        alertModalEl,
+        arrangeModalEl,
+        linkModalEl,
+        importFileInput
+      ].filter(Boolean);
+
+      dialogsToMove.forEach((el) => {
+        if (el && el.parentNode) {
+          const ph = window.document.createComment(`pip-ph-${el.id || 'el'}`);
+          el.parentNode.insertBefore(ph, el);
+          pipPlaceholders.push({ el, ph });
+        }
+      });
+
+      // Move into PiP document
+      modalEl.classList.add('pip-mode');
+      modalEl.classList.add('open');
+      dialogsToMove.forEach((el) => {
+        if (el) pipWindow.document.body.appendChild(el);
+      });
+
+      // Remove split layout on main desktop page while PiP is active
+      const toolsPage = window.document.getElementById('page-tools');
+      if (toolsPage) {
+        toolsPage.classList.remove('refboard-split');
+      }
+
+      // Update button UI & sync button states
+      updateFloatBtnPipState(true);
+      updateUndoRedoUI();
+      updateItemCount();
+      updateActionsToggleUI();
+
+      // Bind global event listeners to pipWindow
+      pipWindow.addEventListener('mousemove', handleGlobalMouseMove);
+      pipWindow.addEventListener('mouseup', handleGlobalMouseUp);
+      pipWindow.addEventListener('keydown', handleGlobalKeyDown);
+      pipWindow.addEventListener('keyup', handleGlobalKeyUp);
+      pipWindow.addEventListener('paste', handleGlobalPaste);
+
+      // Drag and drop into PiP window
+      pipWindow.addEventListener('dragenter', (e) => {
+        e.preventDefault();
+        if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy';
+        if (dropOverlayEl) dropOverlayEl.classList.add('active');
+      });
+      pipWindow.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy';
+      });
+      pipWindow.addEventListener('dragleave', (e) => {
+        if (!e.relatedTarget) {
+          if (dropOverlayEl) dropOverlayEl.classList.remove('active');
+        }
+      });
+      pipWindow.addEventListener('drop', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (dropOverlayEl) dropOverlayEl.classList.remove('active');
+        const files = e.dataTransfer ? e.dataTransfer.files : null;
+        if (files && files.length > 0) {
+          const rect = viewportEl ? viewportEl.getBoundingClientRect() : { left: 0, top: 0 };
+          const dropX = (e.clientX - rect.left - panX) / zoom;
+          const dropY = (e.clientY - rect.top - panY) / zoom;
+          handleFiles(files, dropX, dropY);
+        }
+      });
+
+      pipWindow.addEventListener('resize', () => {
+        fitBoardToViewport();
+      });
+
+      // Handle close of PiP window (either from OS 'X' or pipWindow.close())
+      pipWindow.addEventListener('pagehide', () => {
+        restoreFromPip();
+      });
+
+      setTimeout(() => {
+        fitBoardToViewport();
+      }, 60);
+
+      showToast('📌 แยกกระดานเรฟลอยหน้าจอแล้ว');
+    } catch (err) {
+      console.error('Document PiP Error:', err);
+      pipWindow = null;
+
+      let friendlyReason = 'เบราว์เซอร์ไม่อนุญาตให้แยกหน้าต่างลอยออกมานอกจอได้ในขณะนี้ครับ';
+      const errMsg = (err && err.message) ? err.message : '';
+      if (errMsg.includes('top-level browsing context')) {
+        friendlyReason = 'ไม่สามารถแยกหน้าต่างลอยได้ เนื่องจากหน้าเว็บกำลังเปิดซ้อนอยู่ภายในโปรแกรมหรือหน้าต่างอื่นครับ แนะนำให้เปิดใช้งานผ่านเบราว์เซอร์โดยตรง';
+      }
+
+      showRefConfirm(
+        'เปิดหน้าต่างลอยไม่สำเร็จ',
+        `${friendlyReason}<br><br>` +
+        '💡 <strong>คุณยังสามารถใช้หน้าต่างลอยบนหน้าเว็บนี้ได้:</strong><br>' +
+        'สามารถลาก ย้ายตำแหน่ง และปรับขนาดย่อ-ขยายบนหน้าเว็บนี้ได้ตามปกติครับ<br><br>' +
+        'ต้องการเปิดใช้งานโหมดหน้าต่างลอยบนหน้าเว็บแทนหรือไม่?',
+        () => {
+          fallbackToggleFloatingMode();
+        },
+        null,
+        'ใช้หน้าต่างลอยบนหน้าเว็บ',
+        'ปิด'
+      );
+    }
+  }
+
+  // Restore elements back to main page
+  function restoreFromPip() {
+    if (!pipWindow) return;
+    pipWindow = null;
+
+    if (pipThemeObserver) {
+      pipThemeObserver.disconnect();
+      pipThemeObserver = null;
+    }
+
+    modalEl.classList.remove('pip-mode');
+
+    if (pipPlaceholders && pipPlaceholders.length > 0) {
+      pipPlaceholders.forEach(({ el, ph }) => {
+        if (ph && ph.parentNode) {
+          ph.parentNode.insertBefore(el, ph);
+          ph.remove();
+        } else {
+          window.document.body.appendChild(el);
+        }
+      });
+      pipPlaceholders = [];
+    } else {
+      window.document.body.appendChild(modalEl);
+    }
+
+    const toolsPage = window.document.getElementById('page-tools');
+    if (toolsPage && isDesktop() && isModalOpen) {
+      toolsPage.classList.add('refboard-split');
+    }
+
+    updateFloatBtnPipState(false);
+    updateUndoRedoUI();
+    updateItemCount();
+    updateActionsToggleUI();
+
+    setTimeout(() => {
+      fitBoardToViewport();
+    }, 60);
+
+    showToast('↩️ ดึงกระดานเรฟกลับเข้าหน้าเว็บเรียบร้อย');
+  }
+
+  // Copy stylesheets & styles to PiP window
+  function copyStylesToPip(targetWin) {
+    const doc = targetWin.document;
+
+    // 1. Copy font preconnects
+    window.document.querySelectorAll('link[rel="preconnect"], link[rel="preload"]').forEach((link) => {
+      doc.head.appendChild(link.cloneNode(true));
+    });
+
+    // 2. Copy link stylesheets
+    window.document.querySelectorAll('link[rel="stylesheet"]').forEach((link) => {
+      const newLink = doc.createElement('link');
+      newLink.rel = 'stylesheet';
+      newLink.href = link.href;
+      if (link.media) newLink.media = link.media;
+      doc.head.appendChild(newLink);
+    });
+
+    // 3. Copy all style elements across document (head and body)
+    window.document.querySelectorAll('style').forEach((st) => {
+      doc.head.appendChild(st.cloneNode(true));
+    });
+
+    // 4. Copy dynamic stylesheet rules
+    [...window.document.styleSheets].forEach((sheet) => {
+      try {
+        if (sheet.href) return;
+        if (sheet.ownerNode && sheet.ownerNode.tagName === 'STYLE') return;
+        if (sheet.cssRules) {
+          const style = doc.createElement('style');
+          style.textContent = [...sheet.cssRules].map((r) => r.cssText).join('\n');
+          doc.head.appendChild(style);
+        }
+      } catch (e) {
+        // Cross-origin restriction ignored
       }
     });
+
+    // 5. Inject Referrer Policy Meta tag to authorize YouTube and media embeds in PiP window
+    const metaRef = doc.createElement('meta');
+    metaRef.name = 'referrer';
+    metaRef.content = 'strict-origin-when-cross-origin';
+    doc.head.appendChild(metaRef);
+
+    // 6. Inject PiP specific layout styles
+    const pipStyle = doc.createElement('style');
+    pipStyle.textContent = `
+      html, body {
+        margin: 0 !important;
+        padding: 0 !important;
+        width: 100vw !important;
+        height: 100vh !important;
+        overflow: hidden !important;
+        background: var(--bg2, #161616) !important;
+      }
+      body.bg-white-mode {
+        background: #ffffff !important;
+      }
+      .refboard-modal.pip-mode {
+        position: fixed !important;
+        inset: 0 !important;
+        width: 100vw !important;
+        height: 100vh !important;
+        margin: 0 !important;
+        border: none !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+        transform: none !important;
+        display: flex !important;
+        opacity: 1 !important;
+        pointer-events: auto !important;
+        z-index: 100 !important;
+      }
+      .refboard-modal.pip-mode #refboard-header {
+        cursor: default !important;
+      }
+      .refboard-modal.pip-mode .ref-modal-handle {
+        display: none !important;
+      }
+      .refboard-modal.pip-mode #refboard-max-btn {
+        display: none !important;
+      }
+      .refboard-modal.pip-mode .ref-footer-brand {
+        display: none !important;
+      }
+      .refboard-modal.pip-mode .refboard-footer {
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        margin: 0 !important;
+        border-radius: 0 !important;
+        border-top: 1px solid var(--line, #2a2a2a) !important;
+        border-left: none !important;
+        border-right: none !important;
+        border-bottom: none !important;
+        box-shadow: none !important;
+        line-height: normal !important;
+      }
+      .refboard-modal.pip-mode .refboard-kbd {
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        padding: 0 5px !important;
+        height: 18px !important;
+        line-height: 18px !important;
+        border-radius: 4px !important;
+        background: var(--bg3, #1e1e1e) !important;
+        border: 1px solid var(--line2, #333) !important;
+        font-family: inherit !important;
+        font-size: 11px !important;
+        box-sizing: border-box !important;
+        margin: 0 2px !important;
+      }
+    `;
+    doc.head.appendChild(pipStyle);
+  }
+
+  // Update button visual state when PiP toggles
+  function updateFloatBtnPipState(isPip) {
+    const floatBtn = document.getElementById('refboard-float-btn');
+    if (!floatBtn) return;
+    floatBtn.classList.toggle('active', isPip);
+    if (isPip) {
+      floatBtn.title = 'ดึงกระดานเรฟกลับเข้าหน้าเว็บ';
+      floatBtn.innerHTML = `
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M19 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+          <polyline points="15 3 21 3 21 9"></polyline>
+          <line x1="10" y1="14" x2="21" y2="3"></line>
+        </svg>
+      `;
+    } else {
+      floatBtn.title = 'แยกหน้าต่างลอยนอกจอ (Always on Top)';
+      floatBtn.innerHTML = `
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="2" y="2" width="20" height="20" rx="3" ry="3"></rect>
+          <rect x="11" y="11" width="9" height="9" rx="1.5" ry="1.5" fill="currentColor" opacity="0.3"></rect>
+          <path d="M11 15h9"></path>
+          <path d="M15 11v9"></path>
+        </svg>
+      `;
+    }
+  }
+
+  // Fallback In-Page Floating Mode
+  function fallbackToggleFloatingMode() {
+    isFloatingMode = !isFloatingMode;
+    modalEl.classList.toggle('floating-mode', isFloatingMode);
+
+    const toolsPage = document.getElementById('page-tools');
+    if (toolsPage) {
+      if (isFloatingMode) {
+        toolsPage.classList.remove('refboard-split');
+      } else if (isDesktop() && isModalOpen) {
+        toolsPage.classList.add('refboard-split');
+      }
+    }
+
+    const floatBtn = document.getElementById('refboard-float-btn');
+    if (isFloatingMode) {
+      if (floatBtn) {
+        floatBtn.classList.add('active');
+        floatBtn.title = 'สลับกลับเป็น Split-Panel';
+      }
+      const defaultW = Math.min(760, Math.round(window.innerWidth * 0.8));
+      const defaultH = Math.min(540, Math.round(window.innerHeight * 0.8));
+      modalEl.style.left = `${Math.max(20, Math.round((window.innerWidth - defaultW) / 2))}px`;
+      modalEl.style.top = '80px';
+      modalEl.style.width = `${defaultW}px`;
+      modalEl.style.height = `${defaultH}px`;
+    } else {
+      if (floatBtn) {
+        floatBtn.classList.remove('active');
+        floatBtn.title = 'ลอยหน้าต่างเสมอ (Always on Top / PiP)';
+      }
+      modalEl.style.left = '';
+      modalEl.style.top = '';
+      modalEl.style.width = '';
+      modalEl.style.height = '';
+    }
   }
 
   // Action Buttons
@@ -1403,6 +1908,9 @@
     if (closeBtn) {
       closeBtn.addEventListener('click', (e) => {
         if (e) { e.preventDefault(); e.stopPropagation(); }
+        if (pipWindow && !pipWindow.closed) {
+          pipWindow.close();
+        }
         closeRefBoardInternal(true);
       });
     }
@@ -1420,35 +1928,7 @@
     if (floatBtn) {
       floatBtn.addEventListener('click', (e) => {
         if (e) { e.preventDefault(); e.stopPropagation(); }
-        isFloatingMode = !isFloatingMode;
-        modalEl.classList.toggle('floating-mode', isFloatingMode);
-
-        const toolsPage = document.getElementById('page-tools');
-        if (toolsPage) {
-          if (isFloatingMode) {
-            toolsPage.classList.remove('refboard-split');
-          } else if (isDesktop() && isModalOpen) {
-            toolsPage.classList.add('refboard-split');
-          }
-        }
-
-        if (isFloatingMode) {
-          floatBtn.classList.add('active');
-          floatBtn.title = 'สลับกลับเป็น Split-Panel';
-          const defaultW = Math.min(760, Math.round(window.innerWidth * 0.8));
-          const defaultH = Math.min(540, Math.round(window.innerHeight * 0.8));
-          modalEl.style.left = `${Math.max(20, Math.round((window.innerWidth - defaultW) / 2))}px`;
-          modalEl.style.top = '80px';
-          modalEl.style.width = `${defaultW}px`;
-          modalEl.style.height = `${defaultH}px`;
-        } else {
-          floatBtn.classList.remove('active');
-          floatBtn.title = 'เปลี่ยนเป็นหน้าต่างลอย';
-          modalEl.style.left = '';
-          modalEl.style.top = '';
-          modalEl.style.width = '';
-          modalEl.style.height = '';
-        }
+        toggleAlwaysOnTop();
       });
     }
 
@@ -1461,6 +1941,16 @@
       });
     }
 
+    const paletteToggleBtn = document.getElementById('refboard-palette-toggle-btn');
+    if (paletteToggleBtn) {
+      paletteToggleBtn.addEventListener('click', (e) => {
+        if (e) { e.preventDefault(); e.stopPropagation(); }
+        if (typeof window.toggleColorPalette === 'function') {
+          window.toggleColorPalette();
+        }
+      });
+    }
+
     const bgBtn = document.getElementById('refboard-bg-btn');
     if (bgBtn) {
       bgBtn.addEventListener('click', (e) => {
@@ -1468,6 +1958,9 @@
         isWhiteBg = !isWhiteBg;
         bgBtn.classList.toggle('active', isWhiteBg);
         if (viewportEl) viewportEl.classList.toggle('bg-white-mode', isWhiteBg);
+        if (pipWindow && !pipWindow.closed) {
+          pipWindow.document.body.classList.toggle('bg-white-mode', isWhiteBg);
+        }
         const bgText = document.getElementById('refboard-bg-text');
         if (bgText) bgText.textContent = isWhiteBg ? 'พื้นหลัง: ขาว' : 'พื้นหลัง: ธีม';
       });
@@ -1588,12 +2081,22 @@
   }
 
   // ── URL & Social Media Media Parser ──
+  function sanitizeEmbedUrl(url) {
+    if (!url) return '';
+    const ytMatch = url.match(/(?:youtube(?:-nocookie)?\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?|shorts)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i);
+    if (ytMatch && ytMatch[1]) {
+      const vidId = ytMatch[1];
+      return `https://www.youtube.com/embed/${vidId}?rel=0&playsinline=1`;
+    }
+    return url;
+  }
+
   function parseMediaUrl(rawUrl) {
     if (!rawUrl) return null;
     const url = rawUrl.trim();
 
     // 1. YouTube & YouTube Shorts
-    const ytMatch = url.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?|shorts)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i);
+    const ytMatch = url.match(/(?:youtube(?:-nocookie)?\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?|shorts)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i);
     if (ytMatch && ytMatch[1]) {
       const id = ytMatch[1];
       const isShorts = url.includes('/shorts/');
@@ -1604,7 +2107,7 @@
         width: isShorts ? 360 : 540,
         height: isShorts ? 640 : 304,
         aspect: isShorts ? (360 / 640) : (16 / 9),
-        embedUrl: `https://www.youtube-nocookie.com/embed/${id}?autoplay=1&enablejsapi=1`,
+        embedUrl: `https://www.youtube.com/embed/${id}?rel=0&playsinline=1`,
         thumbnailUrl: `https://img.youtube.com/vi/${id}/hqdefault.jpg`,
         dataUrl: `https://img.youtube.com/vi/${id}/hqdefault.jpg`,
         title: isShorts ? 'YouTube Shorts' : 'YouTube Video'
@@ -2854,8 +3357,9 @@
       if (itemData.showThumbnailOnly && itemData.thumbnailUrl) {
         mediaHtml = `<img src="${itemData.thumbnailUrl}" class="ref-item-img" alt="thumbnail">`;
       } else {
+        const embedSrc = sanitizeEmbedUrl(itemData.embedUrl);
         mediaHtml = `
-          <iframe src="${itemData.embedUrl}" class="ref-item-img ref-item-embed" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+          <iframe src="${embedSrc}" class="ref-item-img ref-item-embed" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
           <div class="ref-embed-shield"></div>
         `;
       }
@@ -3046,8 +3550,9 @@
               crop.innerHTML = `<img src="${itemData.thumbnailUrl}" class="ref-item-img" alt="thumbnail">`;
               tbBtn.textContent = '🎬 ดูวิดีโอ';
             } else {
+              const embedSrc = sanitizeEmbedUrl(itemData.embedUrl);
               crop.innerHTML = `
-                <iframe src="${itemData.embedUrl}" class="ref-item-img ref-item-embed" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+                <iframe src="${embedSrc}" class="ref-item-img ref-item-embed" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
                 <div class="ref-embed-shield"></div>
               `;
               tbBtn.textContent = '🖼️ ภาพปก';
@@ -3436,12 +3941,12 @@
 
         isInteracting = false;
         activeMode = null;
-        window.removeEventListener('mousemove', onMouseMove);
-        window.removeEventListener('mouseup', onMouseUp);
+        removeActiveWindowListener('mousemove', onMouseMove);
+        removeActiveWindowListener('mouseup', onMouseUp);
       }
 
-      window.addEventListener('mousemove', onMouseMove);
-      window.addEventListener('mouseup', onMouseUp);
+      addActiveWindowListener('mousemove', onMouseMove);
+      addActiveWindowListener('mouseup', onMouseUp);
     });
 
     // Mobile Touch Handling for Individual Item Dragging & Resizing
@@ -4087,13 +4592,13 @@
         }
 
         function onGroupUp() {
-          window.removeEventListener('mousemove', onGroupMove);
-          window.removeEventListener('mouseup', onGroupUp);
+          removeActiveWindowListener('mousemove', onGroupMove);
+          removeActiveWindowListener('mouseup', onGroupUp);
           commitDragState();
         }
 
-        window.addEventListener('mousemove', onGroupMove);
-        window.addEventListener('mouseup', onGroupUp);
+        addActiveWindowListener('mousemove', onGroupMove);
+        addActiveWindowListener('mouseup', onGroupUp);
         return;
       }
 
@@ -4139,13 +4644,13 @@
 
       function onUp() {
         isGroupDragging = false;
-        window.removeEventListener('mousemove', onMove);
-        window.removeEventListener('mouseup', onUp);
+        removeActiveWindowListener('mousemove', onMove);
+        removeActiveWindowListener('mouseup', onUp);
         commitDragState();
       }
 
-      window.addEventListener('mousemove', onMove);
-      window.addEventListener('mouseup', onUp);
+      addActiveWindowListener('mousemove', onMove);
+      addActiveWindowListener('mouseup', onUp);
     });
   }
 
@@ -4425,8 +4930,9 @@
       if (cloned.showThumbnailOnly && cloned.thumbnailUrl) {
         mediaHtml = `<img src="${cloned.thumbnailUrl}" class="ref-item-img" alt="thumbnail">`;
       } else {
+        const embedSrc = sanitizeEmbedUrl(cloned.embedUrl);
         mediaHtml = `
-          <iframe src="${cloned.embedUrl}" class="ref-item-img ref-item-embed" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+          <iframe src="${embedSrc}" class="ref-item-img ref-item-embed" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
           <div class="ref-embed-shield"></div>
         `;
       }
