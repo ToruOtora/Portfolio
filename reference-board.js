@@ -1353,6 +1353,7 @@
 
   function setupPasteHandler() {
     window.addEventListener('paste', handleGlobalPaste);
+    window.addEventListener('message', handleYouTubeWindowMessage);
   }
 
   // Select All Items on Board
@@ -1609,6 +1610,7 @@
       pipWindow.addEventListener('keydown', handleGlobalKeyDown);
       pipWindow.addEventListener('keyup', handleGlobalKeyUp);
       pipWindow.addEventListener('paste', handleGlobalPaste);
+      pipWindow.addEventListener('message', handleYouTubeWindowMessage);
 
       // Drag and drop into PiP window
       pipWindow.addEventListener('dragenter', (e) => {
@@ -2080,13 +2082,537 @@
     }
   }
 
+  // Helper: check if Reference Board is in Normal In-Page Mode (not PiP and not In-Page Floating Mode)
+  function isBoardNormalMode() {
+    const isPip = Boolean((pipWindow && !pipWindow.closed) || (modalEl && modalEl.classList.contains('pip-mode')));
+    const isFloat = Boolean(isFloatingMode || (modalEl && modalEl.classList.contains('floating-mode')));
+    return !isPip && !isFloat;
+  }
+
+  // ── YouTube Iframe PostMessage Controller ──
+  function sendYouTubeCommand(iframeEl, command, args = []) {
+    if (!iframeEl || !iframeEl.contentWindow) return;
+    try {
+      iframeEl.contentWindow.postMessage(JSON.stringify({
+        event: 'command',
+        func: command,
+        args: args
+      }), '*');
+    } catch (err) {}
+  }
+
+  function setupYouTubeIframeController(itemEl, itemData, iframeEl) {
+    if (!iframeEl || itemData.embedType !== 'youtube') return;
+    itemData.ytPlaying = false;
+    itemData.ytMuted = false;
+
+    const playPauseBtn = itemEl.querySelector('[data-act="yt-toggle-play"]');
+    const muteBtn = itemEl.querySelector('[data-act="yt-toggle-mute"]');
+
+    iframeEl.addEventListener('load', () => {
+      sendYouTubeCommand(iframeEl, 'listening');
+      if (itemData.autoplay) {
+        sendYouTubeCommand(iframeEl, 'playVideo');
+        // Browser autoplay policy fallback:
+        // If unmuted playback is blocked by browser policy without user error,
+        // mute and trigger playVideo after 800ms so it plays smoothly regardless
+        setTimeout(() => {
+          if (!itemData.ytPlaying) {
+            sendYouTubeCommand(iframeEl, 'mute');
+            sendYouTubeCommand(iframeEl, 'playVideo');
+            itemData.ytMuted = true;
+            if (muteBtn) muteBtn.textContent = '🔊 เปิดเสียง';
+          }
+        }, 800);
+      }
+    });
+  }
+
+  function handleYouTubeWindowMessage(e) {
+    if (!e.data || typeof e.data !== 'string') return;
+    let data;
+    try {
+      data = JSON.parse(e.data);
+    } catch (err) {
+      return;
+    }
+    if (data.event === 'infoDelivery' && data.info) {
+      const info = data.info;
+      itemsMap.forEach((item) => {
+        if (item.embedType === 'youtube' && item.el) {
+          const iframe = item.el.querySelector('iframe');
+          if (iframe && iframe.contentWindow === e.source) {
+            const playPauseBtn = item.el.querySelector('[data-act="yt-toggle-play"]');
+            const muteBtn = item.el.querySelector('[data-act="yt-toggle-mute"]');
+
+            if (typeof info.playerState !== 'undefined') {
+              if (info.playerState === 1) {
+                item.ytPlaying = true;
+                if (playPauseBtn) playPauseBtn.textContent = '⏸️ พัก';
+              } else if (info.playerState === 2) {
+                item.ytPlaying = false;
+                if (playPauseBtn) playPauseBtn.textContent = '▶️ เล่น';
+              }
+            }
+            if (typeof info.muted !== 'undefined') {
+              item.ytMuted = Boolean(info.muted);
+              if (muteBtn) muteBtn.textContent = item.ytMuted ? '🔊 เปิดเสียง' : '🔇 เสียง';
+            }
+          }
+        }
+      });
+    }
+  }
+
+  // ── Non-YouTube Video Player Controller (Scrubber, Play/Pause, Rewind/Forward 10s) ──
+  function formatVideoTime(sec) {
+    if (isNaN(sec) || !isFinite(sec) || sec < 0) sec = 0;
+    const s = Math.floor(sec % 60);
+    const m = Math.floor((sec / 60) % 60);
+    const h = Math.floor(sec / 3600);
+    const sStr = s < 10 ? '0' + s : s;
+    if (h > 0) {
+      const mStr = m < 10 ? '0' + m : m;
+      return `${h}:${mStr}:${sStr}`;
+    }
+    return `${m}:${sStr}`;
+  }
+
+  function showVideoSeekFeedback(itemEl, text) {
+    let badge = itemEl.querySelector('.ref-video-seek-badge');
+    if (!badge) {
+      badge = document.createElement('div');
+      badge.className = 'ref-video-seek-badge';
+      const crop = itemEl.querySelector('.ref-item-crop');
+      if (crop) crop.appendChild(badge);
+      else itemEl.appendChild(badge);
+    }
+    badge.textContent = text;
+    badge.classList.remove('active');
+    void badge.offsetWidth;
+    badge.classList.add('active');
+    clearTimeout(badge._seekTimer);
+    badge._seekTimer = setTimeout(() => {
+      badge.classList.remove('active');
+    }, 600);
+  }
+
+  function renderVideoControlsHtml(itemData) {
+    const rawTitle = (itemData && itemData.title) ? itemData.title : '';
+    const safeTitle = String(rawTitle).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    return `
+      <div class="ref-video-ctrl-bar" data-role="video-controls">
+        <div class="ref-video-scrubber-wrap">
+          <span class="ref-video-time-cur">0:00</span>
+          <div class="ref-video-track-container" data-act="seek-track" title="ลากเพื่อเลื่อนเวลา">
+            <div class="ref-video-track-bg"></div>
+            <div class="ref-video-track-fill"></div>
+            <div class="ref-video-track-thumb"></div>
+          </div>
+          <span class="ref-video-time-total">0:00</span>
+        </div>
+        <div class="ref-video-btns-row">
+          <div class="ref-video-title-wrap" title="${safeTitle}">
+            ${safeTitle ? `<span class="ref-video-title-txt">${safeTitle}</span>` : ''}
+          </div>
+          <div class="ref-video-center-btns">
+            <button type="button" class="ref-video-btn ref-video-btn-rewind" data-act="video-rewind10" title="ถอยหลัง 10 วินาที (-10s)">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+                <path d="M3 3v5h5"></path>
+              </svg>
+              <span class="ref-video-btn-num">10</span>
+            </button>
+            <button type="button" class="ref-video-btn ref-video-btn-playpause" data-act="video-playpause" title="เล่น / พัก">
+              <svg class="icon-pause" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                <rect x="6" y="4" width="4" height="16" rx="1.5"></rect>
+                <rect x="14" y="4" width="4" height="16" rx="1.5"></rect>
+              </svg>
+              <svg class="icon-play" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="display:none; margin-left:2px;">
+                <polygon points="6 4 20 12 6 20 6 4"></polygon>
+              </svg>
+            </button>
+            <button type="button" class="ref-video-btn ref-video-btn-forward" data-act="video-forward10" title="ไปข้างหน้า 10 วินาที (+10s)">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.85.99 6.74 2.74L21 8"></path>
+                <path d="M21 3v5h-5"></path>
+              </svg>
+              <span class="ref-video-btn-num">10</span>
+            </button>
+          </div>
+          <div class="ref-video-side-actions">
+            <div class="ref-video-vol-group" title="ระดับเสียง">
+              <button type="button" class="ref-video-btn ref-video-btn-mute" data-act="video-mute" title="ปิด/เปิดเสียง (คลิก)">
+                <svg class="icon-vol-mute" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+                  <line x1="23" y1="9" x2="17" y2="15"></line>
+                  <line x1="17" y1="9" x2="23" y2="15"></line>
+                </svg>
+                <svg class="icon-vol-low" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none;">
+                  <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+                  <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+                </svg>
+                <svg class="icon-vol-up" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none;">
+                  <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+                  <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+                </svg>
+              </button>
+              <div class="ref-video-vol-slider-wrap" data-act="video-vol-track" title="ลากหรือคลิกเพื่อปรับระดับเสียง">
+                <div class="ref-video-vol-bg"></div>
+                <div class="ref-video-vol-fill"></div>
+                <div class="ref-video-vol-thumb"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  function setupVideoController(itemEl, itemData) {
+    const video = itemEl.querySelector('video');
+    const ctrlBar = itemEl.querySelector('.ref-video-ctrl-bar');
+    if (!video || !ctrlBar) return;
+
+    const trackContainer = ctrlBar.querySelector('.ref-video-track-container');
+    const trackFill = ctrlBar.querySelector('.ref-video-track-fill');
+    const trackThumb = ctrlBar.querySelector('.ref-video-track-thumb');
+    const timeCur = ctrlBar.querySelector('.ref-video-time-cur');
+    const timeTotal = ctrlBar.querySelector('.ref-video-time-total');
+    const playPauseBtn = ctrlBar.querySelector('.ref-video-btn-playpause');
+    const rewindBtn = ctrlBar.querySelector('.ref-video-btn-rewind');
+    const forwardBtn = ctrlBar.querySelector('.ref-video-btn-forward');
+    const muteBtn = ctrlBar.querySelector('.ref-video-btn-mute');
+    const volGroup = ctrlBar.querySelector('.ref-video-vol-group');
+    const volTrack = ctrlBar.querySelector('.ref-video-vol-slider-wrap');
+    const volFill = ctrlBar.querySelector('.ref-video-vol-fill');
+    const volThumb = ctrlBar.querySelector('.ref-video-vol-thumb');
+
+    let isDragging = false;
+    let isDraggingVol = false;
+    let wasPlayingBeforeDrag = false;
+    let lastVolume = (video.volume > 0.05) ? video.volume : 0.8;
+
+    // Prevent item dragging when interacting with control bar
+    ctrlBar.addEventListener('mousedown', (e) => {
+      e.stopPropagation();
+    });
+    ctrlBar.addEventListener('touchstart', (e) => {
+      e.stopPropagation();
+    }, { passive: false });
+
+    function updateScrubber(time, duration) {
+      if (!duration || duration <= 0) return;
+      const pct = Math.max(0, Math.min(100, (time / duration) * 100));
+      if (trackFill) trackFill.style.width = `${pct}%`;
+      if (trackThumb) trackThumb.style.left = `${pct}%`;
+      if (timeCur) timeCur.textContent = formatVideoTime(time);
+    }
+
+    function syncDuration() {
+      if (video.duration && isFinite(video.duration)) {
+        if (timeTotal) timeTotal.textContent = formatVideoTime(video.duration);
+        updateScrubber(video.currentTime, video.duration);
+      }
+    }
+
+    if (video.readyState >= 1) {
+      syncDuration();
+    }
+    video.addEventListener('loadedmetadata', syncDuration);
+    video.addEventListener('durationchange', syncDuration);
+
+    video.addEventListener('timeupdate', () => {
+      if (!isDragging && video.duration) {
+        updateScrubber(video.currentTime, video.duration);
+      }
+    });
+
+    function syncPlayState() {
+      const isPaused = video.paused;
+      itemEl.classList.toggle('is-paused', isPaused);
+      if (playPauseBtn) {
+        const iconPlay = playPauseBtn.querySelector('.icon-play');
+        const iconPause = playPauseBtn.querySelector('.icon-pause');
+        if (iconPlay && iconPause) {
+          iconPlay.style.display = isPaused ? 'block' : 'none';
+          iconPause.style.display = isPaused ? 'none' : 'block';
+        }
+      }
+      const topPlayBtn = itemEl.querySelector('.ref-tb-btn[data-act="toggle-play"]');
+      if (topPlayBtn) {
+        topPlayBtn.textContent = isPaused ? '▶️ เล่น' : '⏸️ พัก';
+      }
+    }
+
+    video.addEventListener('play', syncPlayState);
+    video.addEventListener('pause', syncPlayState);
+    video.addEventListener('ended', syncPlayState);
+    syncPlayState();
+
+    function syncVolumeUI() {
+      const isMuted = video.muted || video.volume === 0;
+      const vol = isMuted ? 0 : video.volume;
+      const pct = Math.round(vol * 100);
+
+      if (volFill) volFill.style.width = `${pct}%`;
+      if (volThumb) volThumb.style.left = `${pct}%`;
+      if (volTrack) {
+        volTrack.setAttribute('title', isMuted ? 'ปิดเสียงอยู่ (คลิกหรือลากเพื่อเปิดเสียง)' : `ระดับเสียง: ${pct}%`);
+      }
+
+      if (muteBtn) {
+        const iconMute = muteBtn.querySelector('.icon-vol-mute');
+        const iconLow = muteBtn.querySelector('.icon-vol-low');
+        const iconUp = muteBtn.querySelector('.icon-vol-up');
+        if (iconMute && iconLow && iconUp) {
+          iconMute.style.display = isMuted ? 'block' : 'none';
+          iconLow.style.display = (!isMuted && vol < 0.5) ? 'block' : 'none';
+          iconUp.style.display = (!isMuted && vol >= 0.5) ? 'block' : 'none';
+        }
+        muteBtn.setAttribute('title', isMuted ? 'เปิดเสียง (คลิก)' : 'ปิดเสียง (คลิก)');
+      }
+
+      const topMuteBtn = itemEl.querySelector('.ref-tb-btn[data-act="toggle-mute"]');
+      if (topMuteBtn) {
+        topMuteBtn.textContent = isMuted ? '🔇 เสียง' : '🔊 เปิดเสียง';
+      }
+
+      if (!isMuted && video.volume > 0.05) {
+        lastVolume = video.volume;
+      }
+    }
+
+    video.addEventListener('volumechange', syncVolumeUI);
+    syncVolumeUI();
+
+    function seekToClientX(clientX) {
+      if (!video.duration || !isFinite(video.duration)) return;
+      const rect = trackContainer.getBoundingClientRect();
+      if (rect.width <= 0) return;
+      const ratio = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+      const targetTime = ratio * video.duration;
+      video.currentTime = targetTime;
+      updateScrubber(targetTime, video.duration);
+    }
+
+    const hostDoc = (itemEl.ownerDocument && itemEl.ownerDocument.defaultView) || window;
+
+    function onPointerMove(e) {
+      if (!isDragging) return;
+      const clientX = (e.touches && e.touches[0]) ? e.touches[0].clientX : e.clientX;
+      seekToClientX(clientX);
+    }
+
+    function onPointerUp() {
+      if (!isDragging) return;
+      isDragging = false;
+      trackContainer.classList.remove('dragging');
+      if (!isDraggingVol) {
+        ctrlBar.classList.remove('is-active');
+      }
+      hostDoc.removeEventListener('mousemove', onPointerMove);
+      hostDoc.removeEventListener('mouseup', onPointerUp);
+      hostDoc.removeEventListener('touchmove', onPointerMove);
+      hostDoc.removeEventListener('touchend', onPointerUp);
+      if (wasPlayingBeforeDrag) {
+        video.play().catch(() => {});
+      }
+    }
+
+    trackContainer.addEventListener('mousedown', (e) => {
+      e.stopPropagation();
+      e.preventDefault();
+      if (!video.duration || !isFinite(video.duration)) return;
+      isDragging = true;
+      wasPlayingBeforeDrag = !video.paused;
+      if (wasPlayingBeforeDrag) {
+        video.pause();
+      }
+      trackContainer.classList.add('dragging');
+      ctrlBar.classList.add('is-active');
+      seekToClientX(e.clientX);
+      hostDoc.addEventListener('mousemove', onPointerMove);
+      hostDoc.addEventListener('mouseup', onPointerUp);
+    });
+
+    trackContainer.addEventListener('touchstart', (e) => {
+      e.stopPropagation();
+      if (!video.duration || !isFinite(video.duration)) return;
+      isDragging = true;
+      wasPlayingBeforeDrag = !video.paused;
+      if (wasPlayingBeforeDrag) {
+        video.pause();
+      }
+      trackContainer.classList.add('dragging');
+      ctrlBar.classList.add('is-active');
+      if (e.touches && e.touches[0]) {
+        seekToClientX(e.touches[0].clientX);
+      }
+      hostDoc.addEventListener('touchmove', onPointerMove, { passive: false });
+      hostDoc.addEventListener('touchend', onPointerUp);
+    }, { passive: false });
+
+    // Volume Drag & Click Handling
+    function setVolumeFromClientX(clientX) {
+      if (!volTrack) return;
+      const rect = volTrack.getBoundingClientRect();
+      if (rect.width <= 0) return;
+      let ratio = (clientX - rect.left) / rect.width;
+      ratio = Math.max(0, Math.min(1, ratio));
+      if (ratio < 0.03) {
+        video.muted = true;
+        video.volume = 0;
+      } else {
+        video.volume = ratio;
+        video.muted = false;
+        lastVolume = ratio;
+      }
+      syncVolumeUI();
+    }
+
+    function onVolPointerMove(e) {
+      if (!isDraggingVol) return;
+      const clientX = (e.touches && e.touches[0]) ? e.touches[0].clientX : e.clientX;
+      setVolumeFromClientX(clientX);
+    }
+
+    function onVolPointerUp() {
+      if (!isDraggingVol) return;
+      isDraggingVol = false;
+      if (volTrack) volTrack.classList.remove('dragging');
+      if (volGroup) volGroup.classList.remove('is-dragging');
+      if (!isDragging) {
+        ctrlBar.classList.remove('is-active');
+      }
+      hostDoc.removeEventListener('mousemove', onVolPointerMove);
+      hostDoc.removeEventListener('mouseup', onVolPointerUp);
+      hostDoc.removeEventListener('touchmove', onVolPointerMove);
+      hostDoc.removeEventListener('touchend', onVolPointerUp);
+    }
+
+    if (volTrack) {
+      volTrack.addEventListener('mousedown', (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        isDraggingVol = true;
+        volTrack.classList.add('dragging');
+        if (volGroup) volGroup.classList.add('is-dragging');
+        ctrlBar.classList.add('is-active');
+        setVolumeFromClientX(e.clientX);
+        hostDoc.addEventListener('mousemove', onVolPointerMove);
+        hostDoc.addEventListener('mouseup', onVolPointerUp);
+      });
+
+      volTrack.addEventListener('touchstart', (e) => {
+        e.stopPropagation();
+        isDraggingVol = true;
+        volTrack.classList.add('dragging');
+        if (volGroup) volGroup.classList.add('is-dragging');
+        ctrlBar.classList.add('is-active');
+        if (e.touches && e.touches[0]) {
+          setVolumeFromClientX(e.touches[0].clientX);
+        }
+        hostDoc.addEventListener('touchmove', onVolPointerMove, { passive: false });
+        hostDoc.addEventListener('touchend', onVolPointerUp);
+      }, { passive: false });
+    }
+
+    if (volGroup) {
+      volGroup.addEventListener('wheel', (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        const delta = e.deltaY < 0 ? 0.05 : -0.05;
+        let newVol = Math.max(0, Math.min(1, (video.muted ? 0 : video.volume) + delta));
+        if (newVol <= 0.02) {
+          video.muted = true;
+          video.volume = 0;
+        } else {
+          video.muted = false;
+          video.volume = newVol;
+          lastVolume = newVol;
+        }
+      }, { passive: false });
+    }
+
+    if (playPauseBtn) {
+      playPauseBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (video.paused) {
+          video.play().catch(() => {});
+        } else {
+          video.pause();
+        }
+      });
+    }
+
+    if (rewindBtn) {
+      rewindBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        video.currentTime = Math.max(0, video.currentTime - 10);
+        showVideoSeekFeedback(itemEl, '-10s');
+      });
+    }
+
+    if (forwardBtn) {
+      forwardBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const maxTime = video.duration || (video.currentTime + 10);
+        video.currentTime = Math.min(maxTime, video.currentTime + 10);
+        showVideoSeekFeedback(itemEl, '+10s');
+      });
+    }
+
+    if (muteBtn) {
+      muteBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (video.muted || video.volume === 0) {
+          video.muted = false;
+          if (video.volume === 0) {
+            video.volume = lastVolume > 0.05 ? lastVolume : 0.8;
+          }
+        } else {
+          video.muted = true;
+        }
+      });
+    }
+  }
+
   // ── URL & Social Media Media Parser ──
-  function sanitizeEmbedUrl(url) {
+  function sanitizeEmbedUrl(url, extraOptions = {}) {
     if (!url) return '';
     const ytMatch = url.match(/(?:youtube(?:-nocookie)?\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?|shorts)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i);
     if (ytMatch && ytMatch[1]) {
       const vidId = ytMatch[1];
-      return `https://www.youtube.com/embed/${vidId}?rel=0&playsinline=1`;
+      const hasAutoplay = extraOptions.autoplay || url.includes('autoplay=1');
+      const hasMute = extraOptions.mute || url.includes('mute=1');
+      const params = new URLSearchParams();
+      params.set('rel', '0');
+      params.set('playsinline', '1');
+      params.set('enablejsapi', '1');
+      if (hasAutoplay) {
+        params.set('autoplay', '1');
+      }
+      if (hasMute) {
+        params.set('mute', '1');
+      }
+      const timeMatch = url.match(/[?&](?:t|start)=([0-9hms]+)/i);
+      if (timeMatch && timeMatch[1]) {
+        const val = timeMatch[1];
+        if (/^\d+$/.test(val)) {
+          params.set('start', val);
+        } else {
+          let total = 0;
+          const h = val.match(/(\d+)h/i);
+          const m = val.match(/(\d+)m/i);
+          const s = val.match(/(\d+)s/i);
+          if (h) total += parseInt(h[1], 10) * 3600;
+          if (m) total += parseInt(m[1], 10) * 60;
+          if (s) total += parseInt(s[1], 10);
+          if (total > 0) params.set('start', String(total));
+        }
+      }
+      return `https://www.youtube.com/embed/${vidId}?${params.toString()}`;
     }
     return url;
   }
@@ -2100,6 +2626,8 @@
     if (ytMatch && ytMatch[1]) {
       const id = ytMatch[1];
       const isShorts = url.includes('/shorts/');
+      const isNormal = isBoardNormalMode();
+      const sanitizedUrl = sanitizeEmbedUrl(url, { autoplay: isNormal });
       return {
         type: 'youtube',
         isEmbed: true,
@@ -2107,7 +2635,8 @@
         width: isShorts ? 360 : 540,
         height: isShorts ? 640 : 304,
         aspect: isShorts ? (360 / 640) : (16 / 9),
-        embedUrl: `https://www.youtube.com/embed/${id}?rel=0&playsinline=1`,
+        embedUrl: sanitizedUrl,
+        autoplay: isNormal,
         thumbnailUrl: `https://img.youtube.com/vi/${id}/hqdefault.jpg`,
         dataUrl: `https://img.youtube.com/vi/${id}/hqdefault.jpg`,
         title: isShorts ? 'YouTube Shorts' : 'YouTube Video'
@@ -2321,11 +2850,15 @@
     }
 
     // Embed Types (YouTube, TikTok, Vimeo)
+    const isNormal = isBoardNormalMode();
+    const shouldAutoplayYt = (parsed.type === 'youtube' && isNormal) || Boolean(parsed.autoplay);
+
     const newItem = {
       id: 'item_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
       isEmbed: true,
       embedType: parsed.type,
-      embedUrl: parsed.embedUrl,
+      embedUrl: parsed.embedUrl || sanitizeEmbedUrl(parsed.url || rawUrl, { autoplay: shouldAutoplayYt }),
+      autoplay: shouldAutoplayYt,
       thumbnailUrl: parsed.thumbnailUrl || parsed.dataUrl || '',
       dataUrl: parsed.dataUrl || parsed.thumbnailUrl || '',
       title: parsed.title,
@@ -2368,8 +2901,12 @@
 
     createRefImageItem(newItem);
 
-    const nameMap = { youtube: 'YouTube 🔴', tiktok: 'TikTok 🎵', vimeo: 'Vimeo 🎬' };
-    showToast(`นำเข้า ${nameMap[parsed.type] || 'มีเดีย'} เรียบร้อย! ✨`);
+    if (shouldAutoplayYt) {
+      showToast('นำเข้า YouTube เรียบร้อย! 🎬 กำลังเล่นคลิป...');
+    } else {
+      const nameMap = { youtube: 'YouTube 🔴', tiktok: 'TikTok 🎵', vimeo: 'Vimeo 🎬' };
+      showToast(`นำเข้า ${nameMap[parsed.type] || 'มีเดีย'} เรียบร้อย! ✨`);
+    }
   }
 
   // ── Smart PNG & JPEG Metadata Embedding & Extraction Engine ──
@@ -3364,7 +3901,10 @@
         `;
       }
     } else if (itemData.isVideo) {
-      mediaHtml = `<video src="${itemData.dataUrl}" class="ref-item-img ref-item-video" autoplay loop muted playsinline></video>`;
+      mediaHtml = `
+        <video src="${itemData.dataUrl}" class="ref-item-img ref-item-video" autoplay loop muted playsinline></video>
+        ${renderVideoControlsHtml(itemData)}
+      `;
     } else {
       mediaHtml = `<img src="${itemData.dataUrl}" class="ref-item-img" alt="ref">`;
     }
@@ -3392,16 +3932,16 @@
       
       <div class="ref-item-toolbar">
         <button class="ref-tb-btn btn-palette" data-act="palette" title="สกัดชุดสีจากภาพหรือเฟรมวิดีโอนี้ (ส่งไปยัง Color Generator)">🎨 สกัดสี</button>
-        ${(itemData.isVideo || (itemData.isEmbed && !itemData.showThumbnailOnly)) ? `
+        ${(itemData.isEmbed && !itemData.showThumbnailOnly) ? `
           <button class="ref-tb-btn btn-interact" data-act="toggle-interact" title="เปิดโหมดโต้ตอบ/ควบคุมคลิปนี้ (หรือดับเบิ้ลคลิกที่คลิป)">
             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align:-1px; margin-right:3px;">
               <polygon points="5 3 19 12 5 21 5 3"></polygon>
             </svg>โต้ตอบ
           </button>
         ` : ''}
-        ${itemData.isVideo ? `
-          <button class="ref-tb-btn btn-playpause" data-act="toggle-play" title="เล่น / พักวิดีโอ">⏸️ พัก</button>
-          <button class="ref-tb-btn btn-mute" data-act="toggle-mute" title="เปิด / ปิดเสียง">🔇 เสียง</button>
+        ${(itemData.embedType === 'youtube' && !itemData.showThumbnailOnly) ? `
+          <button class="ref-tb-btn btn-playpause btn-yt-playpause" data-act="yt-toggle-play" title="เล่น / พัก YouTube">⏸️ พัก</button>
+          <button class="ref-tb-btn btn-mute btn-yt-mute" data-act="yt-toggle-mute" title="เปิด / ปิดเสียง">🔇 เสียง</button>
         ` : ''}
         ${itemData.embedType === 'youtube' ? `
           <button class="ref-tb-btn" data-act="toggle-yt-mode" title="สลับระหว่างวิดีโอ YouTube และภาพปก">${itemData.showThumbnailOnly ? '🎬 ดูวิดีโอ' : '🖼️ ภาพปก'}</button>
@@ -3422,6 +3962,15 @@
 
     updateItemCount();
     bindItemEvents(itemEl, itemData);
+    if (itemData.embedType === 'youtube') {
+      const ytIframe = itemEl.querySelector('iframe');
+      if (ytIframe) {
+        setupYouTubeIframeController(itemEl, itemData, ytIframe);
+      }
+    }
+    if (itemData.isVideo) {
+      setupVideoController(itemEl, itemData);
+    }
     updateItemDom(itemData);
     selectItem(itemData.id);
   }
@@ -3483,7 +4032,11 @@
     // Double click to enter / exit interactive mode for video/embed
     itemEl.addEventListener('dblclick', (e) => {
       if (!isModalOpen) return;
-      if (itemData.isVideo || itemData.isEmbed) {
+      if (e.target.closest('.ref-video-ctrl-bar')) {
+        e.stopPropagation();
+        return;
+      }
+      if (itemData.isEmbed) {
         e.stopPropagation();
         if (itemEl.classList.contains('is-interactive')) {
           exitInteractiveMode();
@@ -3495,6 +4048,15 @@
 
     itemEl.addEventListener('mousedown', (e) => {
       if (!isModalOpen || spacePressed) return;
+
+      const videoCtrl = e.target.closest('.ref-video-ctrl-bar');
+      if (videoCtrl) {
+        e.stopPropagation();
+        if (!selectedItemIds.has(itemData.id)) {
+          selectItem(itemData.id);
+        }
+        return;
+      }
 
       const handleBtn = e.target.closest('.ref-handle');
       const tbBtn = e.target.closest('.ref-tb-btn');
@@ -3542,6 +4104,35 @@
             tbBtn.textContent = video.muted ? '🔇 เสียง' : '🔊 เปิดเสียง';
           }
           return;
+        } else if (act === 'yt-toggle-play') {
+          const iframe = itemEl.querySelector('iframe');
+          if (iframe) {
+            if (itemData.ytPlaying) {
+              sendYouTubeCommand(iframe, 'pauseVideo');
+              itemData.ytPlaying = false;
+              tbBtn.textContent = '▶️ เล่น';
+            } else {
+              sendYouTubeCommand(iframe, 'playVideo');
+              itemData.ytPlaying = true;
+              tbBtn.textContent = '⏸️ พัก';
+            }
+          }
+          return;
+        } else if (act === 'yt-toggle-mute') {
+          const iframe = itemEl.querySelector('iframe');
+          if (iframe) {
+            if (itemData.ytMuted) {
+              sendYouTubeCommand(iframe, 'unMute');
+              sendYouTubeCommand(iframe, 'setVolume', [100]);
+              itemData.ytMuted = false;
+              tbBtn.textContent = '🔇 เสียง';
+            } else {
+              sendYouTubeCommand(iframe, 'mute');
+              itemData.ytMuted = true;
+              tbBtn.textContent = '🔊 เปิดเสียง';
+            }
+          }
+          return;
         } else if (act === 'toggle-yt-mode') {
           itemData.showThumbnailOnly = !itemData.showThumbnailOnly;
           const crop = itemEl.querySelector('.ref-item-crop');
@@ -3549,13 +4140,27 @@
             if (itemData.showThumbnailOnly) {
               crop.innerHTML = `<img src="${itemData.thumbnailUrl}" class="ref-item-img" alt="thumbnail">`;
               tbBtn.textContent = '🎬 ดูวิดีโอ';
+              const ytPlay = itemEl.querySelector('[data-act="yt-toggle-play"]');
+              const ytMute = itemEl.querySelector('[data-act="yt-toggle-mute"]');
+              if (ytPlay) ytPlay.style.display = 'none';
+              if (ytMute) ytMute.style.display = 'none';
             } else {
-              const embedSrc = sanitizeEmbedUrl(itemData.embedUrl);
+              const shouldAutoplay = isBoardNormalMode();
+              itemData.autoplay = shouldAutoplay;
+              const embedSrc = sanitizeEmbedUrl(itemData.embedUrl, { autoplay: shouldAutoplay });
               crop.innerHTML = `
                 <iframe src="${embedSrc}" class="ref-item-img ref-item-embed" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
                 <div class="ref-embed-shield"></div>
               `;
               tbBtn.textContent = '🖼️ ภาพปก';
+              const ytPlay = itemEl.querySelector('[data-act="yt-toggle-play"]');
+              const ytMute = itemEl.querySelector('[data-act="yt-toggle-mute"]');
+              if (ytPlay) ytPlay.style.display = '';
+              if (ytMute) ytMute.style.display = '';
+              const newIframe = crop.querySelector('iframe');
+              if (newIframe) {
+                setupYouTubeIframeController(itemEl, itemData, newIframe);
+              }
             }
             itemData.imgEl = crop.querySelector('.ref-item-img');
             updateItemDom(itemData);
@@ -4937,7 +5542,10 @@
         `;
       }
     } else if (cloned.isVideo) {
-      mediaHtml = `<video src="${cloned.dataUrl}" class="ref-item-img ref-item-video" autoplay loop muted playsinline></video>`;
+      mediaHtml = `
+        <video src="${cloned.dataUrl}" class="ref-item-img ref-item-video" autoplay loop muted playsinline></video>
+        ${renderVideoControlsHtml(cloned)}
+      `;
     } else {
       mediaHtml = `<img src="${cloned.dataUrl}" class="ref-item-img" alt="ref">`;
     }
@@ -4965,16 +5573,16 @@
       
       <div class="ref-item-toolbar">
         <button class="ref-tb-btn btn-palette" data-act="palette" title="สกัดชุดสีจากภาพหรือเฟรมวิดีโอนี้ (ส่งไปยัง Color Generator)">🎨 สกัดสี</button>
-        ${(cloned.isVideo || (cloned.isEmbed && !cloned.showThumbnailOnly)) ? `
+        ${(cloned.isEmbed && !cloned.showThumbnailOnly) ? `
           <button class="ref-tb-btn btn-interact" data-act="toggle-interact" title="เปิดโหมดโต้ตอบ/ควบคุมคลิปนี้ (หรือดับเบิ้ลคลิกที่คลิป)">
             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align:-1px; margin-right:3px;">
               <polygon points="5 3 19 12 5 21 5 3"></polygon>
             </svg>โต้ตอบ
           </button>
         ` : ''}
-        ${cloned.isVideo ? `
-          <button class="ref-tb-btn btn-playpause" data-act="toggle-play" title="เล่น / พักวิดีโอ">⏸️ พัก</button>
-          <button class="ref-tb-btn btn-mute" data-act="toggle-mute" title="เปิด / ปิดเสียง">🔇 เสียง</button>
+        ${(cloned.embedType === 'youtube' && !cloned.showThumbnailOnly) ? `
+          <button class="ref-tb-btn btn-playpause btn-yt-playpause" data-act="yt-toggle-play" title="เล่น / พัก YouTube">⏸️ พัก</button>
+          <button class="ref-tb-btn btn-mute btn-yt-mute" data-act="yt-toggle-mute" title="เปิด / ปิดเสียง">🔇 เสียง</button>
         ` : ''}
         ${cloned.embedType === 'youtube' ? `
           <button class="ref-tb-btn" data-act="toggle-yt-mode" title="สลับระหว่างวิดีโอ YouTube และภาพปก">${cloned.showThumbnailOnly ? '🎬 ดูวิดีโอ' : '🖼️ ภาพปก'}</button>
@@ -4994,6 +5602,15 @@
     cloned.imgEl = itemEl.querySelector('.ref-item-img');
 
     bindItemEvents(itemEl, cloned);
+    if (cloned.embedType === 'youtube') {
+      const ytIframe = itemEl.querySelector('iframe');
+      if (ytIframe) {
+        setupYouTubeIframeController(itemEl, cloned, ytIframe);
+      }
+    }
+    if (cloned.isVideo) {
+      setupVideoController(itemEl, cloned);
+    }
     updateItemDom(cloned);
   }
 
