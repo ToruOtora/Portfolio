@@ -689,6 +689,7 @@
       createRefImageItem(item);
       if (item.zIndex > nextZIndex) nextZIndex = item.zIndex;
     });
+    deselectAll();
     updateItemCount();
     showToast('✨ เปิดกระดานเรฟเรียบร้อย!');
   }
@@ -1115,7 +1116,15 @@
       if (!isModalOpen) return;
       if (e.pointerType === 'touch') return;
 
-      const isBg = e.target === viewportEl || e.target === canvasEl || e.target === emptyHintEl || e.target.closest('#refboard-empty-hint');
+      const isItemOrControl = Boolean(
+        e.target.closest('.ref-item') ||
+        e.target.closest('.ref-item-toolbar') ||
+        e.target.closest('.ref-handle') ||
+        e.target.closest('.refboard-top-bar') ||
+        e.target.closest('.refboard-footer') ||
+        e.target.closest('.cg-modal')
+      );
+      const isBg = !isItemOrControl && (e.target === viewportEl || e.target === canvasEl || Boolean(e.target.closest('#refboard-viewport')));
       const isShift = e.shiftKey || false;
 
       if (spacePressed || e.button === 1 || (isBg && !isShift && e.button === 0 && e.altKey)) {
@@ -2348,11 +2357,33 @@
       }
     }
 
+    function updateVideoThumb() {
+      if (!itemData.thumbnailUrl && video.videoWidth > 0 && video.videoHeight > 0) {
+        try {
+          const cvs = document.createElement('canvas');
+          cvs.width = video.videoWidth;
+          cvs.height = video.videoHeight;
+          const ctx = cvs.getContext('2d');
+          ctx.drawImage(video, 0, 0, cvs.width, cvs.height);
+          const thumb = cvs.toDataURL('image/jpeg', 0.88);
+          if (thumb && thumb.startsWith('data:image')) {
+            itemData.thumbnailUrl = thumb;
+          }
+        } catch (e) {}
+      }
+    }
+
     if (video.readyState >= 1) {
       syncDuration();
     }
+    if (video.readyState >= 2) {
+      updateVideoThumb();
+    }
     video.addEventListener('loadedmetadata', syncDuration);
     video.addEventListener('durationchange', syncDuration);
+    video.addEventListener('loadeddata', updateVideoThumb);
+    video.addEventListener('canplay', updateVideoThumb);
+    video.addEventListener('seeked', updateVideoThumb);
 
     video.addEventListener('timeupdate', () => {
       if (!isDragging && video.duration) {
@@ -3901,8 +3932,147 @@
     interactiveItemId = null;
   }
 
+  // Build Group SVG Container combining all items with full transform, crop, and media support
+  function buildGroupSvgString(items, groupW, groupH, originX = null, originY = null) {
+    if (!items || items.length === 0) return '';
+
+    let minX = originX;
+    let minY = originY;
+    if (minX === null || minX === undefined || minY === null || minY === undefined) {
+      minX = Infinity;
+      minY = Infinity;
+      items.forEach((it) => {
+        minX = Math.min(minX, it.x);
+        minY = Math.min(minY, it.y);
+      });
+      if (minX === Infinity) minX = 0;
+      if (minY === Infinity) minY = 0;
+    }
+
+    let svgDefs = '';
+    let svgInner = '';
+
+    items.forEach((it, idx) => {
+      const relX = it.x - minX;
+      const relY = it.y - minY;
+      const rot = it.rotation || 0;
+      const w = it.width;
+      const h = it.height;
+      const fullW = it.fullWidth || w;
+      const fullH = it.fullHeight || h;
+      const cL = it.cropLeft || 0;
+      const cT = it.cropTop || 0;
+      const cR = it.cropRight || 0;
+      const cB = it.cropBottom || 0;
+
+      const hasCrop = cL > 0 || cT > 0 || cR > 0 || cB > 0;
+      const clipId = `crop_clip_${idx}_${Math.random().toString(36).substr(2, 5)}`;
+
+      if (hasCrop) {
+        svgDefs += `<clipPath id="${clipId}"><rect x="0" y="0" width="${w}" height="${h}" /></clipPath>`;
+      }
+
+      if (it.svgContent) {
+        try {
+          const parser = new DOMParser();
+          const doc = parser.parseFromString(it.svgContent, 'image/svg+xml');
+          const svgEl = doc.querySelector('svg');
+          const content = svgEl ? svgEl.innerHTML : '';
+          if (hasCrop) {
+            svgInner += `<g transform="translate(${relX}, ${relY}) rotate(${rot}, ${w / 2}, ${h / 2})"><g clip-path="url(#${clipId})"><g transform="translate(-${cL}, -${cT})">${content}</g></g></g>`;
+          } else {
+            svgInner += `<g transform="translate(${relX}, ${relY}) rotate(${rot}, ${w / 2}, ${h / 2})">${content}</g>`;
+          }
+        } catch (e) {
+          console.warn('Error parsing child svgContent:', e);
+        }
+      } else {
+        let imgSrc = it.thumbnailUrl || '';
+        const isRawVideoUrl = typeof it.dataUrl === 'string' && (it.dataUrl.startsWith('data:video/') || /\.(mp4|webm|mov|m4v|ogg)(\?.*)?$/i.test(it.dataUrl));
+        if (!imgSrc && !isRawVideoUrl) {
+          imgSrc = it.dataUrl || '';
+        }
+
+        if (imgSrc) {
+          if (hasCrop) {
+            svgInner += `<g transform="translate(${relX}, ${relY}) rotate(${rot}, ${w / 2}, ${h / 2})"><g clip-path="url(#${clipId})"><image href="${imgSrc}" x="-${cL}" y="-${cT}" width="${fullW}" height="${fullH}" preserveAspectRatio="none" /></g></g>`;
+          } else {
+            svgInner += `<g transform="translate(${relX}, ${relY}) rotate(${rot}, ${w / 2}, ${h / 2})"><image href="${imgSrc}" width="${w}" height="${h}" preserveAspectRatio="none" /></g>`;
+          }
+        } else {
+          // Fallback SVG graphic for videos/embeds without raster thumbnail so it never disappears
+          const safeTitle = String(it.title || (it.isVideo ? 'Video' : 'Media')).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+          const playRadius = Math.max(14, Math.min(w, h) * 0.16);
+          const iconHalf = playRadius * 0.55;
+          svgInner += `
+            <g transform="translate(${relX}, ${relY}) rotate(${rot}, ${w / 2}, ${h / 2})">
+              <rect width="${w}" height="${h}" rx="6" fill="#0f172a" stroke="#334155" stroke-width="1.5" />
+              <circle cx="${w / 2}" cy="${h / 2}" r="${playRadius}" fill="#6366f1" />
+              <polygon points="${w / 2 - iconHalf * 0.6},${h / 2 - iconHalf} ${w / 2 + iconHalf},${h / 2} ${w / 2 - iconHalf * 0.6},${h / 2 + iconHalf}" fill="#ffffff" />
+              <text x="${w / 2}" y="${Math.min(h - 12, h / 2 + playRadius + 22)}" text-anchor="middle" fill="#94a3b8" font-size="12" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif">${safeTitle}</text>
+            </g>
+          `;
+        }
+      }
+    });
+
+    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${groupW} ${groupH}" width="${groupW}" height="${groupH}">${svgDefs ? `<defs>${svgDefs}</defs>` : ''}${svgInner}</svg>`;
+  }
+
+  // Ensure group items always have a fresh, live dataUrl across sessions and imported files
+  function prepareGroupItemData(itemData) {
+    if (!itemData) return;
+    const isGroupItem = Boolean(
+      itemData.isGroup ||
+      (itemData.originalItems && itemData.originalItems.length > 0)
+    );
+    if (!isGroupItem) return;
+
+    itemData.isGroup = true;
+    const isBlob = typeof itemData.dataUrl === 'string' && itemData.dataUrl.startsWith('blob:');
+    const isMissing = !itemData.dataUrl || itemData.dataUrl.trim() === '';
+
+    if (isBlob || isMissing || !itemData.svgContent) {
+      if (itemData.originalItems && itemData.originalItems.length > 0) {
+        let minX = itemData.initialGroupX;
+        let minY = itemData.initialGroupY;
+        let maxX = -Infinity, maxY = -Infinity;
+        if (minX === undefined || minX === null || minY === undefined || minY === null) {
+          minX = Infinity;
+          minY = Infinity;
+          itemData.originalItems.forEach((it) => {
+            minX = Math.min(minX, it.x);
+            minY = Math.min(minY, it.y);
+            maxX = Math.max(maxX, it.x + (it.width || 0));
+            maxY = Math.max(maxY, it.y + (it.height || 0));
+          });
+          if (minX === Infinity) minX = 0;
+          if (minY === Infinity) minY = 0;
+        } else {
+          itemData.originalItems.forEach((it) => {
+            maxX = Math.max(maxX, it.x + (it.width || 0));
+            maxY = Math.max(maxY, it.y + (it.height || 0));
+          });
+        }
+        const gw = itemData.initialGroupWidth || itemData.width || Math.max(40, maxX - minX);
+        const gh = itemData.initialGroupHeight || itemData.height || Math.max(40, maxY - minY);
+        itemData.svgContent = buildGroupSvgString(itemData.originalItems, gw, gh, minX, minY);
+      }
+    }
+
+    if (itemData.svgContent) {
+      try {
+        const blob = new Blob([itemData.svgContent], { type: 'image/svg+xml' });
+        itemData.dataUrl = URL.createObjectURL(blob);
+      } catch (e) {
+        console.warn('Cannot create group SVG blob:', e);
+      }
+    }
+  }
+
   // Create Reference Image / Video / GIF DOM Item
   function createRefImageItem(itemData) {
+    prepareGroupItemData(itemData);
     itemsMap.set(itemData.id, itemData);
 
     if (isGridEnabled) {
@@ -3993,6 +4163,30 @@
     canvasEl.appendChild(itemEl);
     itemData.el = itemEl;
     itemData.imgEl = itemEl.querySelector('.ref-item-img');
+
+    if (itemData.imgEl && canUngroup) {
+      itemData.imgEl.addEventListener('error', () => {
+        if (itemData.originalItems && itemData.originalItems.length > 0 && !itemEl._hasRetriedSvg) {
+          itemEl._hasRetriedSvg = true;
+          let minX = itemData.initialGroupX;
+          let minY = itemData.initialGroupY;
+          if (minX === undefined || minX === null) {
+            minX = Math.min(...itemData.originalItems.map((it) => it.x));
+            minY = Math.min(...itemData.originalItems.map((it) => it.y));
+          }
+          const gw = itemData.initialGroupWidth || itemData.width || 400;
+          const gh = itemData.initialGroupHeight || itemData.height || 400;
+          itemData.svgContent = buildGroupSvgString(itemData.originalItems, gw, gh, minX, minY);
+          if (itemData.svgContent) {
+            try {
+              const blob = new Blob([itemData.svgContent], { type: 'image/svg+xml' });
+              itemData.dataUrl = URL.createObjectURL(blob);
+              itemData.imgEl.src = itemData.dataUrl;
+            } catch (err) {}
+          }
+        }
+      });
+    }
 
     updateItemCount();
     bindItemEvents(itemEl, itemData);
@@ -5052,6 +5246,7 @@
     groupBoxEl.style.transform = `translate(${minX}px, ${minY}px)`;
     groupBoxEl.style.width = `${groupW}px`;
     groupBoxEl.style.height = `${groupH}px`;
+    groupBoxEl.style.zIndex = Math.max(9998, (typeof nextZIndex === 'number' ? nextZIndex : 100) + 10);
     groupBoxEl.classList.add('active');
   }
 
@@ -5303,12 +5498,52 @@
     });
   }
 
-  // Clear Board
+  // Ensure Canvas Utility Elements (#refboard-marquee-box and #refboard-group-box) always exist
+  function ensureCanvasUtilityElements() {
+    if (!canvasEl) return;
+    let marqueeBoxEl = document.getElementById('refboard-marquee-box');
+    if (!marqueeBoxEl) {
+      marqueeBoxEl = document.createElement('div');
+      marqueeBoxEl.id = 'refboard-marquee-box';
+      marqueeBoxEl.className = 'refboard-marquee-box';
+      canvasEl.prepend(marqueeBoxEl);
+    }
+    let groupBoxEl = document.getElementById('refboard-group-box');
+    if (!groupBoxEl) {
+      groupBoxEl = document.createElement('div');
+      groupBoxEl.id = 'refboard-group-box';
+      groupBoxEl.className = 'refboard-group-box';
+      groupBoxEl.innerHTML = `
+        <div class="ref-handle ref-handle-tl" data-ghandle="tl"></div>
+        <div class="ref-handle ref-handle-tr" data-ghandle="tr"></div>
+        <div class="ref-handle ref-handle-bl" data-ghandle="bl"></div>
+        <div class="ref-handle ref-handle-br" data-ghandle="br"></div>
+        <div class="ref-handle ref-handle-rot" data-ghandle="rot"></div>
+
+        <div class="ref-item-toolbar ref-group-toolbar">
+          <button class="ref-tb-btn btn-regroup" data-gact="regroup" title="รวมกลุ่มรูปภาพที่เลือกไว้ด้วยกัน">📦 รวมกลุ่ม</button>
+          <button class="ref-tb-btn" data-gact="front" title="นำกลุ่มขึ้นหน้าสุด">⬆ ขึ้นหน้า</button>
+          <button class="ref-tb-btn" data-gact="back" title="ส่งกลุ่มไปหลังสุด">⬇ ลงหลัง</button>
+          <button class="ref-tb-btn del-btn" data-gact="del" title="ลบรูปในกลุ่มทั้งหมด">🗑️ ลบ</button>
+        </div>
+      `;
+      canvasEl.prepend(groupBoxEl);
+      setupGroupEvents();
+    }
+  }
+
+  // Clear Board safely without destroying canvas utility controls
   function clearBoard() {
     pushUndoState();
-    canvasEl.innerHTML = '';
+    deselectAll();
+    if (canvasEl) {
+      canvasEl.querySelectorAll('.ref-item, .refboard-smart-line').forEach((el) => el.remove());
+    }
     itemsMap.clear();
     selectedItemId = null;
+    selectedItemIds.clear();
+    ensureCanvasUtilityElements();
+    updateSelectionBox();
     updateItemCount();
   }
 
@@ -5330,7 +5565,22 @@
     internalClipboard = selected.map((it) => ({
       dataUrl: it.dataUrl,
       isVideo: Boolean(it.isVideo),
-      mediaType: it.mediaType || (it.isVideo ? 'video' : 'image'),
+      isEmbed: Boolean(it.isEmbed),
+      embedType: it.embedType || null,
+      embedUrl: it.embedUrl || null,
+      thumbnailUrl: it.thumbnailUrl || null,
+      showThumbnailOnly: Boolean(it.showThumbnailOnly),
+      title: it.title || null,
+      mediaType: it.mediaType || (it.isVideo ? 'video' : (it.isEmbed ? 'embed' : 'image')),
+      svgContent: it.svgContent || null,
+      isVector: Boolean(it.isVector),
+      isPdfPage: Boolean(it.isPdfPage),
+      isGroup: Boolean(it.isGroup),
+      originalItems: it.originalItems ? JSON.parse(JSON.stringify(it.originalItems)) : null,
+      initialGroupX: it.initialGroupX,
+      initialGroupY: it.initialGroupY,
+      initialGroupWidth: it.initialGroupWidth,
+      initialGroupHeight: it.initialGroupHeight,
       x: it.x,
       y: it.y,
       width: it.width,
@@ -5390,7 +5640,22 @@
         id: newId,
         dataUrl: it.dataUrl,
         isVideo: Boolean(it.isVideo),
-        mediaType: it.mediaType || (it.isVideo ? 'video' : 'image'),
+        isEmbed: Boolean(it.isEmbed),
+        embedType: it.embedType || null,
+        embedUrl: it.embedUrl || null,
+        thumbnailUrl: it.thumbnailUrl || null,
+        showThumbnailOnly: Boolean(it.showThumbnailOnly),
+        title: it.title || null,
+        mediaType: it.mediaType || (it.isVideo ? 'video' : (it.isEmbed ? 'embed' : 'image')),
+        svgContent: it.svgContent || null,
+        isVector: Boolean(it.isVector),
+        isPdfPage: Boolean(it.isPdfPage),
+        isGroup: Boolean(it.isGroup),
+        originalItems: it.originalItems ? JSON.parse(JSON.stringify(it.originalItems)) : null,
+        initialGroupX: it.initialGroupX,
+        initialGroupY: it.initialGroupY,
+        initialGroupWidth: it.initialGroupWidth,
+        initialGroupHeight: it.initialGroupHeight,
         x: newX,
         y: newY,
         width: it.width,
@@ -5558,6 +5823,7 @@
   }
 
   function createRefImageItemFromSnapshot(itemData) {
+    prepareGroupItemData(itemData);
     const cloned = Object.assign({}, itemData);
     itemsMap.set(cloned.id, cloned);
 
@@ -5644,6 +5910,30 @@
     canvasEl.appendChild(itemEl);
     cloned.el = itemEl;
     cloned.imgEl = itemEl.querySelector('.ref-item-img');
+
+    if (cloned.imgEl && canUngroup) {
+      cloned.imgEl.addEventListener('error', () => {
+        if (cloned.originalItems && cloned.originalItems.length > 0 && !itemEl._hasRetriedSvg) {
+          itemEl._hasRetriedSvg = true;
+          let minX = cloned.initialGroupX;
+          let minY = cloned.initialGroupY;
+          if (minX === undefined || minX === null) {
+            minX = Math.min(...cloned.originalItems.map((it) => it.x));
+            minY = Math.min(...cloned.originalItems.map((it) => it.y));
+          }
+          const gw = cloned.initialGroupWidth || cloned.width || 400;
+          const gh = cloned.initialGroupHeight || cloned.height || 400;
+          cloned.svgContent = buildGroupSvgString(cloned.originalItems, gw, gh, minX, minY);
+          if (cloned.svgContent) {
+            try {
+              const blob = new Blob([cloned.svgContent], { type: 'image/svg+xml' });
+              cloned.dataUrl = URL.createObjectURL(blob);
+              cloned.imgEl.src = cloned.dataUrl;
+            } catch (err) {}
+          }
+        }
+      });
+    }
 
     bindItemEvents(itemEl, cloned);
     if (cloned.embedType === 'youtube') {
@@ -6390,6 +6680,32 @@
     const groupW = Math.max(40, maxX - minX);
     const groupH = Math.max(40, maxY - minY);
 
+    // Ensure all videos have a captured thumbnail frame before building group SVG
+    selected.forEach((it) => {
+      if (it.isVideo) {
+        const video = (it.el ? it.el.querySelector('video') : null) || (it.imgEl && it.imgEl.tagName === 'VIDEO' ? it.imgEl : null);
+        if (video) {
+          try {
+            const vw = video.videoWidth || it.width || 480;
+            const vh = video.videoHeight || it.height || 320;
+            if (vw > 0 && vh > 0) {
+              const tempCanvas = document.createElement('canvas');
+              tempCanvas.width = vw;
+              tempCanvas.height = vh;
+              const ctx = tempCanvas.getContext('2d');
+              ctx.drawImage(video, 0, 0, vw, vh);
+              const thumb = tempCanvas.toDataURL('image/jpeg', 0.88);
+              if (thumb && thumb.startsWith('data:image')) {
+                it.thumbnailUrl = thumb;
+              }
+            }
+          } catch (e) {
+            console.warn('Cannot capture video thumbnail on regroup:', e);
+          }
+        }
+      }
+    });
+
     // Save complete original items metadata to restore 100% exact dimensions and media types on Ungroup
     const originalItems = selected.map((it) => ({
       x: it.x,
@@ -6425,49 +6741,7 @@
     }));
 
     // Build SVG Group Container combining all selected items
-    let svgDefs = '';
-    let svgInner = '';
-    selected.forEach((it, idx) => {
-      const relX = it.x - minX;
-      const relY = it.y - minY;
-      const rot = it.rotation || 0;
-      const w = it.width;
-      const h = it.height;
-      const fullW = it.fullWidth || w;
-      const fullH = it.fullHeight || h;
-      const cL = it.cropLeft || 0;
-      const cT = it.cropTop || 0;
-      const cR = it.cropRight || 0;
-      const cB = it.cropBottom || 0;
-
-      const hasCrop = cL > 0 || cT > 0 || cR > 0 || cB > 0;
-      const clipId = `crop_clip_${idx}_${Math.random().toString(36).substr(2, 5)}`;
-
-      if (hasCrop) {
-        svgDefs += `<clipPath id="${clipId}"><rect x="0" y="0" width="${w}" height="${h}" /></clipPath>`;
-      }
-
-      if (it.svgContent) {
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(it.svgContent, 'image/svg+xml');
-        const svgEl = doc.querySelector('svg');
-        const content = svgEl ? svgEl.innerHTML : '';
-        if (hasCrop) {
-          svgInner += `<g transform="translate(${relX}, ${relY}) rotate(${rot}, ${w / 2}, ${h / 2})"><g clip-path="url(#${clipId})"><g transform="translate(-${cL}, -${cT})">${content}</g></g></g>`;
-        } else {
-          svgInner += `<g transform="translate(${relX}, ${relY}) rotate(${rot}, ${w / 2}, ${h / 2})">${content}</g>`;
-        }
-      } else {
-        const imgSrc = it.thumbnailUrl || it.dataUrl || '';
-        if (hasCrop) {
-          svgInner += `<g transform="translate(${relX}, ${relY}) rotate(${rot}, ${w / 2}, ${h / 2})"><g clip-path="url(#${clipId})"><image href="${imgSrc}" x="-${cL}" y="-${cT}" width="${fullW}" height="${fullH}" preserveAspectRatio="none" /></g></g>`;
-        } else {
-          svgInner += `<g transform="translate(${relX}, ${relY}) rotate(${rot}, ${w / 2}, ${h / 2})"><image href="${imgSrc}" width="${w}" height="${h}" preserveAspectRatio="none" /></g>`;
-        }
-      }
-    });
-
-    const combinedSvgText = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${groupW} ${groupH}" width="${groupW}" height="${groupH}">${svgDefs ? `<defs>${svgDefs}</defs>` : ''}${svgInner}</svg>`;
+    const combinedSvgText = buildGroupSvgString(originalItems, groupW, groupH, minX, minY);
     const blob = new Blob([combinedSvgText], { type: 'image/svg+xml' });
     const groupDataUrl = URL.createObjectURL(blob);
 

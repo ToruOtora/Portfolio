@@ -1222,7 +1222,7 @@
   border-radius: 6px;
   pointer-events: none;
   box-sizing: border-box;
-  z-index: 999;
+  z-index: 9998;
   display: none;
 }
 
