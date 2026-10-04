@@ -2803,46 +2803,75 @@
 
         <!-- Color Inspector Drawer -->
         <div class="cp-inspector" id="cp-inspector">
-          <div class="cp-inspector-head">
-            <div class="cp-inspector-title">
-              <div class="cp-inspector-swatch"></div>
-              <span>สี #1</span>
+          <!-- Background Reveal Track (Undo / Redo Action Slots) -->
+          <div class="cp-inspector-track" aria-hidden="true">
+            <div class="cp-slot-side left" id="cp-slot-redo">
+              <div class="cp-slot-action" id="cp-action-redo">
+                <div class="cp-slot-icon-disc">
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 7v6h-6"/>
+                    <path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3l3 2.7"/>
+                  </svg>
+                </div>
+                <span class="cp-slot-label">(Redo)</span>
+              </div>
             </div>
-            <button class="cp-inspector-close" id="cp-inspector-close" title="ปิด Inspector">✕</button>
+            <div class="cp-slot-side right" id="cp-slot-undo">
+              <div class="cp-slot-action" id="cp-action-undo">
+                <div class="cp-slot-icon-disc">
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M3 7v6h6"/>
+                    <path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/>
+                  </svg>
+                </div>
+                <span class="cp-slot-label">(Undo)</span>
+              </div>
+            </div>
           </div>
-          <div class="cp-slider-group">
-            <div class="cp-slider-row">
-              <span class="cp-slider-label">H</span>
-              <div class="cp-slider-track hue"><div class="cp-slider-thumb h-thumb"></div></div>
-              <span class="cp-slider-value h-val">0°</span>
+
+          <!-- Foreground Sliding Inspector Card -->
+          <div class="cp-inspector-card" id="cp-inspector-card">
+            <div class="cp-inspector-head">
+              <div class="cp-inspector-title">
+                <div class="cp-inspector-swatch"></div>
+                <span>สี #1</span>
+              </div>
+              <button class="cp-inspector-close" id="cp-inspector-close" title="ปิด Inspector">✕</button>
             </div>
-            <div class="cp-slider-row">
-              <span class="cp-slider-label">S</span>
-              <div class="cp-slider-track sat"><div class="cp-slider-thumb s-thumb"></div></div>
-              <span class="cp-slider-value s-val">0%</span>
+            <div class="cp-slider-group">
+              <div class="cp-slider-row">
+                <span class="cp-slider-label">H</span>
+                <div class="cp-slider-track hue"><div class="cp-slider-thumb h-thumb"></div></div>
+                <span class="cp-slider-value h-val">0°</span>
+              </div>
+              <div class="cp-slider-row">
+                <span class="cp-slider-label">S</span>
+                <div class="cp-slider-track sat"><div class="cp-slider-thumb s-thumb"></div></div>
+                <span class="cp-slider-value s-val">0%</span>
+              </div>
+              <div class="cp-slider-row">
+                <span class="cp-slider-label">V</span>
+                <div class="cp-slider-track val"><div class="cp-slider-thumb v-thumb"></div></div>
+                <span class="cp-slider-value v-val">0%</span>
+              </div>
             </div>
-            <div class="cp-slider-row">
-              <span class="cp-slider-label">V</span>
-              <div class="cp-slider-track val"><div class="cp-slider-thumb v-thumb"></div></div>
-              <span class="cp-slider-value v-val">0%</span>
-            </div>
-          </div>
-          <div class="cp-code-row">
-            <div class="cp-code-field">
-              <label>HEX</label>
-              <input type="text" class="cp-hex-field" maxlength="7" value="#000000">
-            </div>
-            <div class="cp-code-field">
-              <label>RGB</label>
-              <input type="text" class="cp-rgb-field" value="0, 0, 0">
-            </div>
-            <div class="cp-code-field">
-              <label>HSL</label>
-              <input type="text" class="cp-hsl-field" value="0, 0%, 0%" readonly>
-            </div>
-            <div class="cp-copy-btns">
-              <button class="cp-copy-btn" onclick="if(typeof copyColorHex==='function'){const i=document.querySelector('.cp-hex-field');copyColorHex(i?.value||'')}" title="Copy HEX">HEX</button>
-              <button class="cp-copy-btn" onclick="if(typeof copyColorArray==='function')copyColorArray()" title="Copy Array">Array</button>
+            <div class="cp-code-row">
+              <div class="cp-code-field">
+                <label>HEX</label>
+                <input type="text" class="cp-hex-field" maxlength="7" value="#000000">
+              </div>
+              <div class="cp-code-field">
+                <label>RGB</label>
+                <input type="text" class="cp-rgb-field" value="0, 0, 0">
+              </div>
+              <div class="cp-code-field">
+                <label>HSL</label>
+                <input type="text" class="cp-hsl-field" value="0, 0%, 0%" readonly>
+              </div>
+              <div class="cp-copy-btns">
+                <button class="cp-copy-btn" onclick="if(typeof copyColorHex==='function'){const i=document.querySelector('.cp-hex-field');copyColorHex(i?.value||'')}" title="Copy HEX">HEX</button>
+                <button class="cp-copy-btn" onclick="if(typeof copyColorArray==='function')copyColorArray()" title="Copy Array">Array</button>
+              </div>
             </div>
           </div>
         </div>

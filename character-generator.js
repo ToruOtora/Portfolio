@@ -811,6 +811,137 @@
   let pendingAlertModal = null; // alert message string
   let pendingSmartModal = false; // boolean for settings modal
 
+  // ===== UNDO / REDO HISTORY =====
+  const undoHistory = [];
+  const redoHistory = [];
+  const MAX_CG_HISTORY = 40;
+
+  function captureCGState() {
+    return {
+      result: { ...currentResult },
+      locked: { ...lockedState },
+      mode: currentMode
+    };
+  }
+
+  function pushCGHistory() {
+    undoHistory.push(captureCGState());
+    if (undoHistory.length > MAX_CG_HISTORY) undoHistory.shift();
+    redoHistory.length = 0;
+  }
+
+  function updateCardDOMFromState(state) {
+    const card = document.getElementById("cg-card");
+    if (!card || !state || !state.result) return;
+
+    Object.entries(state.result).forEach(([key, val]) => {
+      if (key === '_id') return;
+      const row = card.querySelector(`.cg-result-row[data-key="${key}"]`);
+      if (!row) return;
+
+      const isLocked = !!state.locked[key];
+      row.classList.toggle('is-locked-row', isLocked);
+
+      const valLink = row.querySelector('.cg-result-val-link');
+      if (valLink) {
+        valLink.href = `https://www.pinterest.com/search/pins/?q=${encodeURIComponent(val)}`;
+        valLink.title = `ค้นหา ${val} ใน Pinterest`;
+        const span = valLink.querySelector('span');
+        if (span) span.textContent = val;
+      }
+
+      const lockBtn = row.querySelector('.cg-lock-btn');
+      if (lockBtn) {
+        lockBtn.classList.toggle('locked', isLocked);
+        lockBtn.textContent = isLocked ? '🔒' : '🔓';
+        lockBtn.title = isLocked ? 'ปลดล็อก' : 'ล็อกค่านี้ไว้';
+      }
+
+      if (key === 'animal') {
+        const isMGE = mgeRaces.includes(val);
+        const iconEl = row.querySelector('.cg-icon');
+        const textEl = row.querySelector('.cg-result-key span:last-child');
+        if (iconEl) iconEl.textContent = isMGE ? "🧜‍♀️" : "🐱";
+        if (textEl) textEl.textContent = isMGE ? "Species" : "Animal";
+      }
+    });
+  }
+
+  function cgUndo(isSwipe = false) {
+    if (undoHistory.length === 0) {
+      showCGToast('ไม่มีประวัติย้อนกลับแล้ว');
+      return;
+    }
+    redoHistory.push(captureCGState());
+    const prev = undoHistory.pop();
+    currentResult = { ...prev.result };
+    Object.assign(lockedState, prev.locked);
+    currentMode = prev.mode;
+
+    if (isSwipe) {
+      updateCardDOMFromState(prev);
+    } else {
+      renderApp();
+    }
+  }
+
+  function cgRedo(isSwipe = false) {
+    if (redoHistory.length === 0) {
+      showCGToast('ไม่มีการทำซ้ำแล้ว');
+      return;
+    }
+    undoHistory.push(captureCGState());
+    const next = redoHistory.pop();
+    currentResult = { ...next.result };
+    Object.assign(lockedState, next.locked);
+    currentMode = next.mode;
+
+    if (isSwipe) {
+      updateCardDOMFromState(next);
+    } else {
+      renderApp();
+    }
+  }
+
+  function showCGToast(msg) {
+    if (typeof showToast === 'function') {
+      showToast(msg);
+      return;
+    }
+    let toast = document.getElementById('cg-toast');
+    if (!toast) {
+      toast = document.createElement('div');
+      toast.id = 'cg-toast';
+      toast.style.cssText = `
+        position: fixed;
+        bottom: 24px;
+        left: 50%;
+        transform: translateX(-50%) translateY(20px);
+        background: #f0f0f0;
+        color: #0d0d0d;
+        padding: 8px 18px;
+        border-radius: 999px;
+        font-size: 12px;
+        font-weight: 600;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+        z-index: 100000;
+        opacity: 0;
+        pointer-events: none;
+        transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        font-family: inherit;
+      `;
+      document.body.appendChild(toast);
+    }
+    toast.textContent = msg;
+    toast.style.opacity = '1';
+    toast.style.transform = 'translateX(-50%) translateY(0)';
+    clearTimeout(toast._timer);
+    toast._timer = setTimeout(() => {
+      toast.style.opacity = '0';
+      toast.style.transform = 'translateX(-50%) translateY(20px)';
+    }, 2000);
+  }
+
   // Load saved list from LocalStorage
   try {
     const raw = localStorage.getItem("savedCharacters");
@@ -980,19 +1111,48 @@
           </button>
         </div>
 
-        <!-- RESULT CARD -->
-        <div class="cg-card">
-          <div class="cg-result-list">
-            ${resultEntries}
+        <!-- RESULT CARD WRAPPER WITH SWIPE REVEAL -->
+        <div class="cg-card-outer" id="cg-card-outer">
+          <!-- Background Action Track (Revealed on Swipe) -->
+          <div class="cg-card-track" aria-hidden="true">
+            <div class="cg-slot-side left" id="cg-slot-redo">
+              <div class="cg-slot-action" id="cg-action-redo">
+                <div class="cg-slot-icon-disc">
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 7v6h-6"/>
+                    <path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3l3 2.7"/>
+                  </svg>
+                </div>
+                <span class="cg-slot-label">(Redo)</span>
+              </div>
+            </div>
+            <div class="cg-slot-side right" id="cg-slot-undo">
+              <div class="cg-slot-action" id="cg-action-undo">
+                <div class="cg-slot-icon-disc">
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M3 7v6h6"/>
+                    <path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/>
+                  </svg>
+                </div>
+                <span class="cg-slot-label">(Undo)</span>
+              </div>
+            </div>
           </div>
 
-          <div class="cg-action-group">
-            <button class="cg-btn cg-btn-generate" onclick="CharacterGenerator.generate()">
-              ⚡ Random
-            </button>
-            <button class="cg-btn cg-btn-save" onclick="CharacterGenerator.saveResult()">
-              ⭐ Save
-            </button>
+          <!-- Foreground Sliding Card -->
+          <div class="cg-card" id="cg-card">
+            <div class="cg-result-list">
+              ${resultEntries}
+            </div>
+
+            <div class="cg-action-group">
+              <button class="cg-btn cg-btn-generate" onclick="CharacterGenerator.generate()">
+                ⚡ Random
+              </button>
+              <button class="cg-btn cg-btn-save" onclick="CharacterGenerator.saveResult()">
+                ⭐ Save
+              </button>
+            </div>
           </div>
         </div>
 
@@ -1103,6 +1263,8 @@
         ` : ''}
       </div>
     `;
+
+    setupCGCardSwipe();
   }
 
   // FLIP Animation Helpers
@@ -1335,13 +1497,116 @@
         padding: 8px 12px;
         transition: all 0.3s ease;
       }
-      .cg-card {
-        border: 1px solid var(--line);
-        background: var(--bg2);
+      .cg-card-outer {
+        position: relative;
+        overflow: hidden;
         border-radius: 24px;
+        background: var(--bg);
+        border: 1px solid var(--line);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+      }
+      .cg-card-track {
+        position: absolute;
+        inset: 0;
+        z-index: 1;
+        pointer-events: none;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: var(--bg);
+      }
+      .cg-slot-side {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        pointer-events: none;
+        user-select: none;
+        box-sizing: border-box;
+        overflow: hidden;
+        width: 0;
+      }
+      .cg-slot-side.left {
+        left: 0;
+        border-right: 1px solid var(--line);
+      }
+      .cg-slot-side.right {
+        right: 0;
+        border-left: 1px solid var(--line);
+      }
+      .cg-slot-action {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        flex-shrink: 0;
+        opacity: 0;
+        transform: scale(0.85);
+        transition: opacity 0.15s ease, transform 0.15s ease;
+        user-select: none;
+      }
+      .cg-slot-icon-disc {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: var(--bg3);
+        border: 1px solid var(--line2);
+        color: var(--text);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.18s ease;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+      }
+      .cg-slot-icon-disc svg {
+        display: block;
+        stroke: currentColor;
+      }
+      .cg-slot-label {
+        font-family: var(--font, 'DM Sans', sans-serif);
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: 0.4px;
+        color: var(--text2);
+        line-height: 1;
+        transition: color 0.18s ease;
+      }
+      .cg-slot-action.ready .cg-slot-icon-disc {
+        background: var(--text);
+        color: var(--bg);
+        border-color: var(--text);
+        transform: scale(1.1);
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
+      }
+      .cg-slot-action.ready .cg-slot-label {
+        color: var(--text);
+        font-weight: 700;
+      }
+      .cg-card {
+        position: relative;
+        z-index: 2;
+        width: 100%;
+        background: var(--bg2);
+        border-radius: 23px;
         padding: 24px;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-        transition: transform 0.2s ease;
+        box-sizing: border-box;
+        touch-action: pan-y;
+        user-select: none;
+        will-change: transform;
+        box-shadow: 0 0 24px rgba(0, 0, 0, 0.12);
+        cursor: default;
+      }
+      .cg-card.is-dragging {
+        cursor: grabbing;
+      }
+      .cg-result-row {
+        cursor: grab;
+      }
+      .cg-card.is-dragging .cg-result-row {
+        cursor: grabbing;
       }
       .cg-result-row {
         display: flex;
@@ -1992,6 +2257,13 @@
     init: function () {
       injectStyles();
       renderApp();
+      setupCGGestures();
+    },
+    undo: function () {
+      cgUndo();
+    },
+    redo: function () {
+      cgRedo();
     },
     toggleLock: function (key) {
       if (lockedState.hasOwnProperty(key)) {
@@ -2006,6 +2278,7 @@
       animateModeSwitch(mode);
     },
     generate: function () {
+      pushCGHistory();
       if (currentMode === "random") {
         currentResult = randomMode();
       } else {
@@ -2152,11 +2425,287 @@
     }
   };
 
-  // Close modal on Escape key press
+  // ── Multi-Touch Gestures for Character Generator (2-finger tap: Undo | 3-finger tap: Redo) ──
+  function setupCGGestures() {
+    const root = document.getElementById("character-generator-root");
+    if (!root || root._gesturesAttached) return;
+    root._gesturesAttached = true;
+
+    let maxTouches = 0;
+    let startTime = 0;
+    let startPoints = [];
+    let hasMoved = false;
+
+    root.addEventListener('touchstart', (e) => {
+      const currentTouches = e.touches.length;
+      if (currentTouches > maxTouches) maxTouches = currentTouches;
+
+      if (currentTouches >= 2) {
+        startTime = Date.now();
+        hasMoved = false;
+        startPoints = Array.from(e.touches).map(t => ({ x: t.clientX, y: t.clientY }));
+      }
+    }, { passive: true });
+
+    root.addEventListener('touchmove', (e) => {
+      if (hasMoved || startPoints.length < 2) return;
+      for (let i = 0; i < e.touches.length; i++) {
+        const t = e.touches[i];
+        const p = startPoints[i];
+        if (p && Math.hypot(t.clientX - p.x, t.clientY - p.y) > 15) {
+          hasMoved = true;
+          break;
+        }
+      }
+    }, { passive: true });
+
+    root.addEventListener('touchend', (e) => {
+      if (e.touches.length === 0) {
+        const duration = Date.now() - startTime;
+        if (!hasMoved && duration >= 40 && duration <= 380) {
+          if (maxTouches === 2) {
+            cgUndo();
+          } else if (maxTouches === 3) {
+            cgRedo();
+          }
+        }
+        maxTouches = 0;
+        hasMoved = false;
+        startPoints = [];
+      }
+    }, { passive: true });
+
+    root.addEventListener('touchcancel', () => {
+      maxTouches = 0;
+      hasMoved = false;
+      startPoints = [];
+    });
+  }
+
+  // ── Swipe Gestures for Character Generator Card (Swipe Left: Undo | Swipe Right: Redo) ──
+  function setupCGCardSwipe() {
+    const outer = document.getElementById('cg-card-outer');
+    const card = document.getElementById('cg-card');
+    const slotRedo = document.getElementById('cg-slot-redo');
+    const slotUndo = document.getElementById('cg-slot-undo');
+    const actionRedo = document.getElementById('cg-action-redo');
+    const actionUndo = document.getElementById('cg-action-undo');
+
+    if (!outer || !card) return;
+
+    let isDragging = false;
+    let startX = 0;
+    let startY = 0;
+    let currentX = 0;
+    let isHorizontalGesture = false;
+    let activePointerId = null;
+
+    const threshold = 45;
+    const maxOffset = 115;
+
+    card.setAttribute('title', 'เลื่อนซ้าย: (Undo) | เลื่อนขวา: (Redo)');
+
+    function handleStart(clientX, clientY, target, pointerId) {
+      if (target.closest('button, a, input, select, textarea')) {
+        return false;
+      }
+      isDragging = true;
+      startX = clientX;
+      startY = clientY;
+      currentX = 0;
+      isHorizontalGesture = false;
+      activePointerId = pointerId;
+
+      card.classList.add('is-dragging');
+      card.style.transition = 'none';
+      if (slotUndo) slotUndo.style.transition = 'none';
+      if (slotRedo) slotRedo.style.transition = 'none';
+      if (actionUndo) actionUndo.style.transition = 'none';
+      if (actionRedo) actionRedo.style.transition = 'none';
+      return true;
+    }
+
+    function handleMove(clientX, clientY) {
+      if (!isDragging) return;
+      const diffX = clientX - startX;
+      const diffY = clientY - startY;
+
+      if (!isHorizontalGesture) {
+        if (Math.abs(diffX) > 6 && Math.abs(diffX) > Math.abs(diffY)) {
+          isHorizontalGesture = true;
+        } else if (Math.abs(diffY) > 8) {
+          handleEnd(false);
+          return;
+        }
+      }
+
+      if (isHorizontalGesture) {
+        currentX = Math.max(-maxOffset, Math.min(maxOffset, diffX * 0.65));
+        card.style.transform = `translateX(${currentX}px)`;
+
+        const gapWidth = Math.abs(currentX);
+        const isReady = gapWidth >= threshold;
+
+        if (currentX < 0) {
+          // Slide left -> reveal right slot (Undo)
+          if (slotUndo) slotUndo.style.width = gapWidth + 'px';
+          if (slotRedo) slotRedo.style.width = '0px';
+
+          if (actionUndo) {
+            actionUndo.style.opacity = Math.min(1, gapWidth / 28);
+            actionUndo.style.transform = `scale(${Math.min(1, 0.8 + (gapWidth / threshold) * 0.2)})`;
+            actionUndo.classList.toggle('ready', isReady);
+          }
+          if (actionRedo) {
+            actionRedo.style.opacity = '0';
+            actionRedo.classList.remove('ready');
+          }
+        } else if (currentX > 0) {
+          // Slide right -> reveal left slot (Redo)
+          if (slotRedo) slotRedo.style.width = gapWidth + 'px';
+          if (slotUndo) slotUndo.style.width = '0px';
+
+          if (actionRedo) {
+            actionRedo.style.opacity = Math.min(1, gapWidth / 28);
+            actionRedo.style.transform = `scale(${Math.min(1, 0.8 + (gapWidth / threshold) * 0.2)})`;
+            actionRedo.classList.toggle('ready', isReady);
+          }
+          if (actionUndo) {
+            actionUndo.style.opacity = '0';
+            actionUndo.classList.remove('ready');
+          }
+        } else {
+          if (slotUndo) slotUndo.style.width = '0px';
+          if (slotRedo) slotRedo.style.width = '0px';
+          if (actionUndo) { actionUndo.style.opacity = '0'; actionUndo.classList.remove('ready'); }
+          if (actionRedo) { actionRedo.style.opacity = '0'; actionRedo.classList.remove('ready'); }
+        }
+      }
+    }
+
+    function handleEnd(commit = true) {
+      if (!isDragging) return;
+      isDragging = false;
+      activePointerId = null;
+      card.classList.remove('is-dragging');
+
+      let triggered = false;
+      if (commit && isHorizontalGesture) {
+        if (currentX <= -threshold) {
+          cgUndo(true);
+          triggered = true;
+        } else if (currentX >= threshold) {
+          cgRedo(true);
+          triggered = true;
+        }
+      }
+
+      const easeCurve = 'cubic-bezier(0.25, 1, 0.5, 1)';
+      card.style.transition = `transform 0.5s ${easeCurve}`;
+      card.style.transform = 'translateX(0px)';
+
+      if (slotUndo) {
+        slotUndo.style.transition = `width 0.5s ${easeCurve}`;
+        slotUndo.style.width = '0px';
+      }
+      if (slotRedo) {
+        slotRedo.style.transition = `width 0.5s ${easeCurve}`;
+        slotRedo.style.width = '0px';
+      }
+
+      if (actionUndo) {
+        actionUndo.classList.remove('ready');
+        actionUndo.style.transition = 'opacity 0.4s ease, transform 0.4s ease';
+        actionUndo.style.opacity = '0';
+        actionUndo.style.transform = 'scale(0.85)';
+      }
+      if (actionRedo) {
+        actionRedo.classList.remove('ready');
+        actionRedo.style.transition = 'opacity 0.4s ease, transform 0.4s ease';
+        actionRedo.style.opacity = '0';
+        actionRedo.style.transform = 'scale(0.85)';
+      }
+
+      setTimeout(() => {
+        card.style.transition = '';
+        if (slotUndo) slotUndo.style.transition = '';
+        if (slotRedo) slotRedo.style.transition = '';
+        if (actionUndo) actionUndo.style.transition = '';
+        if (actionRedo) actionRedo.style.transition = '';
+        if (triggered) {
+          renderApp();
+        }
+      }, 520);
+    }
+
+    card.addEventListener('pointerdown', (e) => {
+      if (e.pointerType === 'mouse' && e.button !== 0) return;
+      if (handleStart(e.clientX, e.clientY, e.target, e.pointerId)) {
+        try { card.setPointerCapture(e.pointerId); } catch (_) {}
+      }
+    });
+
+    card.addEventListener('pointermove', (e) => {
+      if (activePointerId !== null && e.pointerId === activePointerId) {
+        handleMove(e.clientX, e.clientY);
+        if (isHorizontalGesture && e.cancelable) {
+          e.preventDefault();
+        }
+      }
+    });
+
+    card.addEventListener('pointerup', (e) => {
+      if (activePointerId !== null && e.pointerId === activePointerId) {
+        try { card.releasePointerCapture(e.pointerId); } catch (_) {}
+        handleEnd(true);
+      }
+    });
+
+    card.addEventListener('pointercancel', (e) => {
+      if (activePointerId !== null && e.pointerId === activePointerId) {
+        try { card.releasePointerCapture(e.pointerId); } catch (_) {}
+        handleEnd(false);
+      }
+    });
+  }
+
+  // Keyboard shortcuts (Escape & Ctrl+Z / Ctrl+Y)
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape") {
       if (pendingDeleteField) window.CharacterGenerator.cancelDeleteField();
       if (pendingAlertModal) window.CharacterGenerator.closeAlertModal();
+    }
+    const isInput = e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT';
+    if (!isInput) {
+      const root = document.getElementById("character-generator-root");
+      const isOverRoot = root && (
+        root.contains(e.target) ||
+        root.contains(document.activeElement) ||
+        root.matches(':hover') ||
+        (document.querySelector('#character-generator-root:hover') !== null)
+      );
+      if (isOverRoot) {
+        const isCtrlOrCmd = e.ctrlKey || e.metaKey;
+        const key = (e.key || '').toLowerCase();
+        const code = e.code || '';
+        if (isCtrlOrCmd && (code === 'KeyZ' || key === 'z')) {
+          e.preventDefault();
+          e.stopPropagation();
+          e.stopImmediatePropagation();
+          if (e.shiftKey) {
+            cgRedo();
+          } else {
+            cgUndo();
+          }
+          return;
+        } else if (isCtrlOrCmd && (code === 'KeyY' || key === 'y')) {
+          e.preventDefault();
+          e.stopPropagation();
+          e.stopImmediatePropagation();
+          cgRedo();
+          return;
+        }
+      }
     }
   });
 
@@ -2167,3 +2716,4 @@
     window.CharacterGenerator.init();
   }
 })();
+

@@ -1189,9 +1189,24 @@
       };
     }
 
+    // ── Multi-Finger Tap Tracking for Undo (2-finger) & Redo (3-finger) ──
+    let maxMultiTouches = 0;
+    let multiTouchStartTime = 0;
+    let multiTouchStartPoints = [];
+    let multiTouchHasMoved = false;
+
     viewportEl.addEventListener('touchstart', (e) => {
       if (!isModalOpen) return;
       const isBg = e.target === viewportEl || e.target === canvasEl || e.target === emptyHintEl || e.target.closest('#refboard-empty-hint');
+
+      const currentTouches = e.touches.length;
+      if (currentTouches > maxMultiTouches) maxMultiTouches = currentTouches;
+
+      if (currentTouches >= 2) {
+        multiTouchStartTime = Date.now();
+        multiTouchHasMoved = false;
+        multiTouchStartPoints = Array.from(e.touches).map(t => ({ x: t.clientX, y: t.clientY }));
+      }
 
       if (e.touches.length === 2) {
         // 2-finger Pinch-Zoom Gesture
@@ -1212,6 +1227,17 @@
 
     viewportEl.addEventListener('touchmove', (e) => {
       if (!isModalOpen) return;
+
+      if (!multiTouchHasMoved && multiTouchStartPoints.length >= 2) {
+        for (let i = 0; i < e.touches.length; i++) {
+          const t = e.touches[i];
+          const p = multiTouchStartPoints[i];
+          if (p && Math.hypot(t.clientX - p.x, t.clientY - p.y) > 15) {
+            multiTouchHasMoved = true;
+            break;
+          }
+        }
+      }
 
       if (e.touches.length === 2) {
         e.preventDefault();
@@ -1247,6 +1273,18 @@
         initialTouchDist = 0;
       }
       if (e.touches.length === 0) {
+        const duration = Date.now() - multiTouchStartTime;
+        if (!multiTouchHasMoved && duration >= 40 && duration <= 380) {
+          if (maxMultiTouches === 2) {
+            undo();
+          } else if (maxMultiTouches === 3) {
+            redo();
+          }
+        }
+        maxMultiTouches = 0;
+        multiTouchHasMoved = false;
+        multiTouchStartPoints = [];
+
         isTouchPanning = false;
         viewportEl.classList.remove('panning');
       }
@@ -1256,6 +1294,9 @@
       initialTouchDist = 0;
       isTouchPanning = false;
       viewportEl.classList.remove('panning');
+      maxMultiTouches = 0;
+      multiTouchHasMoved = false;
+      multiTouchStartPoints = [];
     });
   }
 
@@ -1387,6 +1428,13 @@
       e.target.isContentEditable
     );
     if (isInput) return;
+
+    // Do NOT capture hotkeys if the user is currently targeting Character Generator or Color Palette!
+    const isTargetCharGen = (e.target && e.target.closest && e.target.closest('#character-generator-root')) ||
+                            (document.querySelector('#character-generator-root:hover') !== null);
+    const isTargetPalette = (e.target && e.target.closest && e.target.closest('#color-palette-modal')) ||
+                            (document.querySelector('#color-palette-modal:hover') !== null);
+    if (isTargetCharGen || isTargetPalette) return;
 
     const isCtrlOrCmd = e.ctrlKey || e.metaKey;
     const key = (e.key || '').toLowerCase();

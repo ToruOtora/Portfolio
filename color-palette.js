@@ -11,6 +11,8 @@
   let activeHarmony = 'analogous';
   let activeTone = 'all'; // 'all' | 'light' | 'pastel' | 'bright' | 'vivid' | 'muted' | 'dark' | 'deep' | 'neutral'
   let historyStack = [];
+  let redoStack = [];
+  const MAX_HISTORY = 40;
   let inspectorIdx = 0;
   let paletteTargetMode = 'graphic'; // 'graphic' | 'painting'
   let palette = [];
@@ -592,7 +594,127 @@
     }));
   }
 
+  // ── History (Undo / Redo) Engine ──
+  function capturePaletteState() {
+    return {
+      palette: palette.map(c => ({ ...c })),
+      activeHarmony,
+      activeTone,
+      paletteTargetMode
+    };
+  }
+
+  function pushHistory() {
+    if (palette.length === 0) return;
+    historyStack.push(capturePaletteState());
+    if (historyStack.length > MAX_HISTORY) {
+      historyStack.shift();
+    }
+    redoStack = [];
+  }
+
+  function undo() {
+    if (historyStack.length === 0) {
+      showToast('ไม่มีประวัติย้อนกลับแล้ว');
+      return;
+    }
+    redoStack.push(capturePaletteState());
+    const prev = historyStack.pop();
+    palette = prev.palette.map(c => ({ ...c }));
+    activeHarmony = prev.activeHarmony || activeHarmony;
+    activeTone = prev.activeTone || activeTone;
+    paletteTargetMode = prev.paletteTargetMode || paletteTargetMode;
+
+    // Sync harmony dropdown
+    const harmIconEl = document.getElementById('cp-harmony-current-icon');
+    const harmLabelEl = document.getElementById('cp-harmony-current-label');
+    if (typeof HARMONY_DATA !== 'undefined' && HARMONY_DATA[activeHarmony]) {
+      if (harmIconEl) harmIconEl.innerHTML = HARMONY_DATA[activeHarmony].icon;
+      if (harmLabelEl) harmLabelEl.textContent = HARMONY_DATA[activeHarmony].name;
+      document.querySelectorAll('.cp-harmony-item').forEach(item => {
+        item.classList.toggle('active', item.dataset.harmony === activeHarmony);
+      });
+    }
+
+    // Sync tone dropdown
+    const toneIconEl = document.getElementById('cp-tone-current-icon');
+    const toneLabelEl = document.getElementById('cp-tone-current-label');
+    if (typeof TONE_DATA !== 'undefined' && TONE_DATA[activeTone]) {
+      if (toneIconEl) toneIconEl.textContent = TONE_DATA[activeTone].icon;
+      if (toneLabelEl) toneLabelEl.textContent = TONE_DATA[activeTone].name;
+      document.querySelectorAll('.cp-tone-item').forEach(item => {
+        item.classList.toggle('active', item.dataset.tone === activeTone);
+      });
+    }
+
+    // Sync target mode label
+    const modeLabelEl = document.getElementById('cp-target-mode-label');
+    if (modeLabelEl) {
+      modeLabelEl.textContent = paletteTargetMode === 'painting' ? 'รูปแบบสี: ภาพวาด ▾' : 'รูปแบบสี: กราฟิก ▾';
+    }
+    document.querySelectorAll('.cp-mode-item').forEach(item => {
+      item.classList.toggle('active', item.dataset.mode === paletteTargetMode);
+    });
+
+    if (inspectorIdx >= palette.length) inspectorIdx = palette.length - 1;
+
+    renderBars();
+    updateInspector();
+  }
+
+  function redo() {
+    if (redoStack.length === 0) {
+      showToast('ไม่มีการทำซ้ำแล้ว');
+      return;
+    }
+    historyStack.push(capturePaletteState());
+    const next = redoStack.pop();
+    palette = next.palette.map(c => ({ ...c }));
+    activeHarmony = next.activeHarmony || activeHarmony;
+    activeTone = next.activeTone || activeTone;
+    paletteTargetMode = next.paletteTargetMode || paletteTargetMode;
+
+    // Sync harmony dropdown
+    const harmIconEl = document.getElementById('cp-harmony-current-icon');
+    const harmLabelEl = document.getElementById('cp-harmony-current-label');
+    if (typeof HARMONY_DATA !== 'undefined' && HARMONY_DATA[activeHarmony]) {
+      if (harmIconEl) harmIconEl.innerHTML = HARMONY_DATA[activeHarmony].icon;
+      if (harmLabelEl) harmLabelEl.textContent = HARMONY_DATA[activeHarmony].name;
+      document.querySelectorAll('.cp-harmony-item').forEach(item => {
+        item.classList.toggle('active', item.dataset.harmony === activeHarmony);
+      });
+    }
+
+    // Sync tone dropdown
+    const toneIconEl = document.getElementById('cp-tone-current-icon');
+    const toneLabelEl = document.getElementById('cp-tone-current-label');
+    if (typeof TONE_DATA !== 'undefined' && TONE_DATA[activeTone]) {
+      if (toneIconEl) toneIconEl.textContent = TONE_DATA[activeTone].icon;
+      if (toneLabelEl) toneLabelEl.textContent = TONE_DATA[activeTone].name;
+      document.querySelectorAll('.cp-tone-item').forEach(item => {
+        item.classList.toggle('active', item.dataset.tone === activeTone);
+      });
+    }
+
+    const modeLabelEl = document.getElementById('cp-target-mode-label');
+    if (modeLabelEl) {
+      modeLabelEl.textContent = paletteTargetMode === 'painting' ? 'รูปแบบสี: ภาพวาด ▾' : 'รูปแบบสี: กราฟิก ▾';
+    }
+    document.querySelectorAll('.cp-mode-item').forEach(item => {
+      item.classList.toggle('active', item.dataset.mode === paletteTargetMode);
+    });
+
+    if (inspectorIdx >= palette.length) inspectorIdx = palette.length - 1;
+
+    renderBars();
+    updateInspector();
+  }
+
+  window.cpUndo = undo;
+  window.cpRedo = redo;
+
   function randomizePalette() {
+    pushHistory();
     // If Primary Accent (slot 2) or any color is locked, use its Hue as the base anchor!
     let lockedBaseHue = null;
     if (palette[2] && palette[2].locked) {
@@ -872,6 +994,7 @@
         removeBtn.addEventListener('click', (e) => {
           e.stopPropagation();
           if (palette.length <= 2) return;
+          pushHistory();
           palette.splice(idx, 1);
           if (inspectorIdx === idx) inspectorIdx = -1;
           else if (inspectorIdx > idx) inspectorIdx--;
@@ -886,6 +1009,7 @@
         addBtn.addEventListener('click', (e) => {
           e.stopPropagation();
           if (palette.length >= 10) return;
+          pushHistory();
           const newH = rand(0, 360);
           const newCol = { h: newH, s: rand(50, 85), v: rand(60, 90), hex: '', locked: false };
           newCol.hex = hsvToHex(newCol.h, newCol.s, newCol.v);
@@ -908,6 +1032,7 @@
         dragSrcIdx = idx;
         bar.classList.add('dragging');
         e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', 'palette-bar:' + idx);
       });
 
       bar.addEventListener('dragend', () => {
@@ -929,12 +1054,15 @@
 
       bar.addEventListener('drop', (e) => {
         e.preventDefault();
+        e.stopPropagation();
         bar.classList.remove('drag-over');
         if (dragSrcIdx !== -1 && dragSrcIdx !== idx) {
+          pushHistory();
           const movedItem = palette.splice(dragSrcIdx, 1)[0];
           palette.splice(idx, 0, movedItem);
           if (inspectorIdx === dragSrcIdx) inspectorIdx = idx;
           renderBars();
+          updateInspector();
         }
       });
 
@@ -1146,6 +1274,7 @@
 
   window.loadPaletteHexes = function (hexArray, paletteName) {
     if (!Array.isArray(hexArray) || hexArray.length === 0) return;
+    pushHistory();
 
     while (palette.length < hexArray.length && palette.length < 10) {
       palette.push({ h: 0, s: 0, v: 50, hex: '#808080', locked: false });
@@ -1277,6 +1406,7 @@
   window.loadCuratedPreset = function (presetIndex) {
     const preset = CURATED_PALETTES[presetIndex];
     if (!preset) return;
+    pushHistory();
 
     const heroHex = preset.hexes[2] || preset.hexes[0];
     const key = (preset.harmony || '').toLowerCase();
@@ -1547,6 +1677,7 @@
       // Assign roles based on current mode
       const assigned = assignColorRoles(distinct, paletteTargetMode);
 
+      pushHistory();
       // Apply to palette (preserving locked slots)
       assigned.forEach((item, idx) => {
         if (palette[idx] && !palette[idx].locked) {
@@ -1618,6 +1749,13 @@
       targetEl.addEventListener('dragenter', function (e) {
         e.preventDefault();
         e.stopPropagation();
+        // If we are dragging an internal color bar, DO NOT trigger image drop overlay!
+        if (dragSrcIdx !== -1) return;
+
+        const types = e.dataTransfer ? Array.from(e.dataTransfer.types || []) : [];
+        const isFileOrRef = types.includes('Files') || types.includes('application/x-toruo-ref-image');
+        if (!isFileOrRef) return;
+
         dragCounter++;
         targetEl.classList.add('cp-dragover');
       });
@@ -1625,6 +1763,7 @@
       targetEl.addEventListener('dragleave', function (e) {
         e.preventDefault();
         e.stopPropagation();
+        if (dragSrcIdx !== -1) return;
         dragCounter--;
         if (dragCounter <= 0) {
           dragCounter = 0;
@@ -1635,10 +1774,15 @@
       targetEl.addEventListener('dragover', function (e) {
         e.preventDefault();
         e.stopPropagation();
+        if (dragSrcIdx !== -1) {
+          if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
+          return;
+        }
         if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy';
       });
 
       targetEl.addEventListener('drop', function (e) {
+        if (dragSrcIdx !== -1) return; // Internal bar reordering handled by bar drop listener
         e.preventDefault();
         e.stopPropagation();
         dragCounter = 0;
@@ -2096,14 +2240,38 @@
     }
   });
 
-  // ═══ KEYBOARD SHORTCUT ═══
+  // ═══ KEYBOARD SHORTCUTS ═══
 
   document.addEventListener('keydown', function (e) {
     const modal = document.getElementById('color-palette-modal');
     if (modal && modal.classList.contains('open')) {
-      if (e.code === 'Space' && e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA' && e.target.tagName !== 'SELECT') {
-        e.preventDefault();
-        randomizePalette();
+      const isInput = e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT';
+      if (!isInput) {
+        const isOverModal = modal.contains(e.target) ||
+                            modal.contains(document.activeElement) ||
+                            modal.matches(':hover') ||
+                            (document.querySelector('#color-palette-modal:hover') !== null);
+        if (isOverModal) {
+          if (e.code === 'Space') {
+            e.preventDefault();
+            e.stopPropagation();
+            randomizePalette();
+          } else if ((e.ctrlKey || e.metaKey) && (e.code === 'KeyZ' || e.key.toLowerCase() === 'z')) {
+            e.preventDefault();
+            e.stopPropagation();
+            e.stopImmediatePropagation();
+            if (e.shiftKey) {
+              redo();
+            } else {
+              undo();
+            }
+          } else if ((e.ctrlKey || e.metaKey) && (e.code === 'KeyY' || e.key.toLowerCase() === 'y')) {
+            e.preventDefault();
+            e.stopPropagation();
+            e.stopImmediatePropagation();
+            redo();
+          }
+        }
       }
     }
   });
@@ -2161,6 +2329,7 @@
 
   window.selectHarmony = function (mode) {
     if (!HARMONY_DATA[mode]) return;
+    pushHistory();
     activeHarmony = mode;
 
     const iconEl = document.getElementById('cp-harmony-current-icon');
@@ -2385,8 +2554,11 @@
     setupModalResizing();
     renderBars();
 
+    // Setup Touch Gestures (Option A: Inspector Swipe | Option B: 2/3 Finger Tap)
+    setupInspectorGestures();
+    setupMultiFingerTapGestures(modalEl, undo, redo);
+
     // Auto update split layout when modal height changes
-    const modalEl = document.getElementById('color-palette-modal');
     if (modalEl && window.ResizeObserver) {
       const ro = new ResizeObserver(() => {
         if (window.updateColorPaletteSplitLayout) window.updateColorPaletteSplitLayout();
@@ -2394,6 +2566,246 @@
       ro.observe(modalEl);
     }
   });
+
+  // ── Option A: Inspector Swipe Gesture (Swipe Left: Undo | Swipe Right: Redo) ──
+  function setupInspectorGestures() {
+    const insp = document.getElementById('cp-inspector');
+    const card = document.getElementById('cp-inspector-card') || insp;
+    const slotRedo = document.getElementById('cp-slot-redo');
+    const slotUndo = document.getElementById('cp-slot-undo');
+    const actionRedo = document.getElementById('cp-action-redo');
+    const actionUndo = document.getElementById('cp-action-undo');
+
+    if (!insp || !card) return;
+
+    let isDragging = false;
+    let startX = 0;
+    let startY = 0;
+    let currentX = 0;
+    let isHorizontalGesture = false;
+    let activePointerId = null;
+
+    const threshold = 45;
+    const maxOffset = 115;
+
+    card.setAttribute('title', 'เลื่อนซ้าย: (Undo) | เลื่อนขวา: (Redo)');
+
+    function handleStart(clientX, clientY, target, pointerId) {
+      // Don't drag if interacting with interactive controls or slider tracks/thumbs
+      if (target.closest('input, button, .cp-slider-track, .cp-slider-thumb, .cp-slider-row, a')) {
+        return false;
+      }
+      isDragging = true;
+      startX = clientX;
+      startY = clientY;
+      currentX = 0;
+      isHorizontalGesture = false;
+      activePointerId = pointerId;
+
+      card.classList.add('is-dragging');
+      card.style.transition = 'none';
+      if (slotUndo) slotUndo.style.transition = 'none';
+      if (slotRedo) slotRedo.style.transition = 'none';
+      if (actionUndo) actionUndo.style.transition = 'none';
+      if (actionRedo) actionRedo.style.transition = 'none';
+      return true;
+    }
+
+    function handleMove(clientX, clientY) {
+      if (!isDragging) return;
+      const diffX = clientX - startX;
+      const diffY = clientY - startY;
+
+      if (!isHorizontalGesture) {
+        if (Math.abs(diffX) > 6 && Math.abs(diffX) > Math.abs(diffY)) {
+          isHorizontalGesture = true;
+        } else if (Math.abs(diffY) > 8) {
+          // Vertical movement dominates -> allow page/modal scroll
+          handleEnd(false);
+          return;
+        }
+      }
+
+      if (isHorizontalGesture) {
+        currentX = Math.max(-maxOffset, Math.min(maxOffset, diffX * 0.65));
+        card.style.transform = `translateX(${currentX}px)`;
+
+        const gapWidth = Math.abs(currentX);
+        const isReady = gapWidth >= threshold;
+
+        if (currentX < 0) {
+          // Card moved Left -> Reveal Right Slot: (Undo)
+          if (slotUndo) slotUndo.style.width = gapWidth + 'px';
+          if (slotRedo) slotRedo.style.width = '0px';
+
+          if (actionUndo) {
+            actionUndo.style.opacity = Math.min(1, gapWidth / 28);
+            actionUndo.style.transform = `scale(${Math.min(1, 0.8 + (gapWidth / threshold) * 0.2)})`;
+            actionUndo.classList.toggle('ready', isReady);
+          }
+          if (actionRedo) {
+            actionRedo.style.opacity = '0';
+            actionRedo.classList.remove('ready');
+          }
+        } else if (currentX > 0) {
+          // Card moved Right -> Reveal Left Slot: (Redo)
+          if (slotRedo) slotRedo.style.width = gapWidth + 'px';
+          if (slotUndo) slotUndo.style.width = '0px';
+
+          if (actionRedo) {
+            actionRedo.style.opacity = Math.min(1, gapWidth / 28);
+            actionRedo.style.transform = `scale(${Math.min(1, 0.8 + (gapWidth / threshold) * 0.2)})`;
+            actionRedo.classList.toggle('ready', isReady);
+          }
+          if (actionUndo) {
+            actionUndo.style.opacity = '0';
+            actionUndo.classList.remove('ready');
+          }
+        } else {
+          if (slotUndo) slotUndo.style.width = '0px';
+          if (slotRedo) slotRedo.style.width = '0px';
+          if (actionUndo) { actionUndo.style.opacity = '0'; actionUndo.classList.remove('ready'); }
+          if (actionRedo) { actionRedo.style.opacity = '0'; actionRedo.classList.remove('ready'); }
+        }
+      }
+    }
+
+    function handleEnd(commit = true) {
+      if (!isDragging) return;
+      isDragging = false;
+      activePointerId = null;
+      card.classList.remove('is-dragging');
+
+      if (commit && isHorizontalGesture) {
+        if (currentX <= -threshold) {
+          undo();
+        } else if (currentX >= threshold) {
+          redo();
+        }
+      }
+
+      // Smooth return transition: ~0.5s with zero spring overshoot
+      const easeCurve = 'cubic-bezier(0.25, 1, 0.5, 1)';
+      card.style.transition = `transform 0.5s ${easeCurve}`;
+      card.style.transform = 'translateX(0px)';
+
+      if (slotUndo) {
+        slotUndo.style.transition = `width 0.5s ${easeCurve}`;
+        slotUndo.style.width = '0px';
+      }
+      if (slotRedo) {
+        slotRedo.style.transition = `width 0.5s ${easeCurve}`;
+        slotRedo.style.width = '0px';
+      }
+
+      if (actionUndo) {
+        actionUndo.classList.remove('ready');
+        actionUndo.style.transition = 'opacity 0.4s ease, transform 0.4s ease';
+        actionUndo.style.opacity = '0';
+        actionUndo.style.transform = 'scale(0.85)';
+      }
+      if (actionRedo) {
+        actionRedo.classList.remove('ready');
+        actionRedo.style.transition = 'opacity 0.4s ease, transform 0.4s ease';
+        actionRedo.style.opacity = '0';
+        actionRedo.style.transform = 'scale(0.85)';
+      }
+
+      setTimeout(() => {
+        card.style.transition = '';
+        if (slotUndo) slotUndo.style.transition = '';
+        if (slotRedo) slotRedo.style.transition = '';
+        if (actionUndo) actionUndo.style.transition = '';
+        if (actionRedo) actionRedo.style.transition = '';
+      }, 520);
+    }
+
+    // Pointer events binding (supports mouse, touch, pen unified)
+    card.addEventListener('pointerdown', (e) => {
+      if (e.pointerType === 'mouse' && e.button !== 0) return;
+      if (handleStart(e.clientX, e.clientY, e.target, e.pointerId)) {
+        try { card.setPointerCapture(e.pointerId); } catch (_) {}
+      }
+    });
+
+    card.addEventListener('pointermove', (e) => {
+      if (activePointerId !== null && e.pointerId === activePointerId) {
+        handleMove(e.clientX, e.clientY);
+        if (isHorizontalGesture && e.cancelable) {
+          e.preventDefault();
+        }
+      }
+    });
+
+    card.addEventListener('pointerup', (e) => {
+      if (activePointerId !== null && e.pointerId === activePointerId) {
+        try { card.releasePointerCapture(e.pointerId); } catch (_) {}
+        handleEnd(true);
+      }
+    });
+
+    card.addEventListener('pointercancel', (e) => {
+      if (activePointerId !== null && e.pointerId === activePointerId) {
+        try { card.releasePointerCapture(e.pointerId); } catch (_) {}
+        handleEnd(false);
+      }
+    });
+  }
+
+  // ── Option B: Multi-Finger Tap Gesture (2-finger tap: Undo | 3-finger tap: Redo) ──
+  function setupMultiFingerTapGestures(containerEl, undoFn, redoFn) {
+    if (!containerEl) return;
+
+    let maxTouches = 0;
+    let startTime = 0;
+    let startPoints = [];
+    let hasMoved = false;
+
+    containerEl.addEventListener('touchstart', (e) => {
+      const currentTouches = e.touches.length;
+      if (currentTouches > maxTouches) maxTouches = currentTouches;
+
+      if (currentTouches >= 2) {
+        startTime = Date.now();
+        hasMoved = false;
+        startPoints = Array.from(e.touches).map(t => ({ x: t.clientX, y: t.clientY }));
+      }
+    }, { passive: true });
+
+    containerEl.addEventListener('touchmove', (e) => {
+      if (hasMoved || startPoints.length < 2) return;
+      for (let i = 0; i < e.touches.length; i++) {
+        const t = e.touches[i];
+        const p = startPoints[i];
+        if (p && Math.hypot(t.clientX - p.x, t.clientY - p.y) > 15) {
+          hasMoved = true;
+          break;
+        }
+      }
+    }, { passive: true });
+
+    containerEl.addEventListener('touchend', (e) => {
+      if (e.touches.length === 0) {
+        const duration = Date.now() - startTime;
+        if (!hasMoved && duration >= 40 && duration <= 380) {
+          if (maxTouches === 2) {
+            undoFn();
+          } else if (maxTouches === 3) {
+            redoFn();
+          }
+        }
+        maxTouches = 0;
+        hasMoved = false;
+        startPoints = [];
+      }
+    }, { passive: true });
+
+    containerEl.addEventListener('touchcancel', () => {
+      maxTouches = 0;
+      hasMoved = false;
+      startPoints = [];
+    });
+  }
 
   function setupModalResizing() {
     const modal = document.getElementById('color-palette-modal');
