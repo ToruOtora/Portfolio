@@ -220,9 +220,15 @@
     width: 15px;
     height: 15px;
     fill: currentColor;
+    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
-  .icon-sun {
+  .theme-btn:hover svg {
+    transform: rotate(15deg) scale(1.1);
+  }
+
+  .icon-sun,
+  .icon-random {
     display: none;
   }
 
@@ -230,12 +236,41 @@
     display: block;
   }
 
-  [data-theme="light"] .icon-sun {
+  /* Default theme fallbacks when data-theme-mode is not set */
+  :root:not([data-theme-mode])[data-theme="light"] .icon-sun {
     display: block;
   }
-
-  [data-theme="light"] .icon-moon {
+  :root:not([data-theme-mode])[data-theme="light"] .icon-moon {
     display: none;
+  }
+
+  /* 3-Mode Theme Switcher Rules */
+  [data-theme-mode="light"] .icon-sun {
+    display: block !important;
+  }
+  [data-theme-mode="light"] .icon-moon,
+  [data-theme-mode="light"] .icon-random {
+    display: none !important;
+  }
+
+  [data-theme-mode="dark"] .icon-moon {
+    display: block !important;
+  }
+  [data-theme-mode="dark"] .icon-sun,
+  [data-theme-mode="dark"] .icon-random {
+    display: none !important;
+  }
+
+  [data-theme-mode="random"] .icon-random {
+    display: block !important;
+  }
+  [data-theme-mode="random"] .icon-sun,
+  [data-theme-mode="random"] .icon-moon {
+    display: none !important;
+  }
+  [data-theme-mode="random"] .theme-btn {
+    border-color: var(--accent, var(--line2));
+    color: var(--accent, var(--text));
   }
 
   .nav-commission {
@@ -2265,13 +2300,16 @@
     </div>
 
     <div class="nav-right">
-      <button class="theme-btn" onclick="toggleTheme()" title="เปลี่ยนธีม" aria-label="toggle dark mode">
-        <svg class="icon-moon" viewBox="0 0 24 24">
+      <button class="theme-btn" id="nav-theme-btn" onclick="toggleTheme()" title="เปลี่ยนธีม (มืด / สว่าง)" aria-label="เปลี่ยนธีมเว็บไซต์">
+        <svg class="icon-moon" viewBox="0 0 24 24" aria-hidden="true">
           <path d="M21 12.79A9 9 0 1111.21 3a7 7 0 009.79 9.79z" />
         </svg>
-        <svg class="icon-sun" viewBox="0 0 24 24">
+        <svg class="icon-sun" viewBox="0 0 24 24" aria-hidden="true">
           <path
             d="M12 17a5 5 0 100-10 5 5 0 000 10zm0-14a1 1 0 011 1v1a1 1 0 11-2 0V4a1 1 0 011-1zm0 17a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zm9-9a1 1 0 010 2h-1a1 1 0 110-2h1zM4 12a1 1 0 010 2H3a1 1 0 110-2h1zm14.95-6.95a1 1 0 010 1.41l-.7.7a1 1 0 11-1.41-1.41l.7-.7a1 1 0 011.41 0zM6.34 17.66a1 1 0 010 1.41l-.7.7a1 1 0 01-1.41-1.41l.7-.7a1 1 0 011.41 0zm12.02.7a1 1 0 01-1.41 0l-.7-.7a1 1 0 01-1.41-1.41l.7.7a1 1 0 010 1.41zM5.05 5.05a1 1 0 011.41 0l.7.7A1 1 0 015.75 7.16l-.7-.7a1 1 0 010-1.41z" />
+        </svg>
+        <svg class="icon-random" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M12 2C6.49 2 2 6.49 2 12c0 2.8 1.15 5.35 3.01 7.19.4.4.95.63 1.52.59.62-.04 1.15-.48 1.27-1.1.2-.95 1.05-1.68 2.05-1.68h1.65c3.58 0 6.5-2.92 6.5-6.5C18 5.75 14.77 2 12 2zm-5.5 9c-.83 0-1.5-.67-1.5-1.5S5.67 8 6.5 8s1.5.67 1.5 1.5S7.33 11 6.5 11zm3-4c-.83 0-1.5-.67-1.5-1.5S8.67 4 9.5 4s1.5.67 1.5 1.5S10.33 7 9.5 7zm5 0c-.83 0-1.5-.67-1.5-1.5S13.67 4 14.5 4s1.5.67 1.5 1.5S15.33 7 14.5 7zm2.5 4c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z" />
         </svg>
       </button>
       <a class="nav-commission" href="#" onclick="showPage('terms'); return false;">commission</a>
@@ -3070,18 +3108,277 @@
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script>
-    /* ══ THEME ══ */
-    function toggleTheme() {
-      const html = document.documentElement;
-      html.setAttribute('data-theme', html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
-      localStorage.setItem('theme', html.getAttribute('data-theme'));
+    /* ══ 3-MODE THEME SYSTEM: DARK -> LIGHT -> RANDOM -> DARK ══ */
+    const THEME_OVERRIDE_KEYS = [
+      '--bg', '--bg2', '--bg3', '--line', '--line2',
+      '--text', '--text2', '--text3', '--accent', '--accent-text',
+      '--primary', '--primary-text', '--secondary', '--inv', '--inv-bg',
+      '--lb-bg', '--lb-close-bg', '--lb-close-border', '--lb-close-color',
+      '--lb-close-hover', '--lb-title-color', '--lb-desc-color',
+      '--lb-price-bg', '--lb-price-border', '--lb-price-color',
+      '--lb-divider', '--lb-card-bg', '--lb-card-border'
+    ];
+
+    const CURATED_SITE_RANDOM_THEMES = [
+      {
+        name: 'Cyber Neon',
+        mode: 'dark',
+        props: {
+          '--bg': '#090a14', '--bg2': '#121426', '--bg3': '#1b1e38',
+          '--line': '#2d3356', '--line2': '#3e4676',
+          '--text': '#f4f6ff', '--text2': '#9da8d6', '--text3': '#6f79a8',
+          '--accent': '#00f0ff', '--accent-text': '#090a14',
+          '--inv': '#090a14', '--inv-bg': '#00f0ff'
+        }
+      },
+      {
+        name: 'Velvet Amethyst',
+        mode: 'dark',
+        props: {
+          '--bg': '#0e0817', '--bg2': '#191126', '--bg3': '#251b38',
+          '--line': '#382a54', '--line2': '#4f3b73',
+          '--text': '#fbf8ff', '--text2': '#bcaed6', '--text3': '#83749e',
+          '--accent': '#c084fc', '--accent-text': '#0e0817',
+          '--inv': '#0e0817', '--inv-bg': '#c084fc'
+        }
+      },
+      {
+        name: 'Emerald Forest',
+        mode: 'dark',
+        props: {
+          '--bg': '#08140f', '--bg2': '#10241c', '--bg3': '#18362b',
+          '--line': '#254e3f', '--line2': '#346b57',
+          '--text': '#f0fdf4', '--text2': '#86efac', '--text3': '#52a677',
+          '--accent': '#34d399', '--accent-text': '#08140f',
+          '--inv': '#08140f', '--inv-bg': '#34d399'
+        }
+      },
+      {
+        name: 'Amber Harvest',
+        mode: 'dark',
+        props: {
+          '--bg': '#140c06', '--bg2': '#24160d', '--bg3': '#362114',
+          '--line': '#4d301e', '--line2': '#69432b',
+          '--text': '#fffaf0', '--text2': '#fbd38d', '--text3': '#c08050',
+          '--accent': '#f6ad55', '--accent-text': '#140c06',
+          '--inv': '#140c06', '--inv-bg': '#f6ad55'
+        }
+      },
+      {
+        name: 'Crimson Night',
+        mode: 'dark',
+        props: {
+          '--bg': '#14080a', '--bg2': '#240f13', '--bg3': '#36161c',
+          '--line': '#50232b', '--line2': '#6e323d',
+          '--text': '#fff1f2', '--text2': '#fca5a5', '--text3': '#b95d6c',
+          '--accent': '#fb7185', '--accent-text': '#14080a',
+          '--inv': '#14080a', '--inv-bg': '#fb7185'
+        }
+      },
+      {
+        name: 'Ocean Abyss',
+        mode: 'dark',
+        props: {
+          '--bg': '#06111a', '--bg2': '#0c1e2d', '--bg3': '#142c40',
+          '--line': '#1e405d', '--line2': '#2b5880',
+          '--text': '#f0f9ff', '--text2': '#7dd3fc', '--text3': '#38bdf8',
+          '--accent': '#38bdf8', '--accent-text': '#06111a',
+          '--inv': '#06111a', '--inv-bg': '#38bdf8'
+        }
+      },
+      {
+        name: 'Nordic Slate',
+        mode: 'light',
+        props: {
+          '--bg': '#f8fafc', '--bg2': '#f1f5f9', '--bg3': '#e2e8f0',
+          '--line': '#cbd5e1', '--line2': '#94a3b8',
+          '--text': '#0f172a', '--text2': '#475569', '--text3': '#64748b',
+          '--accent': '#2563eb', '--accent-text': '#ffffff',
+          '--inv': '#ffffff', '--inv-bg': '#2563eb'
+        }
+      },
+      {
+        name: 'Warm Ochre',
+        mode: 'light',
+        props: {
+          '--bg': '#faf6f0', '--bg2': '#f2ebe0', '--bg3': '#e5dacb',
+          '--line': '#d4c5b3', '--line2': '#b9a58f',
+          '--text': '#2c251e', '--text2': '#5f5346', '--text3': '#867664',
+          '--accent': '#c2410c', '--accent-text': '#ffffff',
+          '--inv': '#ffffff', '--inv-bg': '#c2410c'
+        }
+      },
+      {
+        name: 'Matcha Breeze',
+        mode: 'light',
+        props: {
+          '--bg': '#f2fbf7', '--bg2': '#e3f6ee', '--bg3': '#c7ebd9',
+          '--line': '#a3dcbf', '--line2': '#7bc9a4',
+          '--text': '#123827', '--text2': '#1f5f42', '--text3': '#388a64',
+          '--accent': '#059669', '--accent-text': '#ffffff',
+          '--inv': '#ffffff', '--inv-bg': '#059669'
+        }
+      },
+      {
+        name: 'Lavender Dusk',
+        mode: 'light',
+        props: {
+          '--bg': '#faf7ff', '--bg2': '#f2ebff', '--bg3': '#e4d4ff',
+          '--line': '#cfb5fc', '--line2': '#b48ff7',
+          '--text': '#271147', '--text2': '#4a2582', '--text3': '#6e3db8',
+          '--accent': '#7c3aed', '--accent-text': '#ffffff',
+          '--inv': '#ffffff', '--inv-bg': '#7c3aed'
+        }
+      }
+    ];
+
+    function cleanThemeOverrides() {
+      const docEl = document.documentElement;
+      THEME_OVERRIDE_KEYS.forEach(k => docEl.style.removeProperty(k));
+      docEl.removeAttribute('data-theme-preview');
+      try {
+        localStorage.removeItem('cp_theme_preview_active');
+      } catch (e) {}
+    }
+
+    function applyBuiltinRandomTheme(forceNew = true) {
+      let chosen = null;
+      if (!forceNew) {
+        try {
+          const cached = localStorage.getItem('site_random_palette_cache');
+          if (cached) chosen = JSON.parse(cached);
+        } catch (e) {}
+      }
+      if (!chosen) {
+        const idx = Math.floor(Math.random() * CURATED_SITE_RANDOM_THEMES.length);
+        chosen = CURATED_SITE_RANDOM_THEMES[idx];
+        try {
+          localStorage.setItem('site_random_palette_cache', JSON.stringify(chosen));
+        } catch (e) {}
+      }
+
+      const docEl = document.documentElement;
+      docEl.setAttribute('data-theme', chosen.mode || 'dark');
+      docEl.setAttribute('data-theme-preview', 'active');
+
+      if (chosen.props) {
+        for (const [key, val] of Object.entries(chosen.props)) {
+          docEl.style.setProperty(key, val);
+        }
+      }
+    }
+
+    function applyRandomSiteTheme(forceNew = true) {
+      if (typeof window.applyRandomPaletteTheme === 'function') {
+        window.applyRandomPaletteTheme(forceNew);
+      } else {
+        applyBuiltinRandomTheme(forceNew);
+      }
+    }
+
+    function isThemePreviewActive() {
+      return document.documentElement.getAttribute('data-theme-preview') === 'active' ||
+             (typeof window.isPaletteThemePreviewActive === 'function' && window.isPaletteThemePreviewActive()) ||
+             localStorage.getItem('cp_theme_preview_enabled') === 'true';
+    }
+
+    function getWebsiteThemeMode() {
+      const docEl = document.documentElement;
+      return docEl.getAttribute('data-theme-mode') || docEl.getAttribute('data-theme') || 'dark';
+    }
+
+    function setWebsiteThemeMode(mode, options = {}) {
+      const docEl = document.documentElement;
+      const btn = document.getElementById('nav-theme-btn');
+      const forceNew = options.forceNew !== false;
+      const hasPreview = isThemePreviewActive();
+
+      if (mode === 'random') {
+        docEl.setAttribute('data-theme-mode', 'random');
+        docEl.setAttribute('data-theme-preview', 'active');
+        applyRandomSiteTheme(forceNew);
+        if (btn) {
+          btn.setAttribute('title', 'โหมดตัวอย่างชุดสี (คลิกเพื่อเปลี่ยนเป็นธีมมืด)');
+          btn.setAttribute('aria-label', 'โหมดตัวอย่างชุดสี');
+        }
+        try {
+          localStorage.setItem('theme_mode', 'random');
+          localStorage.setItem('cp_theme_preview_enabled', 'true');
+        } catch (e) {}
+      } else if (mode === 'light') {
+        cleanThemeOverrides();
+        if (typeof window.revertRandomPaletteTheme === 'function') {
+          window.revertRandomPaletteTheme();
+        }
+        docEl.setAttribute('data-theme', 'light');
+        docEl.setAttribute('data-theme-mode', 'light');
+        if (btn) {
+          btn.setAttribute('title', hasPreview ? 'ธีมสว่าง (คลิกเพื่อสลับไปโหมดตัวอย่างชุดสี)' : 'ธีมสว่าง (คลิกเพื่อเปลี่ยนเป็นธีมมืด)');
+          btn.setAttribute('aria-label', 'ธีมสว่าง');
+        }
+        try {
+          localStorage.setItem('theme_mode', 'light');
+          localStorage.setItem('theme', 'light');
+        } catch (e) {}
+      } else {
+        // 'dark'
+        cleanThemeOverrides();
+        if (typeof window.revertRandomPaletteTheme === 'function') {
+          window.revertRandomPaletteTheme();
+        }
+        docEl.setAttribute('data-theme', 'dark');
+        docEl.setAttribute('data-theme-mode', 'dark');
+        if (btn) {
+          btn.setAttribute('title', 'ธีมมืด (คลิกเพื่อเปลี่ยนเป็นธีมสว่าง)');
+          btn.setAttribute('aria-label', 'ธีมมืด');
+        }
+        try {
+          localStorage.setItem('theme_mode', 'dark');
+          localStorage.setItem('theme', 'dark');
+        } catch (e) {}
+      }
+
       if (typeof window.onWebsiteThemeChanged === 'function') {
         window.onWebsiteThemeChanged();
       }
     }
-    (function () {
-      const saved = localStorage.getItem('theme');
-      if (saved) document.documentElement.setAttribute('data-theme', saved);
+
+    function toggleTheme() {
+      const hasPreview = isThemePreviewActive();
+
+      if (!hasPreview) {
+        // Standard 2-mode cycle (Dark <-> Light) - As requested: 2 โหมดมืดสว่างเหมือนเดิม
+        const curTheme = document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+        const nextTheme = curTheme === 'dark' ? 'light' : 'dark';
+        setWebsiteThemeMode(nextTheme);
+        return;
+      }
+
+      // If Theme Preview is active: includes random preview mode in cycle
+      const curMode = getWebsiteThemeMode();
+      let next = 'dark';
+      if (curMode === 'dark') {
+        next = 'light';
+      } else if (curMode === 'light') {
+        next = 'random';
+      } else {
+        next = 'dark';
+      }
+      setWebsiteThemeMode(next, { forceNew: false });
+    }
+
+    (function initWebsiteTheme() {
+      const isPreview = localStorage.getItem('cp_theme_preview_enabled') === 'true' &&
+                        localStorage.getItem('cp_theme_preview_active') === 'true';
+      const savedMode = localStorage.getItem('theme_mode');
+      const savedTheme = localStorage.getItem('theme') || 'dark';
+      if (isPreview && savedMode === 'random') {
+        setWebsiteThemeMode('random', { forceNew: false });
+      } else if (savedMode === 'light' || (!savedMode && savedTheme === 'light')) {
+        setWebsiteThemeMode('light');
+      } else {
+        setWebsiteThemeMode('dark');
+      }
     })();
 
     /* ══ NAV & HERO VIDEO DEFER LOAD ══ */

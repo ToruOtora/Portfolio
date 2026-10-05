@@ -2671,6 +2671,7 @@
       docEl.style.setProperty(key, val);
     }
     docEl.setAttribute('data-theme-preview', 'active');
+    docEl.setAttribute('data-theme-mode', 'random');
 
     const previewBtn = document.getElementById('cp-btn-preview-theme');
     if (previewBtn) {
@@ -2682,9 +2683,21 @@
     if (fab) fab.classList.add('theme-previewing');
 
     try {
+      localStorage.setItem('cp_theme_preview_enabled', 'true');
       localStorage.setItem('cp_theme_preview_active', 'true');
       localStorage.setItem('cp_theme_preview_mapping', JSON.stringify(mapping));
+      localStorage.setItem('theme_mode', 'random');
     } catch (e) {}
+
+    const navThemeBtn = document.getElementById('nav-theme-btn');
+    if (navThemeBtn) {
+      navThemeBtn.setAttribute('title', 'โหมดตัวอย่างชุดสี (คลิกเพื่อเปลี่ยนเป็นธีมมืด)');
+      navThemeBtn.setAttribute('aria-label', 'โหมดตัวอย่างชุดสี');
+    }
+
+    if (typeof window.onWebsiteThemeChanged === 'function') {
+      window.onWebsiteThemeChanged();
+    }
 
     if (showToastFlag) {
       showToast('เปิดการแสดงตัวอย่างธีมเว็บ');
@@ -2707,6 +2720,10 @@
     keys.forEach(k => docEl.style.removeProperty(k));
     docEl.removeAttribute('data-theme-preview');
 
+    const baseTheme = localStorage.getItem('theme') || 'dark';
+    docEl.setAttribute('data-theme', baseTheme);
+    docEl.setAttribute('data-theme-mode', baseTheme);
+
     const previewBtn = document.getElementById('cp-btn-preview-theme');
     if (previewBtn) {
       previewBtn.classList.remove('active');
@@ -2717,9 +2734,21 @@
     if (fab) fab.classList.remove('theme-previewing');
 
     try {
+      localStorage.removeItem('cp_theme_preview_enabled');
       localStorage.removeItem('cp_theme_preview_active');
       localStorage.removeItem('cp_theme_preview_mapping');
+      localStorage.setItem('theme_mode', baseTheme);
     } catch (e) {}
+
+    const navThemeBtn = document.getElementById('nav-theme-btn');
+    if (navThemeBtn) {
+      navThemeBtn.setAttribute('title', baseTheme === 'dark' ? 'ธีมมืด (คลิกเพื่อเปลี่ยนเป็นธีมสว่าง)' : 'ธีมสว่าง (คลิกเพื่อเปลี่ยนเป็นธีมมืด)');
+      navThemeBtn.setAttribute('aria-label', baseTheme === 'dark' ? 'ธีมมืด' : 'ธีมสว่าง');
+    }
+
+    if (typeof window.onWebsiteThemeChanged === 'function') {
+      window.onWebsiteThemeChanged();
+    }
 
     if (showToastFlag) {
       showToast('ปิดการแสดงตัวอย่างธีม คืนค่าสีเดิมเรียบร้อย');
@@ -2733,6 +2762,24 @@
     } else {
       revertThemePreview(true);
     }
+  };
+
+  window.isPaletteThemePreviewActive = function () {
+    return isThemePreviewActive;
+  };
+
+  // Exposed for navbar theme switcher (only when Theme Preview is active)
+  window.applyRandomPaletteTheme = function (forceNew = true) {
+    if (forceNew || palette.length === 0) {
+      randomizePalette();
+    }
+    isThemePreviewActive = true;
+    applyThemePreview(false);
+  };
+
+  window.revertRandomPaletteTheme = function () {
+    isThemePreviewActive = false;
+    revertThemePreview(false);
   };
 
   // ═══ MODAL WINDOW MANAGEMENT ═══

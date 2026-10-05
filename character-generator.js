@@ -2625,6 +2625,13 @@
   let traitSearchQuery = "";
   let traitSubFilter = "all"; // 'all' | 'mge' | 'animal'
   let showChipTranslations = false; // toggle for showing Thai translation tags on chips
+  let showMainCardTranslations = false; // toggle for showing Thai translation on main character generator card
+  try {
+    const savedMainTrans = localStorage.getItem('cg_show_main_translations');
+    if (savedMainTrans !== null) {
+      showMainCardTranslations = savedMainTrans === 'true';
+    }
+  } catch (e) {}
   let savedSearchQuery = "";
 
   function escapeHTML(str) {
@@ -2641,6 +2648,9 @@
   let cgTooltipEl = null;
   let cgLongPressTimer = null;
   let cgTouchStartPos = { x: 0, y: 0 };
+  let cgDidLongPress = false;
+  let cgSuppressClickUntil = 0;
+  let cgIsTooltipOpen = false;
 
   function ensureCGTooltipEl() {
     if (!cgTooltipEl || !document.body.contains(cgTooltipEl)) {
@@ -2667,6 +2677,7 @@
       <div class="cg-tt-header">
         <span class="cg-tt-en">${escapeHTML(enWord)}</span>
         ${parsed.main ? `<span class="cg-tt-th">${escapeHTML(parsed.main)}</span>` : ''}
+        <button type="button" class="cg-tt-close-btn" onclick="event.stopPropagation(); CharacterGenerator.hideWordTooltip();" title="ปิด">✕</button>
       </div>
     `;
 
@@ -2717,6 +2728,7 @@
 
     tt.style.top = `${Math.round(top)}px`;
     tt.style.left = `${Math.round(left)}px`;
+    cgIsTooltipOpen = true;
 
     requestAnimationFrame(() => {
       tt.classList.add("show");
@@ -2728,6 +2740,7 @@
       clearTimeout(cgLongPressTimer);
       cgLongPressTimer = null;
     }
+    cgIsTooltipOpen = false;
     const tt = document.getElementById("cg-tooltip-popup");
     if (tt) {
       tt.classList.remove("show");
@@ -2737,10 +2750,31 @@
 
   // Auto dismiss tooltip on outside touch
   document.addEventListener('touchstart', (e) => {
-    if (!e.target.closest('#cg-tooltip-popup, .cg-picker-chip, .cg-result-val-link, .cg-pin-link')) {
+    if (cgIsTooltipOpen && !e.target.closest('#cg-tooltip-popup, .cg-picker-chip, .cg-result-val-link, .cg-pin-link')) {
       hideCGTooltip();
     }
   }, { passive: true });
+
+  // Auto dismiss tooltip on scroll so it doesn't float disconnected
+  window.addEventListener('scroll', () => {
+    if (cgIsTooltipOpen) hideCGTooltip();
+  }, { passive: true });
+
+  document.addEventListener('scroll', (e) => {
+    if (cgIsTooltipOpen && e.target && e.target.closest && e.target.closest('.cg-modal, .cg-picker-grid, .cg-modal-body, .cg-app')) {
+      hideCGTooltip();
+    }
+  }, { capture: true, passive: true });
+
+  // Suppress accidental click/navigation after mobile long-press
+  document.addEventListener('click', (e) => {
+    if (Date.now() < cgSuppressClickUntil) {
+      e.preventDefault();
+      e.stopPropagation();
+      e.stopImmediatePropagation();
+      return false;
+    }
+  }, true);
 
   // ===== UNDO / REDO HISTORY =====
   const undoHistory = [];
@@ -2767,6 +2801,31 @@
     translate: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 8 6 6"/><path d="m4 14 6-6 2-3"/><path d="M2 5h12"/><path d="M7 2h1"/><path d="m22 22-5-10-5 10"/><path d="M14 18h6"/></svg>`
   };
 
+  function renderValLinkContent(val) {
+    const escapedVal = escapeHTML(val);
+    if (!showMainCardTranslations) {
+      return `
+        <span class="cg-val-text">${escapedVal}</span>
+        <span class="cg-arrow">&gt;</span>
+      `;
+    }
+    const parsed = parseTranslation(val);
+    const thMain = parsed.main || getThaiTranslation(val);
+    if (thMain) {
+      return `
+        <div class="cg-val-text-stack">
+          <span class="cg-val-th">${escapeHTML(thMain)}</span>
+          <span class="cg-val-en-sub">${escapedVal}</span>
+        </div>
+        <span class="cg-arrow">&gt;</span>
+      `;
+    }
+    return `
+      <span class="cg-val-text">${escapedVal}</span>
+      <span class="cg-arrow">&gt;</span>
+    `;
+  }
+
   function updateCardDOMFromState(state) {
     const card = document.getElementById("cg-card");
     if (!card || !state || !state.result) return;
@@ -2786,8 +2845,9 @@
         const escapedVal = escapeHTML(val).replace(/'/g, "\\'");
         valLink.setAttribute('onmouseenter', `CharacterGenerator.showWordTooltip(this, '${escapedVal}', 'คลิกเพื่อค้นหาภาพไอเดียบน Pinterest')`);
         valLink.setAttribute('ontouchstart', `CharacterGenerator.onWordTouchStart(event, this, '${escapedVal}', 'คลิกเพื่อค้นหาภาพไอเดียบน Pinterest')`);
-        const valText = valLink.querySelector('.cg-val-text');
-        if (valText) valText.textContent = val;
+        valLink.setAttribute('ontouchend', `CharacterGenerator.onWordTouchEnd(event)`);
+        valLink.setAttribute('ontouchmove', `CharacterGenerator.onWordTouchMove(event)`);
+        valLink.innerHTML = renderValLinkContent(val);
       }
 
       const lockBtn = row.querySelector('.cg-lock-btn');
@@ -2980,8 +3040,8 @@
               onmouseenter="CharacterGenerator.showWordTooltip(this, '${escapedVal}')"
               onmouseleave="CharacterGenerator.hideWordTooltip()"
               ontouchstart="CharacterGenerator.onWordTouchStart(event, this, '${escapedVal}')"
-              ontouchend="CharacterGenerator.onWordTouchEnd()"
-              ontouchmove="CharacterGenerator.onWordTouchMove()"
+              ontouchend="CharacterGenerator.onWordTouchEnd(event)"
+              ontouchmove="CharacterGenerator.onWordTouchMove(event)"
             >
               <span class="cg-chip-en">${val}</span>
               ${showThaiTag ? `<span class="cg-chip-th-fixed">${escapeHTML(parsed.main)}</span>` : ''}
@@ -3125,11 +3185,10 @@
                 onmouseenter="CharacterGenerator.showWordTooltip(this, '${escapeHTML(val).replace(/'/g, "\\'")}', 'ค้นหาบน Pinterest')"
                 onmouseleave="CharacterGenerator.hideWordTooltip()"
                 ontouchstart="CharacterGenerator.onWordTouchStart(event, this, '${escapeHTML(val).replace(/'/g, "\\'")}', 'ค้นหาบน Pinterest')"
-                ontouchend="CharacterGenerator.onWordTouchEnd()"
-                ontouchmove="CharacterGenerator.onWordTouchMove()"
+                ontouchend="CharacterGenerator.onWordTouchEnd(event)"
+                ontouchmove="CharacterGenerator.onWordTouchMove(event)"
               >
-                <span>${val}</span>
-                <span class="cg-arrow">&gt;</span>
+                ${renderValLinkContent(val)}
               </a>
               <button class="cg-row-delete-btn" onclick="CharacterGenerator.confirmDeleteField(${origIndex}, '${f.key}', '${f.label}', '${escapeHTML(val)}')" title="ลบเฉพาะ ${f.label}">✕</button>
             </div>
@@ -3263,11 +3322,10 @@
                   onmouseenter="CharacterGenerator.showWordTooltip(this, '${escapedVal}', 'คลิกเพื่อค้นหาภาพไอเดียบน Pinterest')"
                   onmouseleave="CharacterGenerator.hideWordTooltip()"
                   ontouchstart="CharacterGenerator.onWordTouchStart(event, this, '${escapedVal}', 'คลิกเพื่อค้นหาภาพไอเดียบน Pinterest')"
-                  ontouchend="CharacterGenerator.onWordTouchEnd()"
-                  ontouchmove="CharacterGenerator.onWordTouchMove()"
+                  ontouchend="CharacterGenerator.onWordTouchEnd(event)"
+                  ontouchmove="CharacterGenerator.onWordTouchMove(event)"
                 >
-                  <span class="cg-val-text">${val}</span>
-                  <span class="cg-arrow">&gt;</span>
+                  ${renderValLinkContent(val)}
                 </a>
                 `;
               })()}
@@ -3283,7 +3341,20 @@
       <div class="cg-container">
         <!-- HEADER -->
         <div class="cg-header-block">
-          <h1 class="cg-title">Character Generator</h1>
+          <div class="cg-title-row">
+            <h1 class="cg-title">Character Generator</h1>
+            <button
+              type="button"
+              id="cg-title-trans-btn"
+              class="cg-title-trans-btn ${showMainCardTranslations ? 'active' : ''}"
+              onclick="CharacterGenerator.toggleMainCardTranslations()"
+              title="${showMainCardTranslations ? 'คลิกเพื่อปิดคำแปลไทย' : 'คลิกเพื่อเปิดคำแปลไทย'}"
+              aria-label="แปลภาษาไทย"
+            >
+              <span class="cg-trans-icon">${SVG_ICONS.translate}</span>
+              <span class="cg-trans-label">${showMainCardTranslations ? 'แปลไทย: เปิด' : 'แปลไทย'}</span>
+            </button>
+          </div>
           <p class="cg-subtitle">✨ OC Idea Randomizer for Artists & Creators</p>
         </div>
 
@@ -3717,15 +3788,141 @@
         color: var(--text);
       }
       .cg-header-block {
+        position: relative;
         text-align: center;
         margin-bottom: 24px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+      .cg-title-row {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        margin-bottom: 6px;
+        position: relative;
+        transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
       }
       .cg-title {
         font-size: 36px;
         font-weight: 800;
-        margin-bottom: 6px;
+        margin: 0;
         color: var(--text);
         letter-spacing: -0.5px;
+        line-height: 1.15;
+        white-space: nowrap;
+        transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+      }
+      .cg-title-trans-btn {
+        width: 34px;
+        height: 34px;
+        padding: 0;
+        border-radius: 50%;
+        background: var(--bg2, #18181c);
+        border: 1px solid var(--line2, #383842);
+        color: var(--text2, #888);
+        display: inline-flex;
+        align-items: center;
+        justify-content: flex-start;
+        cursor: pointer;
+        overflow: hidden;
+        white-space: nowrap;
+        user-select: none;
+        -webkit-tap-highlight-color: transparent;
+        flex-shrink: 0;
+        transition: width 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+                    background 0.25s ease,
+                    border-color 0.25s ease,
+                    color 0.25s ease,
+                    box-shadow 0.25s ease,
+                    transform 0.25s ease;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+      }
+      .cg-title-trans-btn .cg-trans-icon {
+        width: 32px;
+        height: 32px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+      }
+      .cg-title-trans-btn .cg-trans-icon svg {
+        width: 16px;
+        height: 16px;
+        stroke: currentColor;
+        transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      }
+      .cg-title-trans-btn .cg-trans-label {
+        font-size: 12px;
+        font-weight: 600;
+        color: inherit;
+        opacity: 0;
+        transform: translateX(-8px);
+        transition: opacity 0.25s ease 0.06s, transform 0.25s ease 0.06s;
+        padding-right: 12px;
+        pointer-events: none;
+      }
+      .cg-title-trans-btn:hover,
+      .cg-title-trans-btn:focus-visible {
+        width: 104px;
+        border-radius: 999px;
+        background: var(--bg3, #222);
+        color: var(--text, #fff);
+        border-color: var(--text2, #888);
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.16);
+        transform: translateY(-1px);
+      }
+      .cg-title-trans-btn:hover .cg-trans-icon svg,
+      .cg-title-trans-btn:focus-visible .cg-trans-icon svg {
+        transform: scale(1.1) rotate(6deg);
+      }
+      .cg-title-trans-btn.active:hover,
+      .cg-title-trans-btn.active:focus-visible {
+        width: 124px;
+      }
+      .cg-title-trans-btn:hover .cg-trans-label,
+      .cg-title-trans-btn:focus-visible .cg-trans-label {
+        opacity: 1;
+        transform: translateX(0);
+      }
+      .cg-title-trans-btn.active {
+        background: var(--text, #fff);
+        color: var(--accent-text, var(--bg, #0d0d0d));
+        border-color: var(--text, #fff);
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+      }
+      .cg-title-trans-btn.active .cg-trans-icon svg {
+        stroke: var(--accent-text, var(--bg, #0d0d0d));
+      }
+      .cg-title-trans-btn.active:hover {
+        background: var(--text, #fff);
+        color: var(--accent-text, var(--bg, #0d0d0d));
+        border-color: var(--text, #fff);
+      }
+
+      [data-theme="light"] .cg-title-trans-btn {
+        background: var(--bg2, #f0f0f0);
+        border-color: var(--line, #e0e0e0);
+        color: var(--text2, #666);
+      }
+      [data-theme="light"] .cg-title-trans-btn:hover,
+      [data-theme="light"] .cg-title-trans-btn:focus-visible {
+        background: var(--bg3, #e8e8e8);
+        color: var(--text, #0a0a0a);
+        border-color: var(--text2, #999);
+      }
+      [data-theme="light"] .cg-title-trans-btn.active {
+        background: var(--text, #0a0a0a);
+        color: var(--accent-text, #fafafa);
+        border-color: var(--text, #0a0a0a);
+      }
+      [data-theme="light"] .cg-title-trans-btn.active .cg-trans-icon svg {
+        stroke: var(--accent-text, #fafafa);
+      }
+      [data-theme="light"] .cg-title-trans-btn.active:hover {
+        background: var(--text, #0a0a0a);
+        color: var(--accent-text, #fafafa);
       }
       .cg-subtitle {
         color: var(--text2);
@@ -4151,6 +4348,42 @@
         font-size: 13px;
         font-weight: 800;
         color: #ff4757;
+      }
+      .cg-val-text-stack {
+        display: inline-flex;
+        flex-direction: column;
+        align-items: flex-end;
+        line-height: 1.25;
+        text-align: right;
+      }
+      .cg-val-th {
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--text);
+        letter-spacing: -0.2px;
+      }
+      .cg-val-en-sub {
+        font-size: 11px;
+        font-weight: 500;
+        color: var(--text2, #888);
+        margin-top: 1px;
+        letter-spacing: 0.2px;
+      }
+      .cg-result-val-link:hover .cg-val-th {
+        color: #ff4757;
+      }
+      .cg-result-val-link:hover .cg-val-en-sub {
+        color: rgba(255, 71, 87, 0.85);
+      }
+      .cg-pin-link .cg-val-th {
+        color: inherit;
+        font-size: 14px;
+        font-weight: 700;
+      }
+      .cg-pin-link .cg-val-en-sub {
+        color: var(--text2, #888);
+        font-size: 11px;
+        font-weight: 500;
       }
 
       .cg-action-group {
@@ -4821,13 +5054,40 @@
       .cg-tooltip-popup.show {
         opacity: 1;
         transform: translateY(0);
+        pointer-events: auto;
       }
       .cg-tt-header {
         display: flex;
-        align-items: baseline;
+        align-items: center;
         flex-wrap: wrap;
         gap: 6px 10px;
         font-weight: 700;
+      }
+      .cg-tt-close-btn {
+        margin-left: auto;
+        background: transparent;
+        border: none;
+        color: var(--text2, #888);
+        font-size: 13px;
+        font-family: inherit;
+        line-height: 1;
+        cursor: pointer;
+        padding: 3px 6px;
+        border-radius: 6px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        transition: color 0.15s ease, background 0.15s ease;
+      }
+      .cg-tt-close-btn:hover,
+      .cg-tt-close-btn:active {
+        color: var(--text, #fff);
+        background: var(--line, rgba(255, 255, 255, 0.12));
+      }
+      [data-theme="light"] .cg-tt-close-btn:hover,
+      [data-theme="light"] .cg-tt-close-btn:active {
+        color: var(--text, #0a0a0a);
+        background: var(--line, rgba(0, 0, 0, 0.08));
       }
       .cg-tt-en {
         color: var(--text, #fff);
@@ -5040,8 +5300,33 @@
       }
 
       @media (max-width: 600px) {
+        .cg-header-block {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+        }
+        .cg-title-row {
+          gap: 8px;
+          margin-bottom: 4px;
+        }
         .cg-title {
-          font-size: 28px;
+          font-size: clamp(20px, 5.8vw, 28px);
+        }
+        .cg-title-trans-btn {
+          width: 32px;
+          height: 32px;
+        }
+        .cg-title-trans-btn .cg-trans-icon {
+          width: 30px;
+          height: 30px;
+        }
+        .cg-title-trans-btn:hover,
+        .cg-title-trans-btn:focus-visible {
+          width: 98px;
+        }
+        .cg-title-trans-btn.active:hover,
+        .cg-title-trans-btn.active:focus-visible {
+          width: 116px;
         }
         .cg-explain-item {
           flex-direction: column;
@@ -5128,11 +5413,18 @@
       hideCGTooltip();
     },
     onWordTouchStart: function (e, targetEl, enWord, extraHint) {
-      if (!e.touches || e.touches.length === 0) return;
-      const touch = e.touches[0];
+      const evt = e || window.event;
+      if (!evt || !evt.touches || evt.touches.length === 0) return;
+      const touch = evt.touches[0];
       cgTouchStartPos = { x: touch.clientX, y: touch.clientY };
-      if (cgLongPressTimer) clearTimeout(cgLongPressTimer);
+      cgDidLongPress = false;
+      if (cgLongPressTimer) {
+        clearTimeout(cgLongPressTimer);
+        cgLongPressTimer = null;
+      }
       cgLongPressTimer = setTimeout(() => {
+        cgDidLongPress = true;
+        cgSuppressClickUntil = Date.now() + 650;
         showCGTooltip(targetEl, enWord, extraHint);
         if (navigator.vibrate) {
           try { navigator.vibrate(25); } catch (_) {}
@@ -5140,13 +5432,21 @@
       }, 350);
     },
     onWordTouchMove: function (e) {
-      if (!cgLongPressTimer || !e.touches || e.touches.length === 0) return;
-      const touch = e.touches[0];
+      const evt = e || window.event;
+      if (!evt || !evt.touches || evt.touches.length === 0) return;
+      const touch = evt.touches[0];
       const dist = Math.hypot(touch.clientX - cgTouchStartPos.x, touch.clientY - cgTouchStartPos.y);
-      if (dist > 8) {
-        clearTimeout(cgLongPressTimer);
-        cgLongPressTimer = null;
-        hideCGTooltip();
+      if (!cgDidLongPress) {
+        if (dist > 18) {
+          if (cgLongPressTimer) {
+            clearTimeout(cgLongPressTimer);
+            cgLongPressTimer = null;
+          }
+        }
+      } else {
+        if (dist > 35) {
+          hideCGTooltip();
+        }
       }
     },
     onWordTouchEnd: function () {
@@ -5154,9 +5454,17 @@
         clearTimeout(cgLongPressTimer);
         cgLongPressTimer = null;
       }
-      setTimeout(() => {
-        hideCGTooltip();
-      }, 2000);
+      if (cgDidLongPress) {
+        cgSuppressClickUntil = Date.now() + 650;
+      }
+    },
+    toggleMainCardTranslations: function () {
+      showMainCardTranslations = !showMainCardTranslations;
+      try {
+        localStorage.setItem('cg_show_main_translations', String(showMainCardTranslations));
+      } catch (e) {}
+      renderApp();
+      showCGToast(showMainCardTranslations ? 'เปิดแสดงคำแปลภาษาไทย' : 'ปิดแสดงคำแปลภาษาไทย');
     },
     toggleShowTranslations: function () {
       showChipTranslations = !showChipTranslations;
