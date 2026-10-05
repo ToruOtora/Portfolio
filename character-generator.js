@@ -2633,6 +2633,319 @@
     }
   } catch (e) {}
   let savedSearchQuery = "";
+  let isDailyMode = false; // toggle for daily challenge mode
+  let isDailyAnimating = false; // guard against rapid clicks during 2-stage slide
+  let dailyCountdownTimer = null;
+
+  // ===== DAILY / ROUTINE QUEST CONFIG (ตั้งค่าโหมดและรอบวันที่นี่ หรือดึงสดจาก Google Sheet) =====
+  // mode: '1': Random Everything | '2': Smart (เฉพาะสัตว์) | '3': Smart (Monster) | '4': Smart (สัตว์+Monster)
+  // intervalDays: จำนวนวันต่อรอบ เช่น 1, 3, 7 วัน
+  // startDate: วันที่เริ่มรอบเควสต์ในรูปแบบ 'YYYY-MM-DD' (เวลาไทย)
+  const QUEST_CONFIG = {
+    mode: '4',              // ดึงตาม Google Sheet ตารางที่ 3 (ค่าเริ่มต้น: 4 = Smart สัตว์+Monster)
+    intervalDays: 1,        // สุ่มทุกๆ ? วัน (ค่าเริ่มต้น: 1 = Daily)
+    startDate: '2026-10-06' // วันที่เริ่มตั้ง เช่น วันที่ 6 ต.ค.
+  };
+
+  // Helper to fetch live Daily Quest config directly from Google Sheet Table 3
+  async function fetchQuestConfigFromSheet() {
+    try {
+      const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQfEtWV8M_ionTpWcgPqMBxO1G_Kf1BPDjEdea-NGu4imkbS_nNPeiHPQNttg8XrQJDP66LplqGd4y_/pub?gid=0&single=true&output=csv';
+      const res = await fetch(csvUrl + '&t=' + Date.now());
+      if (!res.ok) return;
+      const text = await res.text();
+      const lines = text.split(/\r?\n/).map(l => l.split(','));
+      let mode = null;
+      let interval = null;
+      for (let r = 0; r < lines.length; r++) {
+        const row = lines[r];
+        for (let c = 0; c < row.length; c++) {
+          const cell = (row[c] || '').trim();
+          if (cell.includes('ตัวสุ่มของวัน') && r + 1 < lines.length && lines[r + 1][c]) {
+            mode = lines[r + 1][c].trim();
+          }
+          if (cell.includes('สุ่มทุกๆ') && r + 1 < lines.length && lines[r + 1][c]) {
+            interval = parseInt(lines[r + 1][c].trim(), 10);
+          }
+        }
+        if (mode !== null && interval !== null) break;
+      }
+      if (mode !== null || interval !== null) {
+        if (window.CharacterGenerator && typeof window.CharacterGenerator.updateQuestConfigFromSheet === 'function') {
+          window.CharacterGenerator.updateQuestConfigFromSheet({ mode, intervalDays: interval });
+        }
+      }
+    } catch (_) {}
+  }
+
+  // ===== DETERMINISTIC PRNG PER CYCLE =====
+  function getDailySeed() {
+    const now = new Date();
+    // Convert current time to Bangkok time (UTC+7)
+    const utcNow = now.getTime() + (now.getTimezoneOffset() * 60000);
+    const bkkNow = new Date(utcNow + (3600000 * 7));
+
+    // Parse startDate (Bangkok local date)
+    const [sY, sM, sD] = (QUEST_CONFIG.startDate || '2026-10-06').split('-').map(Number);
+    // UTC timestamp corresponding to start date 00:00:00 Bangkok time
+    const startBkkMs = Date.UTC(sY, sM - 1, sD, 0 - 7, 0, 0);
+
+    const interval = Math.max(1, QUEST_CONFIG.intervalDays || 1);
+    const intervalMs = interval * 86400000;
+
+    // Elapsed milliseconds since startDate 00:00:00 Bangkok time
+    const elapsedMs = now.getTime() - startBkkMs;
+    const cycleIndex = elapsedMs >= 0 ? Math.floor(elapsedMs / intervalMs) : 0;
+
+    // Start & End timestamps of the current cycle (Bangkok midnight boundaries)
+    const currentCycleStartMs = startBkkMs + (cycleIndex * intervalMs);
+    const currentCycleEndMs = currentCycleStartMs + intervalMs; // Midnight ending the last day
+
+    // Clean Bangkok dates without duplicate offsets
+    const startBkkDate = new Date(currentCycleStartMs);
+    const endBkkLastDay = new Date(currentCycleEndMs - 1000);
+
+    const todayStr = bkkNow.toLocaleDateString('th-TH', { timeZone: 'Asia/Bangkok', day: 'numeric', month: 'short', year: 'numeric' });
+    const cycleRangeStr = interval === 1
+      ? todayStr
+      : `${startBkkDate.toLocaleDateString('th-TH', { timeZone: 'Asia/Bangkok', day: 'numeric', month: 'short' })} - ${endBkkLastDay.toLocaleDateString('th-TH', { timeZone: 'Asia/Bangkok', day: 'numeric', month: 'short', year: 'numeric' })}`;
+
+    return {
+      dateKey: `quest_v4_${interval}_${QUEST_CONFIG.mode}_${cycleIndex}_${sY}-${sM}-${sD}`,
+      cycleIndex,
+      interval,
+      currentCycleEndMs,
+      bkkNow,
+      formattedThai: todayStr,
+      cycleRangeStr
+    };
+  }
+
+  function mulberry32(a) {
+    return function() {
+      let t = a += 0x6D2B79F5;
+      t = Math.imul(t ^ t >>> 15, t | 1);
+      t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    };
+  }
+
+  function getDailyChallengeResult() {
+    const seedInfo = getDailySeed();
+    let hash = 0;
+    for (let i = 0; i < seedInfo.dateKey.length; i++) {
+      hash = ((hash << 5) - hash) + seedInfo.dateKey.charCodeAt(i);
+      hash |= 0;
+    }
+    const rng = mulberry32(Math.abs(hash) + 54321);
+    const pick = (arr) => arr[Math.floor(rng() * arr.length)];
+
+    let animal, theme, object, color, personality, clothingVal;
+
+    if (QUEST_CONFIG.mode === '1') {
+      // 1 · Random Everything (100% อิสระ)
+      const speciesPool = [...animals, ...mgeRaces];
+      animal = pick(speciesPool);
+      theme = pick(themes);
+      object = pick(objects);
+      color = pick(colors);
+      personality = pick(personalities);
+      clothingVal = pick(clothing);
+    } else if (QUEST_CONFIG.mode === '2') {
+      // 2 · Smart Match (เฉพาะสัตว์ Animals)
+      animal = pick(animals);
+      const possibleThemes = smartThemes[animal] || themes;
+      theme = pick(possibleThemes);
+      const possibleObjects = smartObjects[theme] || objects;
+      const possibleClothing = smartclothing[theme] || clothing;
+      const possibleColors = smartColors[theme] || colors;
+      const possiblePersonalities = smartPersonalities[theme] || personalities;
+      object = pick(possibleObjects);
+      color = pick(possibleColors);
+      personality = pick(possiblePersonalities);
+      clothingVal = pick(possibleClothing);
+    } else if (QUEST_CONFIG.mode === '3') {
+      // 3 · Smart Match (เฉพาะเผ่าพันธุ์ Monster Girl)
+      animal = pick(mgeRaces);
+      const possibleThemes = smartThemes[animal] || themes;
+      theme = pick(possibleThemes);
+      const possibleObjects = smartObjects[theme] || objects;
+      const possibleClothing = smartclothing[theme] || clothing;
+      const possibleColors = smartColors[theme] || colors;
+      const possiblePersonalities = smartPersonalities[theme] || personalities;
+      object = pick(possibleObjects);
+      color = pick(possibleColors);
+      personality = pick(possiblePersonalities);
+      clothingVal = pick(possibleClothing);
+    } else {
+      // 4 · Smart Match (ทั้งสองอย่าง สัตว์ + Monster)
+      const speciesPool = [...animals, ...mgeRaces];
+      animal = pick(speciesPool);
+      const possibleThemes = smartThemes[animal] || themes;
+      theme = pick(possibleThemes);
+      const possibleObjects = smartObjects[theme] || objects;
+      const possibleClothing = smartclothing[theme] || clothing;
+      const possibleColors = smartColors[theme] || colors;
+      const possiblePersonalities = smartPersonalities[theme] || personalities;
+      object = pick(possibleObjects);
+      color = pick(possibleColors);
+      personality = pick(possiblePersonalities);
+      clothingVal = pick(possibleClothing);
+    }
+
+    return {
+      animal,
+      theme,
+      object,
+      color,
+      personality,
+      clothing: clothingVal,
+      dateKey: seedInfo.dateKey,
+      formattedThai: seedInfo.formattedThai,
+      cycleRangeStr: seedInfo.cycleRangeStr
+    };
+  }
+
+  // ===== DAILY THEME & COLOR GENERATOR (SURFACE & PRIMARY) =====
+  function hslToHexStr(h, s, l) {
+    l /= 100;
+    const a = s * Math.min(l, 1 - l) / 100;
+    const f = n => {
+      const k = (n + h / 30) % 12;
+      const color = l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
+      return Math.round(255 * color).toString(16).padStart(2, '0');
+    };
+    return '#' + f(0) + f(8) + f(4);
+  }
+
+  function getColorHueFromName(name) {
+    if (!name) return 35;
+    const n = name.toLowerCase();
+    if (n.includes('pink') || n.includes('rose') || n.includes('magenta')) return 330;
+    if (n.includes('red') || n.includes('crimson') || n.includes('ruby')) return 4;
+    if (n.includes('orange') || n.includes('amber') || n.includes('coral') || n.includes('terracotta') || n.includes('peach') || n.includes('cream')) return 26;
+    if (n.includes('gold') || n.includes('yellow')) return 48;
+    if (n.includes('lime') || n.includes('mint')) return 120;
+    if (n.includes('green') || n.includes('emerald') || n.includes('forest') || n.includes('jade')) return 145;
+    if (n.includes('teal') || n.includes('cyan') || n.includes('aqua')) return 175;
+    if (n.includes('blue') || n.includes('sky') || n.includes('azure') || n.includes('navy')) return 215;
+    if (n.includes('purple') || n.includes('violet') || n.includes('indigo') || n.includes('lavender')) return 270;
+    if (n.includes('brown') || n.includes('bronze') || n.includes('copper')) return 25;
+    return 35;
+  }
+
+  function getDailyThemePalette(colorName) {
+    const baseHue = getColorHueFromName(colorName);
+    const bg = hslToHexStr(baseHue, 16, 96);
+    const cardBg = hslToHexStr(baseHue, 22, 92);
+    const surfaceAlt = hslToHexStr(baseHue, 24, 87);
+    let primaryHue = (baseHue + 20) % 360;
+    if (baseHue > 170 && baseHue < 260) {
+      primaryHue = (baseHue + 150) % 360;
+    }
+    const primary = hslToHexStr(primaryHue, 84, 52);
+    const text = '#181615';
+    const text2 = '#6a655f';
+    const text3 = '#969087';
+    const line = 'rgba(24, 22, 21, 0.08)';
+    const line2 = 'rgba(24, 22, 21, 0.16)';
+    return { bg, cardBg, surfaceAlt, primary, text, text2, text3, line, line2 };
+  }
+
+  // ===== SITE-WIDE DYNAMIC THEME COLOR SWITCHING =====
+  let previousThemeSnapshot = null;
+
+  function applyDailyTheme(palette) {
+    if (!palette) return;
+    const docEl = document.documentElement;
+    if (!previousThemeSnapshot) {
+      previousThemeSnapshot = {
+        dataTheme: docEl.getAttribute('data-theme'),
+        dataThemeMode: docEl.getAttribute('data-theme-mode'),
+        styles: {}
+      };
+      const keys = ['--bg', '--bg2', '--bg3', '--line', '--line2', '--text', '--text2', '--text3', '--accent', '--primary', '--secondary'];
+      keys.forEach(k => {
+        previousThemeSnapshot.styles[k] = docEl.style.getPropertyValue(k);
+      });
+    }
+
+    docEl.style.setProperty('--bg', palette.bg);
+    docEl.style.setProperty('--bg2', palette.cardBg);
+    docEl.style.setProperty('--bg3', palette.surfaceAlt);
+    docEl.style.setProperty('--line', palette.line);
+    docEl.style.setProperty('--line2', palette.line2);
+    docEl.style.setProperty('--text', palette.text);
+    docEl.style.setProperty('--text2', palette.text2);
+    docEl.style.setProperty('--text3', palette.text3);
+    docEl.style.setProperty('--accent', palette.primary);
+    docEl.style.setProperty('--primary', palette.primary);
+    docEl.setAttribute('data-theme', 'light');
+    docEl.setAttribute('data-daily-theme', 'active');
+  }
+
+  function revertDailyTheme() {
+    const docEl = document.documentElement;
+    if (previousThemeSnapshot) {
+      const keys = ['--bg', '--bg2', '--bg3', '--line', '--line2', '--text', '--text2', '--text3', '--accent', '--primary', '--secondary'];
+      keys.forEach(k => {
+        if (previousThemeSnapshot.styles[k]) {
+          docEl.style.setProperty(k, previousThemeSnapshot.styles[k]);
+        } else {
+          docEl.style.removeProperty(k);
+        }
+      });
+      if (previousThemeSnapshot.dataTheme) {
+        docEl.setAttribute('data-theme', previousThemeSnapshot.dataTheme);
+      } else {
+        docEl.removeAttribute('data-theme');
+      }
+      if (previousThemeSnapshot.dataThemeMode) {
+        docEl.setAttribute('data-theme-mode', previousThemeSnapshot.dataThemeMode);
+      } else {
+        docEl.removeAttribute('data-theme-mode');
+      }
+      docEl.removeAttribute('data-daily-theme');
+      previousThemeSnapshot = null;
+    }
+  }
+
+  // ===== REALTIME COUNTDOWN TIMER (Countdown to Cycle End Midnight) =====
+  function updateDailyCountdownDOM() {
+    const el = document.getElementById("cg-daily-countdown-time");
+    if (!el) return;
+    const seedInfo = getDailySeed();
+    const now = new Date();
+
+    let diffMs = seedInfo.currentCycleEndMs - now.getTime();
+    if (diffMs <= 0) diffMs = 0;
+
+    const totalSeconds = Math.floor(diffMs / 1000);
+    const days = Math.floor(totalSeconds / 86400);
+    const hours = Math.floor((totalSeconds % 86400) / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = Math.floor(totalSeconds % 60);
+    const pad = (n) => String(n).padStart(2, '0');
+
+    if (days > 0) {
+      el.textContent = `${days}วัน ${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
+    } else {
+      el.textContent = `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
+    }
+  }
+
+  function startDailyCountdown() {
+    stopDailyCountdown();
+    updateDailyCountdownDOM();
+    dailyCountdownTimer = setInterval(updateDailyCountdownDOM, 1000);
+  }
+
+  function stopDailyCountdown() {
+    if (dailyCountdownTimer) {
+      clearInterval(dailyCountdownTimer);
+      dailyCountdownTimer = null;
+    }
+  }
 
   function escapeHTML(str) {
     if (!str) return "";
@@ -3337,8 +3650,57 @@
         `;
       }).join("");
 
+    // Build Daily Challenge card data & rows (Pinterest links, no lock buttons)
+    const daily = getDailyChallengeResult();
+    const dailySeed = getDailySeed();
+    const dailyPalette = getDailyThemePalette(daily.color);
+
+    const dailyTraits = [
+      { key: 'animal', label: 'Species', icon: '🧜‍♀️', val: daily.animal },
+      { key: 'theme', label: 'Theme', icon: '✨', val: daily.theme },
+      { key: 'object', label: 'Object', icon: '🔮', val: daily.object },
+      { key: 'color', label: 'Color', icon: '🎨', val: daily.color },
+      { key: 'personality', label: 'Personality', icon: '🎭', val: daily.personality },
+      { key: 'clothing', label: 'Clothing', icon: '👗', val: daily.clothing }
+    ];
+
+    const dailyRowsHTML = dailyTraits.map(t => {
+      const escapedVal = escapeHTML(t.val).replace(/'/g, "\\'");
+      return `
+        <div class="cg-daily-row" data-key="${t.key}">
+          <div class="cg-daily-key-box">
+            <span class="cg-icon">${t.icon}</span>
+            <span class="cg-key-text">${t.label}</span>
+          </div>
+          <div class="cg-daily-val-box">
+            <a
+              href="https://www.pinterest.com/search/pins/?q=${encodeURIComponent(t.val)}"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="cg-result-val-link cg-daily-val-link"
+              onmouseenter="CharacterGenerator.showWordTooltip(this, '${escapedVal}', 'คลิกเพื่อค้นหาภาพไอเดียบน Pinterest')"
+              onmouseleave="CharacterGenerator.hideWordTooltip()"
+              ontouchstart="CharacterGenerator.onWordTouchStart(event, this, '${escapedVal}', 'คลิกเพื่อค้นหาภาพไอเดียบน Pinterest')"
+              ontouchend="CharacterGenerator.onWordTouchEnd(event)"
+              ontouchmove="CharacterGenerator.onWordTouchMove(event)"
+            >
+              ${renderValLinkContent(t.val)}
+            </a>
+          </div>
+        </div>
+      `;
+    }).join("");
+
     root.innerHTML = `
       <div class="cg-container">
+        <!-- RADIAL EXPANSION BACKDROP (Storyboard Frame 6 & 10) -->
+        <div
+          class="cg-daily-radial-backdrop ${isDailyMode ? 'active' : ''}"
+          id="cg-daily-radial-backdrop"
+          style="--daily-glow: ${dailyPalette.primary}88; --daily-glow-soft: ${dailyPalette.primary}28; --daily-bg: ${dailyPalette.cardBg};"
+          aria-hidden="true"
+        ></div>
+
         <!-- HEADER -->
         <div class="cg-header-block">
           <div class="cg-title-row">
@@ -3376,47 +3738,114 @@
           </button>
         </div>
 
-        <!-- RESULT CARD WRAPPER WITH SWIPE REVEAL -->
-        <div class="cg-card-outer" id="cg-card-outer">
-          <!-- Background Action Track (Revealed on Swipe) -->
-          <div class="cg-card-track" aria-hidden="true">
-            <div class="cg-slot-side left" id="cg-slot-redo">
-              <div class="cg-slot-action" id="cg-action-redo">
-                <div class="cg-slot-icon-disc">
-                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M21 7v6h-6"/>
-                    <path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3l3 2.7"/>
-                  </svg>
+        <!-- RESULT CARD WRAPPER WITH 2-STAGE SLIDE CHOREOGRAPHY -->
+        <div class="cg-card-wrap ${isDailyMode ? 'daily-active' : ''}">
+          <div class="cg-card-outer" id="cg-card-outer">
+            <!-- Background Action Track (Revealed on Swipe) -->
+            <div class="cg-card-track" aria-hidden="true">
+              <div class="cg-slot-side left" id="cg-slot-redo">
+                <div class="cg-slot-action" id="cg-action-redo">
+                  <div class="cg-slot-icon-disc">
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M21 7v6h-6"/>
+                      <path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3l3 2.7"/>
+                    </svg>
+                  </div>
+                  <span class="cg-slot-label">(Redo)</span>
                 </div>
-                <span class="cg-slot-label">(Redo)</span>
+              </div>
+              <div class="cg-slot-side right" id="cg-slot-undo">
+                <div class="cg-slot-action" id="cg-action-undo">
+                  <div class="cg-slot-icon-disc">
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M3 7v6h6"/>
+                      <path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/>
+                    </svg>
+                  </div>
+                  <span class="cg-slot-label">(Undo)</span>
+                </div>
               </div>
             </div>
-            <div class="cg-slot-side right" id="cg-slot-undo">
-              <div class="cg-slot-action" id="cg-action-undo">
-                <div class="cg-slot-icon-disc">
-                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M3 7v6h6"/>
-                    <path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/>
-                  </svg>
-                </div>
-                <span class="cg-slot-label">(Undo)</span>
+
+            <!-- Foreground Sliding Card -->
+            <div class="cg-card" id="cg-card">
+              <div class="cg-result-list">
+                ${resultEntries}
+              </div>
+
+              <div class="cg-action-group">
+                <button class="cg-btn cg-btn-generate" onclick="CharacterGenerator.generate()">
+                  <span>⚡ Random</span>
+                </button>
+                <button class="cg-btn cg-btn-save" onclick="CharacterGenerator.saveResult()">
+                  <span>⭐ Save</span>
+                </button>
               </div>
             </div>
           </div>
 
-          <!-- Foreground Sliding Card -->
-          <div class="cg-card" id="cg-card">
-            <div class="cg-result-list">
-              ${resultEntries}
-            </div>
+          <!-- DAILY / ROUTINE CHALLENGE CARD (Tucked behind card 1 initially, with single ribbon attached) -->
+          <div
+            class="cg-daily-card-outer"
+            id="cg-daily-card-outer"
+            aria-hidden="${!isDailyMode}"
+            style="
+              --daily-bg: ${dailyPalette.bg};
+              --daily-card-bg: ${dailyPalette.cardBg};
+              --daily-surface-alt: ${dailyPalette.surfaceAlt};
+              --daily-primary: ${dailyPalette.primary};
+              --daily-text: ${dailyPalette.text};
+              --daily-text2: ${dailyPalette.text2};
+              --daily-text3: ${dailyPalette.text3};
+              --daily-line: ${dailyPalette.line};
+              --daily-line2: ${dailyPalette.line2};
+            "
+          >
+            <!-- THE SINGLE RIBBON: Attached to Daily Card all the time, longer bookmark cut (Image 4) -->
+            <button
+              type="button"
+              id="cg-daily-ribbon"
+              class="cg-daily-ribbon"
+              onclick="CharacterGenerator.toggleDailyMode()"
+              title="คลิกเพื่อเปิด/ปิดโจทย์ชาเลนจ์ (#DailyOCAdopt #สุ่มวาดOC)"
+              aria-label="ชาเลนจ์ประจำวัน"
+            ></button>
 
-            <div class="cg-action-group">
-              <button class="cg-btn cg-btn-generate" onclick="CharacterGenerator.generate()">
-                <span>⚡ Random</span>
-              </button>
-              <button class="cg-btn cg-btn-save" onclick="CharacterGenerator.saveResult()">
-                <span>⭐ Save</span>
-              </button>
+            <div class="cg-daily-card-inner" id="cg-daily-card-inner">
+              <div class="cg-daily-header">
+                <div class="cg-daily-header-left">
+                  <div class="cg-daily-title-row">
+                    <span class="cg-daily-badge">
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                      </svg>
+                      <span>${QUEST_CONFIG.intervalDays === 1 ? 'Daily Quest' : `${QUEST_CONFIG.intervalDays}-Day Quest`}</span>
+                    </span>
+                    <h2 class="cg-daily-title">${QUEST_CONFIG.intervalDays === 1 ? 'Daily Character Challenge' : 'Character Quest Challenge'}</h2>
+                  </div>
+                  <p class="cg-daily-desc">โจทย์สุ่มวาดและออกแบบตัวละคร ${QUEST_CONFIG.intervalDays === 1 ? `ประจำวัน (${escapeHTML(dailySeed.formattedThai)})` : `(รอบ ${escapeHTML(dailySeed.cycleRangeStr)})`}</p>
+                </div>
+
+                <div class="cg-daily-header-right">
+                  <div class="cg-daily-timer-box" title="เวลานับถอยหลังสู่การรีเซ็ตโจทย์รอบถัดไป">
+                    <svg class="cg-daily-timer-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                      <circle cx="12" cy="12" r="10"></circle>
+                      <polyline points="12 6 12 12 16 14"></polyline>
+                    </svg>
+                    <span class="cg-daily-timer-val" id="cg-daily-countdown-time">--:--:--</span>
+                  </div>
+                  <div class="cg-daily-hashtags-pill">
+                    <span>#DailyOCAdopt</span>
+                    <span class="cg-daily-tag-sep">·</span>
+                    <span>#สุ่มวาดOC</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 6 TRAIT ROWS -->
+              <div class="cg-daily-trait-list">
+                ${dailyRowsHTML}
+              </div>
             </div>
           </div>
         </div>
@@ -3645,10 +4074,14 @@
             </div>
           </div>
         ` : ''}
+
       </div>
     `;
 
     setupCGCardSwipe();
+    if (isDailyMode) {
+      updateDailyCountdownDOM();
+    }
   }
 
   // FLIP Animation Helpers
@@ -4013,13 +4446,314 @@
         padding: 8px 12px;
         transition: all 0.3s ease;
       }
+      /* FIXED RADIAL AMBIENT GLOW BACKDROP (Pure opacity fade, no transform scale or heavy blur to eliminate lag) */
+      .cg-daily-radial-backdrop {
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        z-index: 0;
+        opacity: 0;
+        background: radial-gradient(ellipse 75% 65% at 50% 36%, var(--daily-glow, rgba(255, 120, 60, 0.45)) 0%, var(--daily-glow-soft, rgba(255, 120, 60, 0.16)) 45%, transparent 75%);
+        transition: opacity 0.4s ease;
+        will-change: opacity;
+      }
+      .cg-daily-radial-backdrop.active {
+        opacity: 0.35; /* ลด opacity ลง 65% และอยู่หลังหน้าต่าง Daily ตลอด */
+      }
+
+      /* CARD WRAPPER WITH 2-STAGE SLIDE CHOREOGRAPHY */
+      .cg-card-wrap {
+        position: relative;
+        display: grid;
+        grid-template-columns: 100%;
+        grid-template-rows: 1fr;
+        align-items: stretch;
+        width: 100%;
+        perspective: 1200px;
+      }
+      .cg-card-outer,
+      .cg-daily-card-outer {
+        grid-column: 1;
+        grid-row: 1;
+        width: 100%;
+        height: 100%;
+        box-sizing: border-box;
+      }
+
+      /* BLACK MAIN CARD */
       .cg-card-outer {
         position: relative;
+        z-index: 2;
         overflow: hidden;
         border-radius: 24px;
         background: var(--bg);
         border: 1px solid var(--line);
-        box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+        box-shadow: none;
+        transform: translate3d(0, 0, 0);
+        transition: transform 0.32s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.32s ease;
+        will-change: transform, opacity;
+        backface-visibility: hidden;
+        -webkit-backface-visibility: hidden;
+      }
+
+      /* DAILY CHALLENGE CARD (Tucked behind black card initially, never peeks out) */
+      .cg-daily-card-outer {
+        position: relative;
+        z-index: 1; /* Resting behind black card */
+        overflow: visible;
+        border-radius: 24px;
+        background: transparent;
+        border: 1px solid transparent;
+        box-shadow: none;
+        padding: 0;
+        transform: translate3d(0, 0, 0);
+        transition: transform 0.32s cubic-bezier(0.16, 1, 0.3, 1);
+        will-change: transform;
+        backface-visibility: hidden;
+        -webkit-backface-visibility: hidden;
+      }
+      /* Prevent any part of Daily Card from showing under black card when resting */
+      .cg-card-wrap:not(.daily-active):not(.daily-phase-out):not(.daily-closing-out):not(.daily-tucking-in) .cg-daily-card-outer {
+        pointer-events: none;
+      }
+      .cg-card-wrap:not(.daily-active):not(.daily-phase-out):not(.daily-closing-out):not(.daily-tucking-in) .cg-daily-ribbon {
+        pointer-events: auto;
+      }
+
+      /* DAILY CARD INNER (Matching black card size 100% so both cover each other perfectly, flat minimal without drop-shadow) */
+      .cg-daily-card-inner {
+        position: relative;
+        z-index: 2; /* In front of ribbon */
+        height: 100%;
+        min-height: 100%;
+        box-sizing: border-box;
+        padding: 24px;
+        border-radius: 24px;
+        background: var(--daily-card-bg, #f5f2eb);
+        border: 1px solid var(--daily-line2, rgba(0, 0, 0, 0.12));
+        color: var(--daily-text, #181615);
+        opacity: 0;
+        pointer-events: none;
+        box-shadow: none;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+      }
+
+      /* THE SINGLE RIBBON: Tucked behind card on layer 1, sticking out on right */
+      .cg-daily-ribbon {
+        position: absolute;
+        right: -32px;
+        top: 110px;
+        width: 64px;
+        height: 34px;
+        background: var(--daily-primary, #ff5722);
+        border: none;
+        cursor: pointer;
+        padding: 0;
+        z-index: 1; /* Behind card surface layer 2 */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        clip-path: polygon(0% 0%, 100% 0%, 78% 50%, 100% 100%, 0% 100%);
+        box-shadow: none;
+        transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease;
+      }
+      .cg-daily-ribbon:hover {
+        transform: translate3d(4px, 0, 0);
+        opacity: 0.9;
+      }
+
+      /* ══ CHOREOGRAPHY STAGES (PC) ══ */
+      /* Stage 1: Pull out to the right (behind black card) */
+      .cg-card-wrap.daily-phase-out .cg-card-outer {
+        transform: scale(0.975) translate3d(0, 4px, 0);
+        opacity: 0.88;
+      }
+      .cg-card-wrap.daily-phase-out .cg-daily-card-outer {
+        z-index: 1;
+        transform: translate3d(104%, 0, 0);
+      }
+      .cg-card-wrap.daily-phase-out .cg-daily-card-inner {
+        opacity: 1;
+        pointer-events: auto;
+      }
+
+      /* Stage 2: Swapped in front & resting in center */
+      .cg-card-wrap.daily-active .cg-card-outer {
+        transform: scale(0.975) translate3d(0, 4px, 0);
+        opacity: 0.88;
+        pointer-events: none;
+        z-index: 2;
+      }
+      .cg-card-wrap.daily-active .cg-daily-card-outer {
+        z-index: 5; /* In front! */
+        transform: translate3d(0, 0, 0);
+      }
+      .cg-card-wrap.daily-active .cg-daily-card-inner {
+        opacity: 1;
+        pointer-events: auto;
+        box-shadow: none;
+      }
+      .cg-card-wrap.daily-active .cg-daily-ribbon:hover {
+        transform: translate3d(-4px, 0, 0);
+        opacity: 0.9;
+      }
+
+      /* Stage A of Closing: Slide out to right (in front) */
+      .cg-card-wrap.daily-closing-out .cg-card-outer {
+        transform: scale(0.975) translate3d(0, 4px, 0);
+        opacity: 0.88;
+      }
+      .cg-card-wrap.daily-closing-out .cg-daily-card-outer {
+        z-index: 5;
+        transform: translate3d(104%, 0, 0);
+      }
+      .cg-card-wrap.daily-closing-out .cg-daily-card-inner {
+        opacity: 1;
+        pointer-events: auto;
+      }
+
+      /* Stage B of Closing: Drop behind black card & slide back in */
+      .cg-card-wrap.daily-tucking-in .cg-card-outer {
+        transform: scale(1) translate3d(0, 0, 0);
+        opacity: 1;
+      }
+      .cg-card-wrap.daily-tucking-in .cg-daily-card-outer {
+        z-index: 1; /* Drops behind! */
+        transform: translate3d(0, 0, 0);
+      }
+      .cg-card-wrap.daily-tucking-in .cg-daily-card-inner {
+        opacity: 1;
+        pointer-events: auto;
+      }
+
+      /* DAILY CARD INTERNAL COMPACT STYLES (Scoped to Daily Palette) */
+      .cg-daily-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 12px;
+        margin-bottom: 14px;
+        padding-right: 4px;
+      }
+      .cg-daily-title-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 3px;
+        flex-wrap: wrap;
+      }
+      .cg-daily-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 11.5px;
+        font-weight: 800;
+        color: #ffffff;
+        background: var(--daily-text, #181615);
+        border: 1px solid rgba(0, 0, 0, 0.12);
+        padding: 4px 10px;
+        border-radius: 20px;
+        letter-spacing: 0.4px;
+        box-shadow: none;
+      }
+      .cg-daily-badge svg {
+        color: var(--daily-primary, #f59e0b);
+      }
+      .cg-daily-title {
+        font-size: 20px;
+        font-weight: 700;
+        color: var(--daily-text, #181615);
+        margin: 0;
+      }
+      .cg-daily-desc {
+        font-size: 13px;
+        color: var(--daily-text2, #6a655f);
+        margin: 0;
+      }
+      .cg-daily-header-right {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 5px;
+      }
+      .cg-daily-timer-box {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: var(--daily-surface-alt, rgba(0, 0, 0, 0.05));
+        border: 1px solid var(--daily-line2, rgba(0, 0, 0, 0.12));
+        padding: 4px 10px;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 700;
+        color: var(--daily-text, #181615);
+        letter-spacing: 0.3px;
+      }
+      .cg-daily-timer-icon {
+        color: var(--daily-primary, #ff5722);
+      }
+      .cg-daily-hashtags-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--daily-text2, #6a655f);
+      }
+      .cg-daily-tag-sep {
+        opacity: 0.5;
+      }
+
+      .cg-daily-trait-list {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .cg-daily-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 12px;
+        border-radius: 12px;
+        background: var(--daily-surface-alt, rgba(0, 0, 0, 0.03));
+        border: 1px solid var(--daily-line, rgba(0, 0, 0, 0.08));
+        transition: border-color 0.2s ease, background 0.2s ease;
+      }
+      .cg-daily-row:hover {
+        border-color: var(--daily-line2, rgba(0, 0, 0, 0.18));
+      }
+      .cg-daily-key-box {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--daily-text, #181615);
+      }
+      .cg-daily-val-box {
+        display: flex;
+        align-items: center;
+      }
+      .cg-daily-val-link {
+        color: var(--daily-text, #181615);
+        background: var(--daily-card-bg, #fff);
+        border: 1px solid var(--daily-line2, rgba(0, 0, 0, 0.12));
+        padding: 6px 14px;
+        border-radius: 14px;
+        text-decoration: none;
+        font-size: 14px;
+        font-weight: 700;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        transition: all 0.2s ease;
+      }
+      .cg-daily-val-link:hover {
+        border-color: var(--daily-primary, #ff5722);
+        color: var(--daily-primary, #ff5722);
+        box-shadow: none;
       }
       .cg-card-track {
         position: absolute;
@@ -4105,6 +4839,8 @@
         position: relative;
         z-index: 2;
         width: 100%;
+        height: 100%;
+        min-height: 100%;
         background: var(--bg2);
         border-radius: 23px;
         padding: 24px;
@@ -4114,6 +4850,9 @@
         will-change: transform;
         box-shadow: 0 0 24px rgba(0, 0, 0, 0.12);
         cursor: default;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
       }
       .cg-card.is-dragging {
         cursor: grabbing;
@@ -5334,6 +6073,121 @@
         .cg-title-trans-btn.active:focus-visible {
           width: 116px;
         }
+        .cg-card-wrap {
+          margin-bottom: 24px;
+        }
+        .cg-daily-ribbon {
+          right: 24px;
+          top: auto;
+          bottom: -32px;
+          width: 34px;
+          height: 56px;
+          z-index: 1;
+          clip-path: polygon(0% 0%, 100% 0%, 100% 100%, 50% 78%, 0% 100%);
+        }
+        .cg-daily-ribbon:hover {
+          transform: translate3d(0, 3px, 0);
+          opacity: 0.9;
+        }
+        .cg-card-wrap.daily-active .cg-daily-ribbon:hover {
+          transform: translate3d(0, -3px, 0);
+          opacity: 0.9;
+        }
+
+        /* MOBILE 2-STAGE SLIDE CHOREOGRAPHY (Vertical axis) */
+        .cg-daily-card-outer {
+          padding: 0;
+          transform: translate3d(0, 0, 0);
+        }
+        .cg-card,
+        .cg-daily-card-inner {
+          padding: 18px 16px;
+          border-radius: 20px;
+        }
+
+        /* Stage 1: Pull out to the bottom (behind black card) */
+        .cg-card-wrap.daily-phase-out .cg-card-outer {
+          transform: scale(0.975);
+          opacity: 0.88;
+        }
+        .cg-card-wrap.daily-phase-out .cg-daily-card-outer {
+          z-index: 1;
+          transform: translate3d(0, 104%, 0);
+        }
+        .cg-card-wrap.daily-phase-out .cg-daily-card-inner {
+          opacity: 1;
+          pointer-events: auto;
+        }
+
+        /* Stage 2: Swapped in front & in center */
+        .cg-card-wrap.daily-active .cg-card-outer {
+          transform: scale(0.975);
+          opacity: 0.88;
+          pointer-events: none;
+        }
+        .cg-card-wrap.daily-active .cg-daily-card-outer {
+          z-index: 5;
+          transform: translate3d(0, 0, 0);
+        }
+        .cg-card-wrap.daily-active .cg-daily-card-inner {
+          opacity: 1;
+          pointer-events: auto;
+        }
+
+        /* Stage A of Closing: Slide down (in front) */
+        .cg-card-wrap.daily-closing-out .cg-card-outer {
+          transform: scale(0.975);
+          opacity: 0.88;
+        }
+        .cg-card-wrap.daily-closing-out .cg-daily-card-outer {
+          z-index: 5;
+          transform: translate3d(0, 104%, 0);
+        }
+        .cg-card-wrap.daily-closing-out .cg-daily-card-inner {
+          opacity: 1;
+          pointer-events: auto;
+        }
+
+        /* Stage B of Closing: Drop behind black card & slide up into place */
+        .cg-card-wrap.daily-tucking-in .cg-card-outer {
+          transform: scale(1);
+          opacity: 1;
+        }
+        .cg-card-wrap.daily-tucking-in .cg-daily-card-outer {
+          z-index: 1;
+          transform: translate3d(0, 0, 0);
+        }
+        .cg-card-wrap.daily-tucking-in .cg-daily-card-inner {
+          opacity: 1;
+          pointer-events: auto;
+        }
+
+        .cg-daily-header {
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 6px;
+          padding-right: 0;
+          margin-bottom: 12px;
+        }
+        .cg-daily-header-right {
+          align-items: flex-start;
+          flex-direction: row;
+          align-items: center;
+          gap: 8px;
+        }
+        .cg-daily-title {
+          font-size: 18px;
+        }
+        .cg-daily-desc {
+          font-size: 12px;
+        }
+        .cg-daily-key-box {
+          font-size: 13px;
+        }
+        .cg-daily-val-link {
+          font-size: 13px;
+          padding: 5px 12px;
+        }
         .cg-explain-item {
           flex-direction: column;
           align-items: flex-start;
@@ -5403,8 +6257,39 @@
   window.CharacterGenerator = {
     init: function () {
       injectStyles();
+      if (window._pendingQuestConfigFromSheet) {
+        window.CharacterGenerator.updateQuestConfigFromSheet(window._pendingQuestConfigFromSheet);
+        window._pendingQuestConfigFromSheet = null;
+      } else {
+        fetchQuestConfigFromSheet();
+      }
       renderApp();
       setupCGGestures();
+    },
+    updateQuestConfigFromSheet: function (cfg) {
+      if (!cfg) return;
+      let hasChange = false;
+      if (cfg.mode !== undefined && cfg.mode !== null) {
+        QUEST_CONFIG.mode = String(cfg.mode);
+        hasChange = true;
+      }
+      if (cfg.intervalDays !== undefined && cfg.intervalDays !== null) {
+        const intVal = parseInt(cfg.intervalDays, 10);
+        if (!isNaN(intVal) && intVal >= 1) {
+          QUEST_CONFIG.intervalDays = intVal;
+          hasChange = true;
+        }
+      }
+      if (cfg.startDate !== undefined && cfg.startDate) {
+        QUEST_CONFIG.startDate = String(cfg.startDate);
+        hasChange = true;
+      }
+      if (hasChange) {
+        renderApp();
+        if (isDailyMode) {
+          updateDailyCountdownDOM();
+        }
+      }
     },
     undo: function () {
       cgUndo();
@@ -5715,6 +6600,161 @@
       } catch (e) {
         console.error("Error moving saved character:", e);
       }
+    },
+    toggleDailyMode: function () {
+      if (isDailyAnimating) return;
+      if (isDailyMode) {
+        window.CharacterGenerator.closeDailyMode();
+      } else {
+        window.CharacterGenerator.openDailyMode();
+      }
+    },
+    setDailyGenMode: function (mode) {
+      dailyGenMode = String(mode);
+      try { localStorage.setItem('cg_daily_mode', dailyGenMode); } catch (_) {}
+      renderApp();
+    },
+    setDailyInterval: function (days) {
+      dailyIntervalDays = parseInt(days, 10) || 1;
+      try { localStorage.setItem('cg_daily_interval', String(dailyIntervalDays)); } catch (_) {}
+      renderApp();
+      updateDailyCountdownDOM();
+    },
+    openDailyMode: function () {
+      if (isDailyAnimating || isDailyMode) return;
+      isDailyAnimating = true;
+
+      const cardWrap = document.querySelector('.cg-card-wrap');
+      const dailyCard = document.getElementById('cg-daily-card-outer');
+      const backdrop = document.getElementById('cg-daily-radial-backdrop');
+
+      // Apply site-wide dynamic theme matching the daily challenge palette
+      const dailyResult = getDailyChallengeResult();
+      const dailyPalette = getDailyThemePalette(dailyResult.color);
+      applyDailyTheme(dailyPalette);
+
+      // Stage 1: Pull out to the right (or bottom on mobile) behind black card
+      if (cardWrap) {
+        cardWrap.classList.remove('daily-closing-out', 'daily-tucking-in', 'daily-active');
+        cardWrap.classList.add('daily-phase-out');
+      }
+
+      setTimeout(() => {
+        // Stage 2: Swap z-index to front (5) and slide back into center
+        isDailyMode = true;
+        if (dailyCard) dailyCard.setAttribute('aria-hidden', 'false');
+        if (cardWrap) {
+          cardWrap.classList.remove('daily-phase-out');
+          cardWrap.classList.add('daily-active');
+        }
+        if (backdrop) backdrop.classList.add('active');
+
+        startDailyCountdown();
+
+        setTimeout(() => {
+          isDailyAnimating = false;
+        }, 380);
+      }, 320);
+    },
+    closeDailyMode: function () {
+      if (isDailyAnimating || !isDailyMode) return;
+      isDailyAnimating = true;
+
+      const cardWrap = document.querySelector('.cg-card-wrap');
+      const dailyCard = document.getElementById('cg-daily-card-outer');
+      const backdrop = document.getElementById('cg-daily-radial-backdrop');
+
+      // Revert site-wide theme back to previous state
+      revertDailyTheme();
+
+      // Stage A: Slide out to right (or bottom on mobile) in front of black card
+      if (cardWrap) {
+        cardWrap.classList.remove('daily-active', 'daily-phase-out', 'daily-tucking-in');
+        cardWrap.classList.add('daily-closing-out');
+      }
+      if (backdrop) backdrop.classList.remove('active');
+      stopDailyCountdown();
+
+      setTimeout(() => {
+        // Stage B: Drop z-index behind black card (1) and slide back into resting position
+        if (cardWrap) {
+          cardWrap.classList.remove('daily-closing-out');
+          cardWrap.classList.add('daily-tucking-in');
+        }
+
+        setTimeout(() => {
+          if (cardWrap) {
+            cardWrap.classList.remove('daily-tucking-in');
+          }
+          isDailyMode = false;
+          if (dailyCard) dailyCard.setAttribute('aria-hidden', 'true');
+          isDailyAnimating = false;
+        }, 360);
+      }, 300);
+    },
+    openDailyChallengeModal: function () {
+      window.CharacterGenerator.openDailyMode();
+    },
+    closeDailyChallengeModal: function () {
+      window.CharacterGenerator.closeDailyMode();
+    },
+    copyDailyChallenge: function () {
+      const daily = getDailyChallengeResult();
+      const seed = getDailySeed();
+      const titleStr = seed.interval === 1
+        ? `โจทย์ชาเลนจ์ประจำวัน (${seed.formattedThai})`
+        : `โจทย์ชาเลนจ์ (${seed.interval}-Day Quest: ${seed.cycleRangeStr})`;
+      const text = [
+        titleStr,
+        `• Species (เผ่าพันธุ์): ${daily.animal}${getThaiTranslation(daily.animal) ? ` (${getThaiTranslation(daily.animal)})` : ''}`,
+        `• Theme (ธีม): ${daily.theme}${getThaiTranslation(daily.theme) ? ` (${getThaiTranslation(daily.theme)})` : ''}`,
+        `• Object (ไอเทม): ${daily.object}${getThaiTranslation(daily.object) ? ` (${getThaiTranslation(daily.object)})` : ''}`,
+        `• Color (สี): ${daily.color}${getThaiTranslation(daily.color) ? ` (${getThaiTranslation(daily.color)})` : ''}`,
+        `• Personality (นิสัย): ${daily.personality}${getThaiTranslation(daily.personality) ? ` (${getThaiTranslation(daily.personality)})` : ''}`,
+        `• Clothing (ชุด): ${daily.clothing}${getThaiTranslation(daily.clothing) ? ` (${getThaiTranslation(daily.clothing)})` : ''}`,
+        '',
+        '#DailyOCAdopt #สุ่มวาดOC',
+        'https://toruotora.github.io/Portfolio/'
+      ].join('\n');
+
+      function copyTextFallback(str) {
+        const ta = document.createElement('textarea');
+        ta.value = str;
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        try {
+          document.execCommand('copy');
+          showCGToast("คัดลอกโจทย์และแฮชแท็กเรียบร้อยแล้ว!");
+        } catch (e) {
+          showCGToast("ไม่สามารถคัดลอกข้อความได้");
+        }
+        document.body.removeChild(ta);
+      }
+
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(() => {
+          showCGToast("คัดลอกโจทย์และแฮชแท็กเรียบร้อยแล้ว!");
+        }).catch(() => {
+          copyTextFallback(text);
+        });
+      } else {
+        copyTextFallback(text);
+      }
+    },
+    loadDailyToMainCard: function () {
+      const daily = getDailyChallengeResult();
+      pushCGHistory();
+      const fields = ['animal', 'theme', 'object', 'color', 'personality', 'clothing'];
+      fields.forEach(k => {
+        lockedState[k] = false;
+        currentResult[k] = daily[k];
+      });
+      delete currentResult._id;
+      window.CharacterGenerator.closeDailyMode();
+      renderApp();
+      showCGToast("โหลดโจทย์ประจำวันลงในการ์ดสุ่มเรียบร้อย!");
     }
   };
 
@@ -5965,6 +7005,10 @@
   // Keyboard shortcuts (Escape & Ctrl+Z / Ctrl+Y)
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape") {
+      if (isDailyMode) {
+        window.CharacterGenerator.closeDailyMode();
+        return;
+      }
       if (activeTraitPicker) {
         window.CharacterGenerator.closeTraitPicker();
         return;

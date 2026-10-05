@@ -1,0 +1,18 @@
+{
+  "name": "Toru O — Portfolio & Tools",
+  "short_name": "Toru O",
+  "description": "Portfolio, Commission Queue & Creative Tools by Toru O",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0d0d0d",
+  "theme_color": "#0d0d0d",
+  "icons": [
+    {
+      "src": "logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

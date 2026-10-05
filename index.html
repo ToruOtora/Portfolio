@@ -5,15 +5,39 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="referrer" content="strict-origin-when-cross-origin">
-  <title>Toru_O — Commission</title>
+  <title>Toru_O — Commission & Portfolio</title>
+  <meta name="description" content="Toru_O — Digital Artist & Creator Portfolio, Motion Graphics, Adoptables, Commission Queue & Creative Tools.">
+  <link rel="canonical" href="https://toruotora.github.io/Portfolio/">
+  <meta name="theme-color" content="#0d0d0d">
+
+  <!-- Open Graph / Facebook / Discord -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://toruotora.github.io/Portfolio/">
+  <meta property="og:title" content="Toru_O — Commission & Portfolio">
+  <meta property="og:description" content="Motion Graphics · Digital Art · Adoptable · Commission Info & Creative Tools">
+  <meta property="og:image" content="https://toruotora.github.io/Portfolio/images/profile.jpg">
+
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:url" content="https://toruotora.github.io/Portfolio/">
+  <meta name="twitter:title" content="Toru_O — Commission & Portfolio">
+  <meta name="twitter:description" content="Motion Graphics · Digital Art · Adoptable · Commission Info & Creative Tools">
+  <meta name="twitter:image" content="https://toruotora.github.io/Portfolio/images/profile.jpg">
+
   <link rel="icon" type="image/png" href="logo.png">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link
-  href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,700;1,9..40,300&display=swap"
-  rel="stylesheet">
-<link rel="stylesheet" href="reference-board.css?v=2.6">
-<link rel="stylesheet" href="color-palette.css">
+  <link rel="apple-touch-icon" href="logo.png">
+  <link rel="manifest" href="site.webmanifest">
+
+  <!-- GoatCounter Web Analytics (Privacy-friendly & Free) -->
+  <script data-goatcounter="https://owen1233m.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,700;1,9..40,300&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="reference-board.css?v=2.6">
+  <link rel="stylesheet" href="color-palette.css">
 <style>
   *,
   *::before,
@@ -508,6 +532,25 @@
     margin-bottom: 7px;
   }
 
+  .profile-contact-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .home-comm-badge-wrap {
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .home-comm-badge-wrap .comm-status-pill {
+    margin: 0;
+    padding: 3.5px 10px 3.5px 8px;
+    font-size: 10.5px;
+    line-height: 1.2;
+  }
+
   .profile-socials {
     display: flex;
     gap: 8px;
@@ -544,16 +587,34 @@
   @media (max-width: 600px) {
     .profile-row {
       padding: 0 1.25rem;
-      margin-top: -40px;
+      margin-top: -30px;
     }
 
     .profile-circle {
-      width: 150px;
-      height: 150px;
+      width: 135px;
+      height: 135px;
     }
 
     .profile-name {
       font-size: 32px;
+    }
+
+    .profile-info {
+      padding: 0 0 2px 14px;
+    }
+
+    .profile-contact-row {
+      gap: 6px;
+    }
+
+    .social-link {
+      width: 26px;
+      height: 26px;
+    }
+
+    .home-comm-badge-wrap .comm-status-pill {
+      font-size: 10px;
+      padding: 3px 8px 3px 7px;
     }
   }
 
@@ -792,6 +853,72 @@
   .status-queue {
     background: var(--bg2);
     color: var(--text3);
+  }
+
+  /* ══ COMMISSION STATUS BADGE ══ */
+  .comm-status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 5px 12px 5px 10px;
+    border-radius: 999px;
+    background: var(--bg2);
+    border: 1px solid var(--line2);
+    color: var(--text);
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    cursor: pointer;
+    user-select: none;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    margin-top: 6px;
+    margin-bottom: 8px;
+    width: fit-content;
+    text-decoration: none;
+  }
+  .comm-status-pill:hover {
+    background: var(--bg3);
+    border-color: var(--text2);
+    transform: translateY(-1px);
+  }
+  .comm-status-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #22c55e;
+    flex-shrink: 0;
+    box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.2);
+    animation: commDotPulse 2.2s infinite ease-in-out;
+  }
+  .comm-status-closed .comm-status-dot {
+    background: #888;
+    box-shadow: 0 0 0 2px rgba(136, 136, 136, 0.2);
+    animation: none;
+  }
+  .comm-status-soon .comm-status-dot {
+    background: #38bdf8;
+    box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.25);
+    animation: commDotPulse 1.8s infinite ease-in-out;
+  }
+  .comm-status-soon {
+    border-color: rgba(56, 189, 248, 0.35);
+  }
+  .comm-status-full .comm-status-dot,
+  .comm-status-almost .comm-status-dot {
+    background: #f59e0b;
+    box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.2);
+  }
+  @keyframes commDotPulse {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.25); opacity: 0.8; }
+  }
+  .comm-status-arrow {
+    stroke: var(--text2);
+    transition: transform 0.2s ease;
+  }
+  .comm-status-pill:hover .comm-status-arrow {
+    transform: translateX(2px);
+    stroke: var(--text);
   }
 
   /* ══ UNIFIED LIGHTBOX ══ */
@@ -1100,6 +1227,38 @@
   .queue-table .col-date {
     white-space: nowrap;
     font-size: 12px;
+  }
+
+  /* ══ COMPLETED QUEUE SECTION ══ */
+  .queue-completed-section {
+    margin-top: 2.5rem;
+  }
+
+  .queue-section-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .queue-section-title {
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    color: var(--text);
+  }
+
+  .queue-completed-count {
+    font-size: 11px;
+    font-weight: 500;
+    color: #22c55e;
+    background: rgba(34, 197, 94, 0.12);
+    border: 1px solid rgba(34, 197, 94, 0.25);
+    padding: 2px 9px;
+    border-radius: 999px;
+    line-height: 1.4;
   }
 
   /* ══ GREEN ROW FOR COMPLETED 100% QUEUES ══ */
@@ -1714,7 +1873,16 @@
   .terms-page {
     max-width: 780px;
     margin: 0 auto;
-    padding: 3rem 3rem 4rem;
+    padding: 1.5rem 3rem 4rem;
+  }
+
+  .terms-comm-badge-wrap {
+    margin-bottom: 0.65rem;
+  }
+
+  .terms-comm-badge-wrap .comm-status-pill {
+    margin-top: 0;
+    margin-bottom: 0;
   }
 
   .terms-section-title {
@@ -1722,8 +1890,8 @@
     font-weight: 700;
     letter-spacing: -0.01em;
     color: var(--text);
-    margin-bottom: 1rem;
-    padding-bottom: 0.6rem;
+    margin-bottom: 0.85rem;
+    padding-bottom: 0.5rem;
     border-bottom: 1px solid var(--line);
   }
 
@@ -1794,7 +1962,7 @@
 
   @media (max-width: 600px) {
     .terms-page {
-      padding: 2rem 1.25rem 5.5rem;
+      padding: 1rem 1.25rem 5.5rem;
     }
 
     .info-p-box {
@@ -2422,31 +2590,34 @@
         <div class="profile-info">
           <div class="profile-name" id="profile-name-el">Toru O</div>
           <div class="profile-tags" id="profile-tags-el">motion · digital art · adoptable</div>
-          <div class="profile-socials">
-            <a class="social-link" id="social-x" href="#" target="_blank" title="X / Twitter">
-              <svg viewBox="0 0 24 24">
-                <path
-                  d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.746l7.73-8.835L1.254 2.25H8.08l4.253 5.622 5.911-5.622Zm-1.161 17.52h1.833L7.084 4.126H5.117Z" />
-              </svg>
-            </a>
-            <a class="social-link" id="social-fb" href="#" target="_blank" title="Facebook">
-              <svg viewBox="0 0 24 24">
-                <path
-                  d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
-              </svg>
-            </a>
-            <a class="social-link" id="social-ig" href="#" target="_blank" title="Instagram">
-              <svg viewBox="0 0 24 24">
-                <path
-                  d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z" />
-              </svg>
-            </a>
-            <a class="social-link" id="social-da" href="#" target="_blank" title="DeviantArt">
-              <svg viewBox="0 0 24 24">
-                <path
-                  d="M19.207 4.794l.23-.43V0h-4.169l-.276.285-2.485 4.739-.512.285H4.793v5.977l.43.23 1.64.83v6.86l-.43.23L4.793 24h4.169l.277-.285 2.485-4.739.512-.285H19.207v-5.977l-.43-.23-1.64-.83V4.794z" />
-              </svg>
-            </a>
+          <div class="profile-contact-row">
+            <div class="profile-socials">
+              <a class="social-link" id="social-x" href="#" target="_blank" title="X / Twitter">
+                <svg viewBox="0 0 24 24">
+                  <path
+                    d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.746l7.73-8.835L1.254 2.25H8.08l4.253 5.622 5.911-5.622Zm-1.161 17.52h1.833L7.084 4.126H5.117Z" />
+                </svg>
+              </a>
+              <a class="social-link" id="social-fb" href="#" target="_blank" title="Facebook">
+                <svg viewBox="0 0 24 24">
+                  <path
+                    d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+                </svg>
+              </a>
+              <a class="social-link" id="social-ig" href="#" target="_blank" title="Instagram">
+                <svg viewBox="0 0 24 24">
+                  <path
+                    d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z" />
+                </svg>
+              </a>
+              <a class="social-link" id="social-da" href="#" target="_blank" title="DeviantArt">
+                <svg viewBox="0 0 24 24">
+                  <path
+                    d="M19.207 4.794l.23-.43V0h-4.169l-.276.285-2.485 4.739-.512.285H4.793v5.977l.43.23 1.64.83v6.86l-.43.23L4.793 24h4.169l.277-.285 2.485-4.739.512-.285H19.207v-5.977l-.43-.23-1.64-.83V4.794z" />
+                </svg>
+              </a>
+            </div>
+            <div id="home-comm-badge-wrap" class="home-comm-badge-wrap"></div>
           </div>
         </div>
         <!-- EDITABLE: replace href with your contact link -->
@@ -2498,6 +2669,7 @@
       <div class="queue-page">
         <div class="queue-page-title">ตารางคิว</div>
         <div class="queue-page-sub" id="queue-updated">กำลังโหลด...</div>
+        <div id="queue-comm-badge-wrap" class="queue-comm-badge-wrap"></div>
         <div class="queue-wrap">
           <table class="queue-table">
             <thead>
@@ -2518,6 +2690,32 @@
               </tr>
             </tbody>
           </table>
+        </div>
+
+        <!-- Completed Queues Section -->
+        <div id="queue-completed-section" class="queue-completed-section" style="display:none;">
+          <div class="queue-section-header">
+            <div class="queue-section-title">เสร็จสมบูรณ์</div>
+            <span class="queue-completed-count" id="queue-completed-count">0 รายการ</span>
+          </div>
+          <div class="queue-wrap">
+            <table class="queue-table">
+              <thead>
+                <tr>
+                  <th class="col-num">#</th>
+                  <th>งาน</th>
+                  <th>ประเภท</th>
+                  <th>เจ้าของ</th>
+                  <th>สถานะ</th>
+                  <th>วันที่เริ่มต้น</th>
+                  <th>ความคืบหน้า</th>
+                  <th>หมายเหตุ</th>
+                </tr>
+              </thead>
+              <tbody id="queue-completed-tbody">
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </section>
@@ -2614,6 +2812,7 @@
         <span>ส่งข้อความ</span>
       </a>
       <div class="terms-page">
+        <div id="terms-comm-badge-wrap" class="terms-comm-badge-wrap"></div>
         <div class="terms-section" id="terms-commission">
           <div class="terms-section-title">Commission</div>
           <div id="terms-commission-items"></div>
@@ -4607,6 +4806,50 @@
       return `<td class="col-note">${raw}</td>`;
     }
 
+    function updateCommissionStatusBadges(info) {
+      if (!info) return;
+      let badgeClass = 'comm-status-open';
+      let labelText = '';
+
+      const slotCounter = `(${info.activeSlots}/${info.totalSlots})`;
+
+      if (info.stateType === 'soon') {
+        badgeClass = 'comm-status-soon';
+        labelText = `เร็วๆ นี้${info.message ? ` (เปิดรับ ${info.message})` : ''}`;
+      } else if (info.stateType === 'closed') {
+        badgeClass = 'comm-status-closed';
+        labelText = `ปิดรับงาน ${slotCounter}`;
+      } else if (info.stateType === 'full') {
+        badgeClass = 'comm-status-full';
+        labelText = `คิวเต็มชั่วคราว ${slotCounter}`;
+      } else if (info.stateType === 'almost') {
+        badgeClass = 'comm-status-almost';
+        labelText = `เปิดรับงาน ${slotCounter}`;
+      } else {
+        badgeClass = 'comm-status-open';
+        labelText = `เปิดรับงาน ${slotCounter}`;
+      }
+
+      const html = `
+        <div class="comm-status-pill ${badgeClass}" onclick="showPage('terms')" title="คลิกเพื่อดูรายละเอียด Commission & ตารางคิว">
+          <span class="comm-status-dot"></span>
+          <span class="comm-status-text">${labelText}</span>
+          <svg class="comm-status-arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="9 18 15 12 9 6"></polyline>
+          </svg>
+        </div>
+      `;
+
+      const homeWrap = document.getElementById('home-comm-badge-wrap');
+      if (homeWrap) homeWrap.innerHTML = html;
+
+      const queueWrap = document.getElementById('queue-comm-badge-wrap');
+      if (queueWrap) queueWrap.innerHTML = html;
+
+      const termsWrap = document.getElementById('terms-comm-badge-wrap');
+      if (termsWrap) termsWrap.innerHTML = html;
+    }
+
     async function loadQueue() {
       try {
         const res = await fetch(QUEUE_CSV + '&t=' + Date.now());
@@ -4627,17 +4870,45 @@
         const iNote = idx('หมายเหตุ');
 
         const tbody = document.getElementById('queue-tbody');
-        const dataRows = rows.slice(1).filter(r => r.some(c => c.trim()));
-        if (dataRows.length === 0) {
-          tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--text3)">ยังไม่มีคิวในขณะนี้</td></tr>';
-          return;
-        }
+        const getCell = (row, colIdx) => (colIdx >= 0 && row && row[colIdx] ? row[colIdx].trim() : '');
 
-        tbody.innerHTML = dataRows.map((r, i) => {
-          const get = idx => idx >= 0 ? (r[idx] || '').trim() : '';
-          const status = get(iStatus);
+        // Only include data rows that have real job, owner, or type info, or have an active queue status (like 'รอคิว', 'กำลังดำเนินการ')
+        const dataRows = rows.slice(1).filter(r => {
+          const job = getCell(r, iJob);
+          const owner = getCell(r, iOwner);
+          const type = getCell(r, iType);
+          const st = getCell(r, iStatus).toLowerCase();
+          const isQueueOrActive = st.includes('รอ') || st.includes('queue') || st.includes('คิว') || st.includes('กำลัง') || st.includes('wip') || st.includes('hold');
+          return Boolean(job || owner || type || isQueueOrActive);
+        });
+
+        const activeRows = [];
+        const completedRows = [];
+
+        dataRows.forEach((r, originalIdx) => {
+          const status = getCell(r, iStatus);
           const sc = statusClass(status);
-          const progVal = get(iProgress);
+          const progVal = getCell(r, iProgress);
+          const numProgress = parseFloat(progVal.replace('%', ''));
+          const isDone = status.includes('เสร็จ') || status.toLowerCase().includes('done') || status.toLowerCase().includes('complete') || (!isNaN(numProgress) && numProgress >= 100) || sc === 'status-done';
+
+          const itemWithNum = {
+            row: r,
+            queueNum: originalIdx + 1
+          };
+
+          if (isDone) {
+            completedRows.push(itemWithNum);
+          } else {
+            activeRows.push(itemWithNum);
+          }
+        });
+
+        function renderRow(item) {
+          const r = item.row;
+          const status = getCell(r, iStatus);
+          const sc = statusClass(status);
+          const progVal = getCell(r, iProgress);
           const numProgress = parseFloat(progVal.replace('%', ''));
 
           let rowClass = '';
@@ -4648,19 +4919,157 @@
           }
 
           return `<tr class="${rowClass}">
-        <td class="col-num">${String(i + 1).padStart(2, '0')}</td>
-        <td>${get(iJob) || '—'}</td>
-        <td>${get(iType) || '—'}</td>
-        <td>${get(iOwner) || '—'}</td>
-        <td><span class="status-badge ${sc}">${status || 'รอคิว'}</span></td>
-        <td class="col-date">${get(iDate) || '—'}</td>
-        ${makeProgressCell(progVal)}
-        <td class="col-note">${get(iNote) || '—'}</td>
-      </tr>`;
-        }).join('');
+            <td class="col-num">${String(item.queueNum).padStart(2, '0')}</td>
+            <td>${getCell(r, iJob) || '—'}</td>
+            <td>${getCell(r, iType) || '—'}</td>
+            <td>${getCell(r, iOwner) || '—'}</td>
+            <td><span class="status-badge ${sc}">${status || 'รอคิว'}</span></td>
+            <td class="col-date">${getCell(r, iDate) || '—'}</td>
+            ${makeProgressCell(progVal)}
+            <td class="col-note">${getCell(r, iNote) || '—'}</td>
+          </tr>`;
+        }
+
+        if (activeRows.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--text3)">ยังไม่มีคิวที่รอดำเนินการในขณะนี้</td></tr>';
+        } else {
+          tbody.innerHTML = activeRows.map(item => renderRow(item)).join('');
+        }
+
+        const completedSection = document.getElementById('queue-completed-section');
+        const completedTbody = document.getElementById('queue-completed-tbody');
+        const completedCountEl = document.getElementById('queue-completed-count');
+
+        if (completedSection && completedTbody) {
+          if (completedRows.length > 0) {
+            completedSection.style.display = 'block';
+            if (completedCountEl) completedCountEl.textContent = `${completedRows.length} รายการ`;
+            completedTbody.innerHTML = completedRows.map(item => renderRow(item)).join('');
+          } else {
+            completedSection.style.display = 'none';
+          }
+        }
 
         document.getElementById('queue-updated').textContent =
           `อัพเดทล่าสุด: ${new Date().toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' })}`;
+
+        // Parse Commission Status from Table 2 in the sheet
+        let commStatus = {
+          status: 'เปิด',
+          totalSlots: 5,
+          activeSlots: 0,
+          remainingSlots: 5,
+          message: '',
+          stateType: 'open'
+        };
+
+        let t2RowIdx = -1;
+        let colSlots = -1;
+        let colStatus = -1;
+        let colMsg = -1;
+
+        // Search for header cell containing 'จำนวนช่อง' or 'เปิดรับ'
+        for (let r = 0; r < Math.min(rows.length, 12); r++) {
+          const row = rows[r];
+          for (let c = 0; c < row.length; c++) {
+            const cell = (row[c] || '').trim();
+            if (cell.includes('จำนวนช่อง') || cell.includes('เปิดรับ')) {
+              t2RowIdx = r;
+              colSlots = c;
+              break;
+            }
+          }
+          if (colSlots !== -1) {
+            for (let c = 0; c < rows[t2RowIdx].length; c++) {
+              const cell = (rows[t2RowIdx][c] || '').trim();
+              if (c !== colSlots) {
+                if (cell.includes('สถานะ') && colStatus === -1) colStatus = c;
+                if ((cell.includes('ข้อความ') || cell.includes('วันที่') || cell.includes('หมายเหตุ')) && colMsg === -1) colMsg = c;
+              }
+            }
+            break;
+          }
+        }
+
+        if (colSlots !== -1 && t2RowIdx + 1 < rows.length) {
+          const dataRow = rows[t2RowIdx + 1];
+          const rawStatus = colStatus !== -1 ? (dataRow[colStatus] || '').trim() : '';
+          const rawSlots = parseInt((dataRow[colSlots] || '').trim(), 10);
+          const rawMsg = colMsg !== -1 ? (dataRow[colMsg] || '').trim() : '';
+
+          if (rawStatus) commStatus.status = rawStatus;
+          if (!isNaN(rawSlots) && rawSlots >= 0) commStatus.totalSlots = rawSlots;
+          if (rawMsg) commStatus.message = rawMsg;
+        }
+
+        // Count active/wip/queued jobs from Table 1 (นับทั้งสถานะ 'กำลังดำเนินการ' และ 'รอคิว' แต่ไม่นับที่ยกเลิก)
+        let activeCount = 0;
+        activeRows.forEach(item => {
+          const st = getCell(item.row, iStatus).toLowerCase();
+          const isCancel = st.includes('ยกเลิก') || st.includes('cancel');
+          if (!isCancel) {
+            activeCount++;
+          }
+        });
+
+        commStatus.activeSlots = activeCount;
+        const stLower = (commStatus.status || '').trim().toLowerCase();
+        const isOpen = stLower.includes('เปิด') || stLower.includes('open');
+        const isSoon = !isOpen && (stLower.includes('เร็วๆ นี้') || stLower.includes('เร็ว') || stLower.includes('soon'));
+        const isExplicitClosed = !isOpen && !isSoon && (stLower.includes('ปิด') || stLower.includes('พัก') || stLower.includes('close'));
+
+        if (isSoon) {
+          commStatus.remainingSlots = 0;
+          commStatus.stateType = 'soon';
+        } else if (isExplicitClosed) {
+          commStatus.remainingSlots = 0;
+          commStatus.stateType = 'closed';
+        } else {
+          commStatus.remainingSlots = Math.max(0, commStatus.totalSlots - activeCount);
+          if (commStatus.remainingSlots === 0) {
+            commStatus.stateType = 'full';
+          } else if (commStatus.remainingSlots === 1) {
+            commStatus.stateType = 'almost';
+          } else {
+            commStatus.stateType = 'open';
+          }
+        }
+
+        updateCommissionStatusBadges(commStatus);
+
+        // ── Parse Table 3: Daily Quest Config (ตัวสุ่มของวัน & สุ่มทุกๆ ? วัน) ──
+        let questMode = null;
+        let questInterval = null;
+        for (let r = 0; r < rows.length; r++) {
+          const row = rows[r];
+          for (let c = 0; c < row.length; c++) {
+            const cell = (row[c] || '').trim();
+            if (cell.includes('ตัวสุ่มของวัน')) {
+              // Mode is in row r+1, column c
+              if (r + 1 < rows.length && rows[r + 1][c]) {
+                questMode = rows[r + 1][c].trim();
+              }
+            }
+            if (cell.includes('สุ่มทุกๆ')) {
+              // Interval is in row r+1, column c
+              if (r + 1 < rows.length && rows[r + 1][c]) {
+                questInterval = parseInt(rows[r + 1][c].trim(), 10);
+              }
+            }
+          }
+          if (questMode !== null && questInterval !== null) break;
+        }
+
+        if (questMode !== null || questInterval !== null) {
+          if (window.CharacterGenerator && typeof window.CharacterGenerator.updateQuestConfigFromSheet === 'function') {
+            window.CharacterGenerator.updateQuestConfigFromSheet({
+              mode: questMode,
+              intervalDays: questInterval
+            });
+          } else {
+            window._pendingQuestConfigFromSheet = { mode: questMode, intervalDays: questInterval };
+          }
+        }
 
       } catch (e) {
         console.warn('Queue load failed:', e);
@@ -4670,6 +5079,15 @@
     }
 
     loadQueue();
+
+    /* ══ PWA SERVICE WORKER REGISTRATION ══ */
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js').catch(err => {
+          console.log('SW registration skipped/failed:', err);
+        });
+      });
+    }
 
     /* ══ DOWNLOAD PROTECTION ══ */
     /* block right-click */
