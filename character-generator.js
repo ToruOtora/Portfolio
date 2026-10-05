@@ -2614,6 +2614,7 @@
   };
 
   // ===== APP STATE =====
+  const MAX_SAVED_ITEMS = 50;
   let currentMode = "random"; // 'random' | 'smart'
   let currentResult = randomMode();
   let savedList = [];
@@ -3170,8 +3171,8 @@
     const countBadge = document.getElementById("cg-saved-count-badge");
     if (countBadge) {
       countBadge.textContent = filteredData.isFiltered
-        ? `พบ ${filteredData.items.length} จาก ${filteredData.total} / 15`
-        : `${filteredData.total} / 15`;
+        ? `พบ ${filteredData.items.length} จาก ${filteredData.total} / ${MAX_SAVED_ITEMS}`
+        : `${filteredData.total} / ${MAX_SAVED_ITEMS}`;
     }
 
     const grid = document.getElementById("cg-saved-grid");
@@ -3230,8 +3231,8 @@
     // Filtered Saved items
     const filteredSaved = getFilteredSavedList();
     const savedBadgeText = filteredSaved.isFiltered
-      ? `พบ ${filteredSaved.items.length} จาก ${filteredSaved.total} / 15`
-      : `${filteredSaved.total} / 15`;
+      ? `พบ ${filteredSaved.items.length} จาก ${filteredSaved.total} / ${MAX_SAVED_ITEMS}`
+      : `${filteredSaved.total} / ${MAX_SAVED_ITEMS}`;
     const savedCardsHTML = buildSavedCardsHTML(filteredSaved);
 
     // Build result entries HTML (Filtered to exclude internal _id property)
@@ -3531,7 +3532,7 @@
           <div class="cg-modal-overlay" onclick="if(event.target === this) CharacterGenerator.closeAlertModal()">
             <div class="cg-modal-box">
               <div class="cg-modal-icon">⚠️</div>
-              <h3 class="cg-modal-title">บันทึกเต็มแล้ว (15/15)</h3>
+              <h3 class="cg-modal-title">บันทึกเต็มแล้ว (${MAX_SAVED_ITEMS}/${MAX_SAVED_ITEMS})</h3>
               <p class="cg-modal-text">${pendingAlertModal}</p>
               <div class="cg-modal-actions">
                 <button class="cg-modal-btn cg-modal-btn-confirm" onclick="CharacterGenerator.closeAlertModal()">ตกลง (OK)</button>
@@ -5265,8 +5266,8 @@
     },
     saveResult: function () {
       try {
-        if (savedList.length >= 15) {
-          pendingAlertModal = "บันทึกผลลัพธ์ครบ 15 รายการแล้ว กรุณาลบบางรายการออกก่อนบันทึกใหม่ครับ";
+        if (savedList.length >= MAX_SAVED_ITEMS) {
+          pendingAlertModal = `บันทึกผลลัพธ์ครบ ${MAX_SAVED_ITEMS} รายการแล้ว กรุณาลบบางรายการออกก่อนบันทึกใหม่ครับ`;
           renderApp();
           return;
         }

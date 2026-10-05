@@ -779,6 +779,7 @@
       if (isDesktop()) {
         const toolsPage = document.getElementById('page-tools');
         if (toolsPage) toolsPage.classList.add('refboard-split');
+        document.body.classList.add('refboard-split');
       }
       setTimeout(() => {
         fitBoardToViewport();
@@ -804,6 +805,7 @@
     // Remove split-panel class
     const toolsPage = document.getElementById('page-tools');
     if (toolsPage) toolsPage.classList.remove('refboard-split');
+    document.body.classList.remove('refboard-split');
     deselectAll();
     if (window.updateColorPaletteSplitLayout) window.updateColorPaletteSplitLayout();
     if (window._refboardUpdateHandle) window._refboardUpdateHandle();
@@ -815,6 +817,10 @@
 
   // Handle Browser Back Button (popstate)
   window.addEventListener('popstate', () => {
+    const cpModal = document.getElementById('color-palette-modal');
+    if (cpModal && cpModal.classList.contains('open')) {
+      return;
+    }
     if (linkModalEl && linkModalEl.classList.contains('open')) {
       linkModalEl.classList.remove('open');
       return;
@@ -4845,13 +4851,17 @@
       if (!isModalOpen || e.touches.length !== 1) return;
       e.stopPropagation();
 
-      selectItem(itemData.id);
+      if (!selectedItemIds.has(itemData.id)) {
+        selectItem(itemData.id);
+      }
 
       const touch = e.touches[0];
       const handleBtn = e.target.closest('.ref-handle');
       const tbBtn = e.target.closest('.ref-tb-btn');
 
       if (tbBtn) return;
+
+      preDragSnapshot = captureSnapshot();
 
       isInteracting = true;
       startX = touch.clientX;
@@ -4860,6 +4870,15 @@
       initialY = itemData.y;
       initialW = itemData.width;
       initialH = itemData.height;
+
+      const groupInitialPositions = new Map();
+      selectedItemIds.forEach((sid) => {
+        const sitem = itemsMap.get(sid);
+        if (sitem) {
+          const sel = sitem.el || document.getElementById(sid);
+          groupInitialPositions.set(sid, { x: sitem.x, y: sitem.y, el: sel });
+        }
+      });
 
       let anchorX = 0, anchorY = 0;
       let rotDeg0 = itemData.rotation || 0;

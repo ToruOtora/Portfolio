@@ -20,7 +20,7 @@
   let dragSrcIdx = -1;
   let isWindowDragging = false;
   let dragOffset = { x: 0, y: 0 };
-  let highestZ = 100;
+  let highestZ = 100000;
   let activeSlider = null; // { type: 'h'|'s'|'v', idx: number }
 
   // ── Curated Hue Zones (full 0-360° coverage with beautiful zones) ──
@@ -780,7 +780,7 @@
     const toneIconEl = document.getElementById('cp-tone-current-icon');
     const toneLabelEl = document.getElementById('cp-tone-current-label');
     if (typeof TONE_DATA !== 'undefined' && TONE_DATA[activeTone]) {
-      if (toneIconEl) toneIconEl.textContent = TONE_DATA[activeTone].icon;
+      if (toneIconEl) toneIconEl.innerHTML = TONE_DATA[activeTone].icon;
       if (toneLabelEl) toneLabelEl.textContent = TONE_DATA[activeTone].name;
       document.querySelectorAll('.cp-tone-item').forEach(item => {
         item.classList.toggle('active', item.dataset.tone === activeTone);
@@ -829,7 +829,7 @@
     const toneIconEl = document.getElementById('cp-tone-current-icon');
     const toneLabelEl = document.getElementById('cp-tone-current-label');
     if (typeof TONE_DATA !== 'undefined' && TONE_DATA[activeTone]) {
-      if (toneIconEl) toneIconEl.textContent = TONE_DATA[activeTone].icon;
+      if (toneIconEl) toneIconEl.innerHTML = TONE_DATA[activeTone].icon;
       if (toneLabelEl) toneLabelEl.textContent = TONE_DATA[activeTone].name;
       document.querySelectorAll('.cp-tone-item').forEach(item => {
         item.classList.toggle('active', item.dataset.tone === activeTone);
@@ -893,7 +893,18 @@
 
     renderBars();
     updateInspector();
+
+    const titleBtn = document.getElementById('cp-title-randomize-btn');
+    if (titleBtn) {
+      titleBtn.classList.remove('spinning');
+      void titleBtn.offsetWidth;
+      titleBtn.classList.add('spinning');
+    }
   }
+
+  window.randomizePalette = function () {
+    randomizePalette();
+  };
 
   // Apply harmony from base (slot 2)
   function calculateHarmonyPalette(heroHex, harmonyMode) {
@@ -2240,9 +2251,24 @@
 
   // ═══ EXPORT PALETTE IMAGE MODAL ═══
 
+  let currentExportTheme = 'auto'; // 'auto' | 'light' | 'dark'
+
+  function getCurrentWebsiteTheme() {
+    if (document.documentElement.getAttribute('data-theme-preview') === 'active') {
+      const bg = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim();
+      if (bg) {
+        return textColorFor(bg) === '#0d0d0d' ? 'light' : 'dark';
+      }
+    }
+    const systemTheme = document.documentElement.getAttribute('data-theme') || 'dark';
+    return systemTheme === 'light' ? 'light' : 'dark';
+  }
+
   window.openExportImageModal = function () {
     const modal = document.getElementById('cp-export-modal');
     if (!modal) return;
+    currentExportTheme = 'auto';
+    updateExportThemeButton();
     renderExportPaletteCanvas();
     modal.classList.add('open');
   };
@@ -2251,6 +2277,50 @@
     const modal = document.getElementById('cp-export-modal');
     if (modal) modal.classList.remove('open');
   };
+
+  window.toggleExportImageTheme = function () {
+    const currentSiteTheme = getCurrentWebsiteTheme();
+    const effective = currentExportTheme === 'auto' ? currentSiteTheme : currentExportTheme;
+    currentExportTheme = effective === 'dark' ? 'light' : 'dark';
+    updateExportThemeButton();
+    renderExportPaletteCanvas();
+  };
+
+  function updateExportThemeButton() {
+    const btn = document.getElementById('cp-export-theme-btn');
+    const label = document.getElementById('cp-export-theme-label');
+    if (!btn || !label) return;
+
+    const currentSiteTheme = getCurrentWebsiteTheme();
+    const effective = currentExportTheme === 'auto' ? currentSiteTheme : currentExportTheme;
+
+    btn.setAttribute('data-theme-mode', effective);
+    label.textContent = effective === 'light' ? 'ธีมภาพ: สว่าง' : 'ธีมภาพ: มืด';
+  }
+
+  window.onWebsiteThemeChanged = function () {
+    const modal = document.getElementById('cp-export-modal');
+    if (modal && modal.classList.contains('open')) {
+      currentExportTheme = 'auto';
+      updateExportThemeButton();
+      renderExportPaletteCanvas();
+    }
+  };
+
+  // Live observe document theme changes for automatic real-time sync
+  if (typeof MutationObserver !== 'undefined') {
+    const themeObserver = new MutationObserver((mutations) => {
+      for (const m of mutations) {
+        if (m.type === 'attributes' && (m.attributeName === 'data-theme' || m.attributeName === 'data-theme-preview')) {
+          if (typeof window.onWebsiteThemeChanged === 'function') {
+            window.onWebsiteThemeChanged();
+          }
+          break;
+        }
+      }
+    });
+    themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme', 'data-theme-preview'] });
+  }
 
   function renderExportPaletteCanvas() {
     const canvas = document.getElementById('cp-export-canvas');
@@ -2262,34 +2332,66 @@
     canvas.width = W;
     canvas.height = H;
 
+    const currentSiteTheme = getCurrentWebsiteTheme();
+    const isLight = (currentExportTheme === 'auto' ? currentSiteTheme : currentExportTheme) === 'light';
+
+    // Theme-based canvas colors matching website aesthetic
+    let bg0, bg1, borderColor, titleColor, subColor, brandColor, barBorderColor, nameColor, nameSubColor, dividerColor, footerColor;
+
+    if (isLight) {
+      bg0 = '#fafafa';
+      bg1 = '#f0f0f4';
+      borderColor = '#e0e0e6';
+      titleColor = '#0a0a0a';
+      subColor = '#666677';
+      brandColor = '#888899';
+      barBorderColor = 'rgba(0, 0, 0, 0.08)';
+      nameColor = '#1a1a24';
+      nameSubColor = '#666677';
+      dividerColor = '#e2e2ea';
+      footerColor = '#888899';
+    } else {
+      bg0 = '#111116';
+      bg1 = '#181822';
+      borderColor = '#282836';
+      titleColor = '#f0f0f5';
+      subColor = '#8888a5';
+      brandColor = '#666685';
+      barBorderColor = 'rgba(255, 255, 255, 0.1)';
+      nameColor = '#d0d0e0';
+      nameSubColor = '#8888a0';
+      dividerColor = '#222232';
+      footerColor = '#666680';
+    }
+
     // Background Gradient
     const bgGrad = ctx.createLinearGradient(0, 0, W, H);
-    bgGrad.addColorStop(0, '#111116');
-    bgGrad.addColorStop(1, '#181822');
+    bgGrad.addColorStop(0, bg0);
+    bgGrad.addColorStop(1, bg1);
     ctx.fillStyle = bgGrad;
     ctx.fillRect(0, 0, W, H);
 
     // Subtle outer border inside canvas
-    ctx.strokeStyle = '#282836';
+    ctx.strokeStyle = borderColor;
     ctx.lineWidth = 2;
     ctx.strokeRect(1, 1, W - 2, H - 2);
 
     // Header Title
     ctx.font = 'bold 28px "Inter", "Prompt", sans-serif';
-    ctx.fillStyle = '#f0f0f5';
+    ctx.fillStyle = titleColor;
     ctx.textAlign = 'left';
     ctx.fillText('TORU_O COLOR PALETTE', 40, 52);
 
-    // Header Subtitle
+    // Header Subtitle (Strict rule: No emojis)
     ctx.font = '500 14px "Inter", "Prompt", sans-serif';
-    ctx.fillStyle = '#8888a5';
-    const modeLabel = paletteTargetMode === 'painting' ? '🎨 PAINTING MODE' : '📐 GRAPHIC MODE (60-30-10)';
+    ctx.fillStyle = subColor;
+    const modeLabel = paletteTargetMode === 'painting' ? 'PAINTING MODE' : 'GRAPHIC MODE (60-30-10)';
     const harmonyLabel = (activeHarmony || 'Analogous').toUpperCase();
     ctx.fillText(`HARMONY: ${harmonyLabel}  |  ${modeLabel}`, 40, 78);
 
     // Brand Tag
     ctx.font = 'bold 12px "Inter", sans-serif';
-    ctx.fillStyle = '#666685';
+    ctx.fillStyle = brandColor;
     ctx.textAlign = 'right';
     ctx.fillText('TORU_O WEB TOOLS', W - 40, 52);
 
@@ -2323,18 +2425,18 @@
       ctx.fill();
 
       // Bar Border
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+      ctx.strokeStyle = barBorderColor;
       ctx.lineWidth = 1;
       ctx.stroke();
       ctx.restore();
 
-      // Role Badge inside or below bar
+      // Role Badge inside or below bar (Strict rule: No emojis)
       let roleLabel = '';
       if (paletteTargetMode === 'painting') {
-        const pRoles = ['Atmosphere', 'Shadow', 'Hero ⭐', 'Key Light', 'Rim Light'];
+        const pRoles = ['Atmosphere', 'Shadow', 'Hero', 'Key Light', 'Rim Light'];
         roleLabel = pRoles[idx] || `Color #${idx + 1}`;
       } else {
-        const gRoles = ['Background', 'Surface', 'Primary ⭐', 'Secondary', 'Text'];
+        const gRoles = ['Background', 'Surface', 'Primary', 'Secondary', 'Text'];
         roleLabel = gRoles[idx] || `Color #${idx + 1}`;
       }
 
@@ -2361,15 +2463,15 @@
       // Color Name below bar (Y = 535)
       ctx.save();
       ctx.font = '500 12px "Prompt", "Inter", sans-serif';
-      ctx.fillStyle = '#d0d0e0';
+      ctx.fillStyle = nameColor;
       ctx.textAlign = 'center';
-      
+
       // Split Thai / English if too wide
       const parts = colorName.split(' / ');
       if (parts.length === 2 && barW < 160) {
         ctx.fillText(parts[0], x + barW / 2, barY + barH + 28);
         ctx.font = '11px "Inter", sans-serif';
-        ctx.fillStyle = '#8888a0';
+        ctx.fillStyle = nameSubColor;
         ctx.fillText(parts[1], x + barW / 2, barY + barH + 46);
       } else {
         ctx.fillText(colorName, x + barW / 2, barY + barH + 32);
@@ -2378,7 +2480,7 @@
     });
 
     // Divider Line
-    ctx.strokeStyle = '#222232';
+    ctx.strokeStyle = dividerColor;
     ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.moveTo(40, 615);
@@ -2387,7 +2489,7 @@
 
     // Footer Watermark
     ctx.font = '12px "Inter", sans-serif';
-    ctx.fillStyle = '#666680';
+    ctx.fillStyle = footerColor;
     ctx.textAlign = 'left';
     ctx.fillText('Exported from Color Generator', 40, 645);
 
@@ -2640,7 +2742,7 @@
     el.style.zIndex = highestZ;
   }
 
-  window.toggleColorPalette = function () {
+  window.toggleColorPalette = function (fromUserAction = true) {
     const modal = document.getElementById('color-palette-modal');
     const fab = document.getElementById('palette-fab');
     if (!modal) return;
@@ -2657,9 +2759,19 @@
         toolsPage.classList.remove('colorpalette-split');
         toolsPage.style.paddingTop = '';
       }
+
+      const drawer = document.getElementById('cp-saved-drawer');
+      if (drawer) drawer.classList.remove('open');
+
+      if (fromUserAction && history.state && history.state.colorPaletteModalOpen) {
+        history.back();
+      }
     } else {
       bringToFront(modal);
       modal.classList.add('open');
+      try {
+        history.pushState({ colorPaletteModalOpen: true }, '');
+      } catch (err) {}
       if (fab) fab.classList.add('active');
       renderBars();
 
@@ -2695,31 +2807,48 @@
     setTimeout(() => {
       const modal = document.getElementById('color-palette-modal');
       const toolsPage = document.getElementById('page-tools');
-      if (!modal || !toolsPage) return;
+      const refModal = document.getElementById('refboard-modal');
+      if (!modal) return;
 
       const isPaletteOpen = modal.classList.contains('open');
-      const isBothOpen = toolsPage.classList.contains('refboard-split') && toolsPage.classList.contains('colorpalette-split');
+      const isRefOpen = refModal && refModal.classList.contains('open') && !refModal.classList.contains('floating-mode') && !refModal.classList.contains('pip-mode');
+      const isBothOpen = isPaletteOpen && isRefOpen;
 
-      if (isPaletteOpen && window.innerWidth > 1024) {
-        const modalHeight = modal.offsetHeight;
-        const modalTop = modal.offsetTop || 60;
-        const requiredPaddingTop = Math.max(480, modalTop + modalHeight + 35);
-
+      if (window.innerWidth > 1024) {
         if (isBothOpen) {
-          toolsPage.style.paddingTop = requiredPaddingTop + 'px';
-
-          // Smooth scroll down by 200px when both windows are open together
-          if (!window._didBothScroll) {
-            window._didBothScroll = true;
-            setTimeout(() => {
-              window.scrollBy({ top: 200, behavior: 'smooth' });
-            }, 250);
+          document.body.classList.add('refboard-split');
+          modal.style.left = '15px';
+          modal.style.width = 'calc(42vw - 25px)';
+          modal.style.maxWidth = 'calc(43vw - 20px)';
+        } else if (!isRefOpen) {
+          document.body.classList.remove('refboard-split');
+          modal.style.maxWidth = '95vw';
+          if (!modal.dataset.userResized) {
+            modal.style.width = 'calc(45vw - 30px)';
           }
-        } else {
-          toolsPage.style.paddingTop = '';
-          scrollBackUpFast();
         }
-      } else {
+
+        if (toolsPage) {
+          const modalHeight = modal.offsetHeight;
+          const modalTop = modal.offsetTop || 60;
+          const requiredPaddingTop = Math.max(480, modalTop + modalHeight + 35);
+
+          if (isBothOpen) {
+            toolsPage.style.paddingTop = requiredPaddingTop + 'px';
+
+            // Smooth scroll down by 200px when both windows are open together
+            if (!window._didBothScroll) {
+              window._didBothScroll = true;
+              setTimeout(() => {
+                window.scrollBy({ top: 200, behavior: 'smooth' });
+              }, 250);
+            }
+          } else {
+            toolsPage.style.paddingTop = '';
+            scrollBackUpFast();
+          }
+        }
+      } else if (toolsPage) {
         toolsPage.style.paddingTop = '';
         scrollBackUpFast();
       }
@@ -2728,7 +2857,12 @@
 
   window.minimizeColorPalette = function () {
     const modal = document.getElementById('color-palette-modal');
-    if (modal) modal.classList.toggle('minimized');
+    if (!modal) return;
+    const isMin = modal.classList.toggle('minimized');
+    const minBtn = document.getElementById('cp-btn-minimize');
+    if (minBtn) {
+      minBtn.title = isMin ? 'ขยายหน้าต่างกลับ' : 'ย่อหน้าต่าง';
+    }
   };
 
   function setupModalDragging() {
@@ -2737,7 +2871,7 @@
     if (!modal || !header) return;
 
     header.addEventListener('mousedown', (e) => {
-      if (e.target.closest('.cp-btn-icon') || e.target.closest('.cp-harmony-select')) return;
+      if (e.target.closest('.cp-btn-icon') || e.target.closest('.cp-harmony-select') || e.target.closest('.cp-title-icon-btn')) return;
       isWindowDragging = true;
       bringToFront(modal);
       const rect = modal.getBoundingClientRect();
@@ -2771,7 +2905,16 @@
     });
 
     modal.addEventListener('mousedown', () => bringToFront(modal));
+    modal.addEventListener('touchstart', () => bringToFront(modal), { passive: true });
   }
+
+  // Handle mobile / browser back button to close Color Palette modal if open
+  window.addEventListener('popstate', () => {
+    const modal = document.getElementById('color-palette-modal');
+    if (modal && modal.classList.contains('open')) {
+      window.toggleColorPalette(false);
+    }
+  });
 
   // ═══ MOBILE POPUP ═══
 

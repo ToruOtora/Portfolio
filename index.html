@@ -352,8 +352,13 @@
       transform: none;
       opacity: 1;
     }
-    #page-tools.refboard-split #color-palette-modal {
-      width: calc(42vw - 25px);
+    #page-tools.refboard-split #color-palette-modal,
+    body.refboard-split #color-palette-modal,
+    :has(#page-tools.refboard-split) #color-palette-modal,
+    :has(.refboard-modal.open:not(.floating-mode):not(.pip-mode)) #color-palette-modal {
+      width: calc(42vw - 25px) !important;
+      max-width: calc(43vw - 20px) !important;
+      left: 15px !important;
       max-height: 92vh;
     }
   }
@@ -2285,6 +2290,14 @@
     <span class="nav-link" onclick="showPage('queue');toggleMobileMenu()">ตารางคิว</span>
     <span class="nav-link" onclick="showPage('tools');toggleMobileMenu()">เครื่องมือ</span>
     <span class="nav-link" onclick="showPage('terms');toggleMobileMenu()">ข้อตกลง</span>
+    <span class="nav-link" onclick="toggleColorPalette();toggleMobileMenu()" style="display:flex;align-items:center;gap:8px;">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a10 10 0 0 1 10 10c0 2.5-2 4.5-4.5 4.5H16a2 2 0 0 0-2 2v.5c0 1.4-1.1 2.5-2.5 2.5A10 10 0 0 1 12 2z"/></svg>
+      สุ่มคู่สี
+    </span>
+    <span class="nav-link" onclick="toggleRefBoard();toggleMobileMenu()" style="display:flex;align-items:center;gap:8px;">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+      กระดานเรฟ
+    </span>
   </div>
 
   <!-- ══ SIDEBAR (home page) ══ -->
@@ -2316,12 +2329,12 @@
         <path d="M14.34 9.17l-1.41-1.41a.996.996 0 0 0-1.41 0L2.2 17.09a.996.996 0 0 0 0 1.41l1.41 1.41c.39.39 1.02.39 1.41 0l9.32-9.33c.39-.38.39-1.02 0-1.41zM19.5 2.5l-1.25 2.25L16 6l2.25 1.25L19.5 9.5l1.25-2.25L23 6l-2.25-1.25z"/>
       </svg>
     </button>
-    <button class="sidebar-btn" id="sidebar-refboard" data-tip="กระดานเรฟ" onclick="toggleRefBoard()" style="display:none;">
+    <button class="sidebar-btn" id="sidebar-refboard" data-tip="กระดานเรฟ" onclick="toggleRefBoard()" style="display:inline-flex;">
       <svg viewBox="0 0 24 24">
         <path fill="currentColor" d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14zm-5.04-6.71l-2.75 3.54-1.96-2.36L6.5 17h11l-3.54-4.71z"/>
       </svg>
     </button>
-    <button class="sidebar-btn" id="sidebar-colorpalette" data-tip="สุ่มคู่สี" onclick="toggleColorPalette()" style="display:none;">
+    <button class="sidebar-btn" id="sidebar-colorpalette" data-tip="สุ่มคู่สี" onclick="toggleColorPalette()" style="display:inline-flex;">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <circle cx="12" cy="12" r="10" />
         <path d="M12 2a10 10 0 0 1 10 10c0 2.5-2 4.5-4.5 4.5H16a2 2 0 0 0-2 2v.5c0 1.4-1.1 2.5-2.5 2.5A10 10 0 0 1 12 2z" />
@@ -2582,25 +2595,6 @@
         <span>กระดานเรฟ</span>
       </button>
 
-      <!-- Mobile Floating Menu Popup -->
-      <div class="mobile-fab-popup" id="mobile-fab-popup">
-        <button class="mobile-popup-item" onclick="toggleRefBoard(); toggleMobileToolsPopup()">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-            <circle cx="8.5" cy="8.5" r="1.5"></circle>
-            <polyline points="21 15 16 10 5 21"></polyline>
-          </svg>
-          <span>🖼️ กระดานเรฟ</span>
-        </button>
-        <button class="mobile-popup-item" onclick="toggleColorPalette(); toggleMobileToolsPopup()">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="12" cy="12" r="10" />
-            <path d="M12 2a10 10 0 0 1 10 10c0 2.5-2 4.5-4.5 4.5H16a2 2 0 0 0-2 2v.5c0 1.4-1.1 2.5-2.5 2.5A10 10 0 0 1 12 2z" />
-          </svg>
-          <span>🎨 Color Generator</span>
-        </button>
-      </div>
-
       <!-- Palette FAB (Bottom Right of Tools Page) -->
       <button class="palette-fab" id="palette-fab" onclick="toggleColorPalette()" title="เปิด Color Generator">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -2614,415 +2608,444 @@
         <span>Color Generator</span>
       </button>
 
-      <!-- Floating Color Palette Modal (Coolors-Style Redesign) -->
-      <div id="color-palette-modal" class="cp-modal">
-        <!-- Right edge resize handle -->
-        <div class="cp-resize-handle right" id="cp-resize-r" title="ลากขอบขวาเพื่อปรับความกว้างหน้าต่าง"></div>
-
-        <!-- Header -->
-        <div class="cp-header" id="cp-modal-header">
-          <div class="cp-title-wrap">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="12" cy="12" r="10"/>
-              <path d="M12 2a10 10 0 0 1 10 10c0 2.5-2 4.5-4.5 4.5H16a2 2 0 0 0-2 2v.5c0 1.4-1.1 2.5-2.5 2.5A10 10 0 0 1 12 2z"/>
-            </svg>
-            <span>Color Generator</span>
-          </div>
-          <div class="cp-header-controls">
-            <!-- Custom Harmony Selector -->
-            <div class="cp-harmony-dropdown-wrap" id="cp-harmony-dropdown-wrap">
-              <button class="cp-harmony-btn" id="cp-harmony-btn" onclick="toggleHarmonyMenu(event)" title="เลือกโหมดทฤษฎีสี">
-                <span class="cp-harmony-btn-icon" id="cp-harmony-current-icon">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="5" r="1.8" fill="currentColor"/><circle cx="7" cy="15" r="1.8" fill="currentColor"/><circle cx="17" cy="15" r="1.8" fill="currentColor"/></svg>
-                </span>
-                <span class="cp-harmony-btn-label" id="cp-harmony-current-label">Analogous</span>
-                <svg class="cp-harmony-arrow" width="10" height="6" viewBox="0 0 10 6"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>
-              </button>
-
-              <!-- Dropdown Menu -->
-              <div class="cp-harmony-menu" id="cp-harmony-menu">
-                <button class="cp-harmony-item active" data-harmony="analogous" onclick="selectHarmony('analogous')">
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="5" r="1.8" fill="currentColor"/><circle cx="7" cy="15" r="1.8" fill="currentColor"/><circle cx="17" cy="15" r="1.8" fill="currentColor"/></svg>
-                  <div class="cp-harmony-item-info">
-                    <span class="cp-harmony-item-name">Analogous</span>
-                    <span class="cp-harmony-item-sub">สีข้างเคียง</span>
-                  </div>
-                </button>
-
-                <button class="cp-harmony-item" data-harmony="complementary" onclick="selectHarmony('complementary')">
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><line x1="6" y1="12" x2="18" y2="12"/><circle cx="6" cy="12" r="1.8" fill="currentColor"/><circle cx="18" cy="12" r="1.8" fill="currentColor"/></svg>
-                  <div class="cp-harmony-item-info">
-                    <span class="cp-harmony-item-name">Complementary</span>
-                    <span class="cp-harmony-item-sub">สีตรงข้าม</span>
-                  </div>
-                </button>
-
-                <button class="cp-harmony-item" data-harmony="triad" onclick="selectHarmony('triad')">
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 4 20 18 4 18"/><circle cx="12" cy="4" r="1.8" fill="currentColor"/><circle cx="20" cy="18" r="1.8" fill="currentColor"/><circle cx="4" cy="18" r="1.8" fill="currentColor"/></svg>
-                  <div class="cp-harmony-item-info">
-                    <span class="cp-harmony-item-name">Triad</span>
-                    <span class="cp-harmony-item-sub">สามเหลี่ยม 3 ทิศทาง</span>
-                  </div>
-                </button>
-
-                <button class="cp-harmony-item" data-harmony="split" onclick="selectHarmony('split')">
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><line x1="12" y1="5" x2="12" y2="12"/><line x1="12" y1="12" x2="6" y2="17"/><line x1="12" y1="12" x2="18" y2="17"/><circle cx="12" cy="5" r="1.8" fill="currentColor"/><circle cx="6" cy="17" r="1.8" fill="currentColor"/><circle cx="18" cy="17" r="1.8" fill="currentColor"/></svg>
-                  <div class="cp-harmony-item-info">
-                    <span class="cp-harmony-item-name">Split-Complementary</span>
-                    <span class="cp-harmony-item-sub">แยกตรงข้าม</span>
-                  </div>
-                </button>
-
-                <button class="cp-harmony-item" data-harmony="square" onclick="selectHarmony('square')">
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="5" width="14" height="14"/><circle cx="5" cy="5" r="1.8" fill="currentColor"/><circle cx="19" cy="5" r="1.8" fill="currentColor"/><circle cx="19" cy="19" r="1.8" fill="currentColor"/><circle cx="5" cy="19" r="1.8" fill="currentColor"/></svg>
-                  <div class="cp-harmony-item-info">
-                    <span class="cp-harmony-item-name">Square</span>
-                    <span class="cp-harmony-item-sub">สี่เหลี่ยม 4 ทิศทาง</span>
-                  </div>
-                </button>
-
-                <button class="cp-harmony-item" data-harmony="monochromatic" onclick="selectHarmony('monochromatic')">
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="2" fill="currentColor"/></svg>
-                  <div class="cp-harmony-item-info">
-                    <span class="cp-harmony-item-name">Monochromatic</span>
-                    <span class="cp-harmony-item-sub">สีเดียวเฉดต่าง</span>
-                  </div>
-                </button>
-
-                <button class="cp-harmony-item" data-harmony="shades" onclick="selectHarmony('shades')">
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z"/><path d="M12 3v18a9 9 0 0 0 0-18z" fill="currentColor"/></svg>
-                  <div class="cp-harmony-item-info">
-                    <span class="cp-harmony-item-name">Shades</span>
-                    <span class="cp-harmony-item-sub">น้ำหนักเฉดสี</span>
-                  </div>
-                </button>
-
-                <button class="cp-harmony-item" data-harmony="custom" onclick="selectHarmony('custom')">
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
-                  <div class="cp-harmony-item-info">
-                    <span class="cp-harmony-item-name">Custom</span>
-                    <span class="cp-harmony-item-sub">เลือกสุ่มอิสระ</span>
-                  </div>
-                </button>
-              </div>
-            </div>
-            <!-- Custom Tone Selector Dropdown -->
-            <div class="cp-tone-dropdown-wrap" id="cp-tone-dropdown-wrap">
-              <button class="cp-tone-btn" id="cp-tone-btn" onclick="toggleToneMenu(event)" title="เลือกโทนสีเฉพาะ (Light, Pastel, Vivid, Muted, Dark, Deep, Neutral)">
-                <span class="cp-tone-btn-icon" id="cp-tone-current-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8z"/></svg></span>
-                <span class="cp-tone-btn-label" id="cp-tone-current-label">ทั้งหมด</span>
-                <svg class="cp-tone-arrow" width="10" height="6" viewBox="0 0 10 6"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>
-              </button>
-
-              <!-- Tone Dropdown Menu -->
-              <div class="cp-tone-menu" id="cp-tone-menu">
-                <button class="cp-tone-item active" data-tone="all" onclick="selectTone('all')">
-                  <span class="cp-tone-item-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8z"/></svg></span>
-                  <div class="cp-tone-item-info">
-                    <span class="cp-tone-item-name">ทั้งหมด (Auto)</span>
-                    <span class="cp-tone-item-sub">สุ่มอิสระตามทฤษฎีสี</span>
-                  </div>
-                </button>
-
-                <button class="cp-tone-item" data-tone="light" onclick="selectTone('light')">
-                  <span class="cp-tone-item-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg></span>
-                  <div class="cp-tone-item-info">
-                    <span class="cp-tone-item-name">Light</span>
-                    <span class="cp-tone-item-sub">สว่างอ่อนนุ่ม คลีนโปร่ง</span>
-                  </div>
-                </button>
-
-                <button class="cp-tone-item" data-tone="pastel" onclick="selectTone('pastel')">
-                  <span class="cp-tone-item-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></span>
-                  <div class="cp-tone-item-info">
-                    <span class="cp-tone-item-name">Pastel</span>
-                    <span class="cp-tone-item-sub">สีหวานละมุน นุ่มนวล</span>
-                  </div>
-                </button>
-
-                <button class="cp-tone-item" data-tone="bright" onclick="selectTone('bright')">
-                  <span class="cp-tone-item-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a10 10 0 0 1 10 10"/><path d="M12 6a6 6 0 0 1 6 6"/></svg></span>
-                  <div class="cp-tone-item-info">
-                    <span class="cp-tone-item-name">Bright</span>
-                    <span class="cp-tone-item-sub">สว่างสดใส มีพลังชัดเจน</span>
-                  </div>
-                </button>
-
-                <button class="cp-tone-item" data-tone="vivid" onclick="selectTone('vivid')">
-                  <span class="cp-tone-item-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></span>
-                  <div class="cp-tone-item-info">
-                    <span class="cp-tone-item-name">Vivid</span>
-                    <span class="cp-tone-item-sub">สดจัดจ้าน อิ่มตัวสูง</span>
-                  </div>
-                </button>
-
-                <button class="cp-tone-item" data-tone="muted" onclick="selectTone('muted')">
-                  <span class="cp-tone-item-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/></svg></span>
-                  <div class="cp-tone-item-info">
-                    <span class="cp-tone-item-name">Muted</span>
-                    <span class="cp-tone-item-sub">เอิร์ธโทน มัวคลาสสิก</span>
-                  </div>
-                </button>
-
-                <button class="cp-tone-item" data-tone="dark" onclick="selectTone('dark')">
-                  <span class="cp-tone-item-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></span>
-                  <div class="cp-tone-item-info">
-                    <span class="cp-tone-item-name">Dark</span>
-                    <span class="cp-tone-item-sub">โทนมืด ลึกลับ ดาร์ก</span>
-                  </div>
-                </button>
-
-                <button class="cp-tone-item" data-tone="deep" onclick="selectTone('deep')">
-                  <span class="cp-tone-item-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="6 3 18 3 22 9 12 22 2 9 6 3"/></svg></span>
-                  <div class="cp-tone-item-info">
-                    <span class="cp-tone-item-name">Deep</span>
-                    <span class="cp-tone-item-sub">เข้มลึก อัญมณี Jewel</span>
-                  </div>
-                </button>
-
-                <button class="cp-tone-item" data-tone="neutral" onclick="selectTone('neutral')">
-                  <span class="cp-tone-item-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3" fill="currentColor"/></svg></span>
-                  <div class="cp-tone-item-info">
-                    <span class="cp-tone-item-name">Neutral</span>
-                    <span class="cp-tone-item-sub">โมโนโทน ธรรมชาติ เทา</span>
-                  </div>
-                </button>
-              </div>
-            </div>
-
-            <button class="cp-btn-icon" onclick="minimizeColorPalette()" title="ย่อหน้าต่าง">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            </button>
-            <button class="cp-btn-icon" onclick="toggleColorPalette()" title="ปิด">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-            </button>
-          </div>
-        </div>
-
-        <!-- 5 Color Bars -->
-        <div class="cp-bars-container" id="cp-bars-container"></div>
-
-        <!-- Spacebar hint overlay -->
-        <div class="cp-spacebar-hint">กด Spacebar เพื่อสุ่มสีใหม่</div>
-
-        <!-- Color Inspector Drawer -->
-        <div class="cp-inspector" id="cp-inspector">
-          <!-- Background Reveal Track (Undo / Redo Action Slots) -->
-          <div class="cp-inspector-track" aria-hidden="true">
-            <div class="cp-slot-side left" id="cp-slot-redo">
-              <div class="cp-slot-action" id="cp-action-redo">
-                <div class="cp-slot-icon-disc">
-                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M21 7v6h-6"/>
-                    <path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3l3 2.7"/>
-                  </svg>
-                </div>
-                <span class="cp-slot-label">(Redo)</span>
-              </div>
-            </div>
-            <div class="cp-slot-side right" id="cp-slot-undo">
-              <div class="cp-slot-action" id="cp-action-undo">
-                <div class="cp-slot-icon-disc">
-                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M3 7v6h6"/>
-                    <path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/>
-                  </svg>
-                </div>
-                <span class="cp-slot-label">(Undo)</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- Foreground Sliding Inspector Card -->
-          <div class="cp-inspector-card" id="cp-inspector-card">
-            <div class="cp-inspector-head">
-              <div class="cp-inspector-title">
-                <div class="cp-inspector-swatch"></div>
-                <span>สี #1</span>
-              </div>
-              <button class="cp-inspector-close" id="cp-inspector-close" title="ปิด Inspector">✕</button>
-            </div>
-            <div class="cp-slider-group">
-              <div class="cp-slider-row">
-                <span class="cp-slider-label">H</span>
-                <div class="cp-slider-track hue"><div class="cp-slider-thumb h-thumb"></div></div>
-                <span class="cp-slider-value h-val">0°</span>
-              </div>
-              <div class="cp-slider-row">
-                <span class="cp-slider-label">S</span>
-                <div class="cp-slider-track sat"><div class="cp-slider-thumb s-thumb"></div></div>
-                <span class="cp-slider-value s-val">0%</span>
-              </div>
-              <div class="cp-slider-row">
-                <span class="cp-slider-label">V</span>
-                <div class="cp-slider-track val"><div class="cp-slider-thumb v-thumb"></div></div>
-                <span class="cp-slider-value v-val">0%</span>
-              </div>
-            </div>
-            <div class="cp-code-row">
-              <div class="cp-code-field">
-                <label>HEX</label>
-                <input type="text" class="cp-hex-field" maxlength="7" value="#000000">
-              </div>
-              <div class="cp-code-field">
-                <label>RGB</label>
-                <input type="text" class="cp-rgb-field" value="0, 0, 0">
-              </div>
-              <div class="cp-code-field">
-                <label>HSL</label>
-                <input type="text" class="cp-hsl-field" value="0, 0%, 0%" readonly>
-              </div>
-              <div class="cp-copy-btns">
-                <button class="cp-copy-btn" onclick="if(typeof copyColorHex==='function'){const i=document.querySelector('.cp-hex-field');copyColorHex(i?.value||'')}" title="Copy HEX">HEX</button>
-                <button class="cp-copy-btn" onclick="if(typeof copyColorArray==='function')copyColorArray()" title="Copy Array">Array</button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Action Bar -->
-        <div class="cp-action-bar">
-          <!-- Target Mode Switcher Dropdown (Graphic vs Painting) -->
-          <div class="cp-mode-dropdown-wrap" id="cp-target-mode-wrap">
-            <button class="cp-action-btn mode-btn" id="cp-target-mode-btn" onclick="toggleTargetModeMenu(event)" title="สลับโหมดรูปแบบสี (กราฟิก / ภาพวาด)">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-              </svg>
-              <span id="cp-target-mode-label">รูปแบบสี ▾</span>
-            </button>
-            <div class="cp-mode-menu" id="cp-target-mode-menu">
-              <div class="cp-mode-item active" data-mode="graphic" onclick="selectTargetMode('graphic')">
-                <span class="cp-mode-icon">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
-                </span>
-                <div class="cp-mode-text">
-                  <div class="cp-mode-name">สีสำหรับกราฟิก</div>
-                  <div class="cp-mode-desc">เน้นคอนทราสต์ อ่านง่าย 60-30-10</div>
-                </div>
-              </div>
-              <div class="cp-mode-item" data-mode="painting" onclick="selectTargetMode('painting')">
-                <span class="cp-mode-icon">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.563-2.512 5.563-5.563C22 6.5 17.5 2 12 2z"/></svg>
-                </span>
-                <div class="cp-mode-text">
-                  <div class="cp-mode-name">สีสำหรับภาพวาด</div>
-                  <div class="cp-mode-desc">เน้นแสงเงา อารมณ์ภาพ Hue Shift</div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <button class="cp-action-btn primary" id="cp-btn-random">
-            <svg viewBox="0 0 24 24"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38"/></svg>
-            <span>สุ่มสีใหม่</span>
-          </button>
-          <button class="cp-action-btn" id="cp-btn-preview-theme" onclick="toggleThemePreview()" title="ดูตัวอย่างการใช้ชุดสีกับทั้งเว็บไซต์">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <rect x="2" y="3" width="20" height="14" rx="2"/>
-              <line x1="2" y1="8" x2="22" y2="8"/>
-              <line x1="8" y1="21" x2="16" y2="21"/>
-              <line x1="12" y1="17" x2="12" y2="21"/>
-            </svg>
-            <span>ดูตัวอย่างธีม</span>
-          </button>
-          <button class="cp-action-btn" id="cp-btn-toggle-saved" title="เปิดคลังชุดสีและรายการที่บันทึกไว้">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-            <span>คลังชุดสี</span>
-          </button>
-          <button class="cp-action-btn" onclick="copyCssVariables()" title="คัดลอก CSS Variables" style="display:none;">
-            <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-            <span>CSS</span>
-          </button>
-          <button class="cp-action-btn" onclick="openExportImageModal()" title="ส่งออก / บันทึกภาพชุดสี">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-            <span>บันทึกภาพ</span>
-          </button>
-          <label class="cp-action-label" title="สกัดสีจากรูปภาพ">
-            <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-            <span>จากภาพ</span>
-            <input type="file" accept="image/*" style="display:none;" onchange="extractPaletteFromImageFile(this.files[0])">
-          </label>
-        </div>
-
-        <!-- Export Palette Image Modal -->
-        <div class="cp-export-modal" id="cp-export-modal">
-          <div class="cp-export-card">
-            <div class="cp-export-head">
-              <div class="cp-export-title">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-                <span>บันทึกภาพชุดสี (Export Image)</span>
-              </div>
-              <button class="cp-export-close" onclick="closeExportImageModal()" title="ปิด">✕</button>
-            </div>
-            
-            <div class="cp-export-preview-container">
-              <canvas id="cp-export-canvas" style="display:none;"></canvas>
-              <img id="cp-export-img" alt="Color Palette Export">
-            </div>
-
-            <div class="cp-export-actions">
-              <button class="cp-action-btn primary" onclick="copyExportImageToClipboard()">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-                <span>คัดลอกภาพ</span>
-              </button>
-              <button class="cp-action-btn" onclick="importExportImageToRefBoard()" title="ส่งภาพชุดสีนี้ไปยังกระดานเรฟ">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M12 8v8M8 12h8"/></svg>
-                <span>นำเข้ากระดานเรฟ</span>
-              </button>
-              <button class="cp-action-btn" onclick="downloadExportImage()">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                <span>ดาวน์โหลดภาพ (PNG)</span>
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <!-- Saved Palettes & Presets Drawer -->
-        <div class="cp-saved-drawer" id="cp-saved-drawer">
-          <div class="cp-saved-head">
-            <div class="cp-saved-title">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-              <span>คลังชุดสี & รายการที่บันทึกไว้</span>
-            </div>
-            <button class="cp-saved-close" id="cp-saved-close" title="ปิดคลังสี">✕</button>
-          </div>
-
-          <!-- Quick Save & Search Form -->
-          <div class="cp-save-input-group">
-            <div class="cp-save-input-wrapper">
-              <svg class="cp-save-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="11" cy="11" r="8"/>
-                <line x1="21" y1="21" x2="16.65" y2="16.65"/>
-              </svg>
-              <input type="text" id="cp-palette-name-input" class="cp-save-input" placeholder="พิมพ์ค้นหา หรือตั้งชื่อเพื่อบันทึกสี..." maxlength="30">
-            </div>
-            <button class="cp-action-btn primary" id="cp-btn-save-submit" title="บันทึกชุดสีปัจจุบัน">
-              <svg viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-              <span>บันทึกสีปัจจุบัน</span>
-            </button>
-          </div>
-
-          <!-- Tabs -->
-          <div class="cp-drawer-tabs">
-            <button class="cp-drawer-tab active" id="cp-tab-saved">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-              <span>ชุดสีของฉัน (<span id="cp-saved-count">0</span>)</span>
-            </button>
-            <button class="cp-drawer-tab" id="cp-tab-presets">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.563-2.512 5.563-5.563C22 6.5 17.5 2 12 2z"/></svg>
-              <span>Presets สำเร็จรูป (<span id="cp-presets-count">120</span>)</span>
-            </button>
-          </div>
-
-          <!-- List Container -->
-          <div class="cp-saved-list" id="cp-saved-list">
-            <!-- JS populates cards here -->
-          </div>
-        </div>
+      <!-- Mobile Floating Menu Popup -->
+      <div class="mobile-fab-popup" id="mobile-fab-popup">
+        <button class="mobile-popup-item" onclick="toggleRefBoard(); toggleMobileToolsPopup()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+            <circle cx="8.5" cy="8.5" r="1.5"></circle>
+            <polyline points="21 15 16 10 5 21"></polyline>
+          </svg>
+          <span>กระดานเรฟ</span>
+        </button>
+        <button class="mobile-popup-item" onclick="toggleColorPalette(); toggleMobileToolsPopup()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10" />
+            <path d="M12 2a10 10 0 0 1 10 10c0 2.5-2 4.5-4.5 4.5H16a2 2 0 0 0-2 2v.5c0 1.4-1.1 2.5-2.5 2.5A10 10 0 0 1 12 2z" />
+          </svg>
+          <span>Color Generator</span>
+        </button>
       </div>
     </section>
 
   </main>
+
+  <!-- Floating Color Palette Modal (Coolors-Style Redesign) -->
+  <div id="color-palette-modal" class="cp-modal">
+    <!-- Right edge resize handle -->
+    <div class="cp-resize-handle right" id="cp-resize-r" title="ลากขอบขวาเพื่อปรับความกว้างหน้าต่าง"></div>
+
+    <!-- Header -->
+    <div class="cp-header" id="cp-modal-header">
+      <div class="cp-title-wrap">
+        <button type="button" class="cp-title-icon-btn" id="cp-title-randomize-btn" onclick="randomizePalette()" title="สุ่มสีใหม่ (Spacebar)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <path d="M12 2a10 10 0 0 1 10 10c0 2.5-2 4.5-4.5 4.5H16a2 2 0 0 0-2 2v.5c0 1.4-1.1 2.5-2.5 2.5A10 10 0 0 1 12 2z"/>
+          </svg>
+        </button>
+        <span>Color Generator</span>
+      </div>
+      <div class="cp-header-controls">
+        <!-- Custom Harmony Selector -->
+        <div class="cp-harmony-dropdown-wrap" id="cp-harmony-dropdown-wrap">
+          <button class="cp-harmony-btn" id="cp-harmony-btn" onclick="toggleHarmonyMenu(event)" title="เลือกโหมดทฤษฎีสี">
+            <span class="cp-harmony-btn-icon" id="cp-harmony-current-icon">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="5" r="1.8" fill="currentColor"/><circle cx="7" cy="15" r="1.8" fill="currentColor"/><circle cx="17" cy="15" r="1.8" fill="currentColor"/></svg>
+            </span>
+            <span class="cp-harmony-btn-label" id="cp-harmony-current-label">Analogous</span>
+            <svg class="cp-harmony-arrow" width="10" height="6" viewBox="0 0 10 6"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>
+          </button>
+
+          <!-- Dropdown Menu -->
+          <div class="cp-harmony-menu" id="cp-harmony-menu">
+            <button class="cp-harmony-item active" data-harmony="analogous" onclick="selectHarmony('analogous')">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="5" r="1.8" fill="currentColor"/><circle cx="7" cy="15" r="1.8" fill="currentColor"/><circle cx="17" cy="15" r="1.8" fill="currentColor"/></svg>
+              <div class="cp-harmony-item-info">
+                <span class="cp-harmony-item-name">Analogous</span>
+                <span class="cp-harmony-item-sub">สีข้างเคียง</span>
+              </div>
+            </button>
+
+            <button class="cp-harmony-item" data-harmony="complementary" onclick="selectHarmony('complementary')">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><line x1="6" y1="12" x2="18" y2="12"/><circle cx="6" cy="12" r="1.8" fill="currentColor"/><circle cx="18" cy="12" r="1.8" fill="currentColor"/></svg>
+              <div class="cp-harmony-item-info">
+                <span class="cp-harmony-item-name">Complementary</span>
+                <span class="cp-harmony-item-sub">สีตรงข้าม</span>
+              </div>
+            </button>
+
+            <button class="cp-harmony-item" data-harmony="triad" onclick="selectHarmony('triad')">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 4 20 18 4 18"/><circle cx="12" cy="4" r="1.8" fill="currentColor"/><circle cx="20" cy="18" r="1.8" fill="currentColor"/><circle cx="4" cy="18" r="1.8" fill="currentColor"/></svg>
+              <div class="cp-harmony-item-info">
+                <span class="cp-harmony-item-name">Triad</span>
+                <span class="cp-harmony-item-sub">สามเหลี่ยม 3 ทิศทาง</span>
+              </div>
+            </button>
+
+            <button class="cp-harmony-item" data-harmony="split" onclick="selectHarmony('split')">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><line x1="12" y1="5" x2="12" y2="12"/><line x1="12" y1="12" x2="6" y2="17"/><line x1="12" y1="12" x2="18" y2="17"/><circle cx="12" cy="5" r="1.8" fill="currentColor"/><circle cx="6" cy="17" r="1.8" fill="currentColor"/><circle cx="18" cy="17" r="1.8" fill="currentColor"/></svg>
+              <div class="cp-harmony-item-info">
+                <span class="cp-harmony-item-name">Split-Complementary</span>
+                <span class="cp-harmony-item-sub">แยกตรงข้าม</span>
+              </div>
+            </button>
+
+            <button class="cp-harmony-item" data-harmony="square" onclick="selectHarmony('square')">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="5" width="14" height="14"/><circle cx="5" cy="5" r="1.8" fill="currentColor"/><circle cx="19" cy="5" r="1.8" fill="currentColor"/><circle cx="19" cy="19" r="1.8" fill="currentColor"/><circle cx="5" cy="19" r="1.8" fill="currentColor"/></svg>
+              <div class="cp-harmony-item-info">
+                <span class="cp-harmony-item-name">Square</span>
+                <span class="cp-harmony-item-sub">สี่เหลี่ยม 4 ทิศทาง</span>
+              </div>
+            </button>
+
+            <button class="cp-harmony-item" data-harmony="monochromatic" onclick="selectHarmony('monochromatic')">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="2" fill="currentColor"/></svg>
+              <div class="cp-harmony-item-info">
+                <span class="cp-harmony-item-name">Monochromatic</span>
+                <span class="cp-harmony-item-sub">สีเดียวเฉดต่าง</span>
+              </div>
+            </button>
+
+            <button class="cp-harmony-item" data-harmony="shades" onclick="selectHarmony('shades')">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z"/><path d="M12 3v18a9 9 0 0 0 0-18z" fill="currentColor"/></svg>
+              <div class="cp-harmony-item-info">
+                <span class="cp-harmony-item-name">Shades</span>
+                <span class="cp-harmony-item-sub">น้ำหนักเฉดสี</span>
+              </div>
+            </button>
+
+            <button class="cp-harmony-item" data-harmony="custom" onclick="selectHarmony('custom')">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+              <div class="cp-harmony-item-info">
+                <span class="cp-harmony-item-name">Custom</span>
+                <span class="cp-harmony-item-sub">เลือกสุ่มอิสระ</span>
+              </div>
+            </button>
+          </div>
+        </div>
+        <!-- Custom Tone Selector Dropdown -->
+        <div class="cp-tone-dropdown-wrap" id="cp-tone-dropdown-wrap">
+          <button class="cp-tone-btn" id="cp-tone-btn" onclick="toggleToneMenu(event)" title="เลือกโทนสีเฉพาะ (Light, Pastel, Vivid, Muted, Dark, Deep, Neutral)">
+            <span class="cp-tone-btn-icon" id="cp-tone-current-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8z"/></svg></span>
+            <span class="cp-tone-btn-label" id="cp-tone-current-label">ทั้งหมด</span>
+            <svg class="cp-tone-arrow" width="10" height="6" viewBox="0 0 10 6"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>
+          </button>
+
+          <!-- Tone Dropdown Menu -->
+          <div class="cp-tone-menu" id="cp-tone-menu">
+            <button class="cp-tone-item active" data-tone="all" onclick="selectTone('all')">
+              <span class="cp-tone-item-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8z"/></svg></span>
+              <div class="cp-tone-item-info">
+                <span class="cp-tone-item-name">ทั้งหมด (Auto)</span>
+                <span class="cp-tone-item-sub">สุ่มอิสระตามทฤษฎีสี</span>
+              </div>
+            </button>
+
+            <button class="cp-tone-item" data-tone="light" onclick="selectTone('light')">
+              <span class="cp-tone-item-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg></span>
+              <div class="cp-tone-item-info">
+                <span class="cp-tone-item-name">Light</span>
+                <span class="cp-tone-item-sub">สว่างอ่อนนุ่ม คลีนโปร่ง</span>
+              </div>
+            </button>
+
+            <button class="cp-tone-item" data-tone="pastel" onclick="selectTone('pastel')">
+              <span class="cp-tone-item-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></span>
+              <div class="cp-tone-item-info">
+                <span class="cp-tone-item-name">Pastel</span>
+                <span class="cp-tone-item-sub">สีหวานละมุน นุ่มนวล</span>
+              </div>
+            </button>
+
+            <button class="cp-tone-item" data-tone="bright" onclick="selectTone('bright')">
+              <span class="cp-tone-item-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a10 10 0 0 1 10 10"/><path d="M12 6a6 6 0 0 1 6 6"/></svg></span>
+              <div class="cp-tone-item-info">
+                <span class="cp-tone-item-name">Bright</span>
+                <span class="cp-tone-item-sub">สว่างสดใส มีพลังชัดเจน</span>
+              </div>
+            </button>
+
+            <button class="cp-tone-item" data-tone="vivid" onclick="selectTone('vivid')">
+              <span class="cp-tone-item-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></span>
+              <div class="cp-tone-item-info">
+                <span class="cp-tone-item-name">Vivid</span>
+                <span class="cp-tone-item-sub">สดจัดจ้าน อิ่มตัวสูง</span>
+              </div>
+            </button>
+
+            <button class="cp-tone-item" data-tone="muted" onclick="selectTone('muted')">
+              <span class="cp-tone-item-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/></svg></span>
+              <div class="cp-tone-item-info">
+                <span class="cp-tone-item-name">Muted</span>
+                <span class="cp-tone-item-sub">เอิร์ธโทน มัวคลาสสิก</span>
+              </div>
+            </button>
+
+            <button class="cp-tone-item" data-tone="dark" onclick="selectTone('dark')">
+              <span class="cp-tone-item-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></span>
+              <div class="cp-tone-item-info">
+                <span class="cp-tone-item-name">Dark</span>
+                <span class="cp-tone-item-sub">โทนมืด ลึกลับ ดาร์ก</span>
+              </div>
+            </button>
+
+            <button class="cp-tone-item" data-tone="deep" onclick="selectTone('deep')">
+              <span class="cp-tone-item-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="6 3 18 3 22 9 12 22 2 9 6 3"/></svg></span>
+              <div class="cp-tone-item-info">
+                <span class="cp-tone-item-name">Deep</span>
+                <span class="cp-tone-item-sub">เข้มลึก อัญมณี Jewel</span>
+              </div>
+            </button>
+
+            <button class="cp-tone-item" data-tone="neutral" onclick="selectTone('neutral')">
+              <span class="cp-tone-item-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3" fill="currentColor"/></svg></span>
+              <div class="cp-tone-item-info">
+                <span class="cp-tone-item-name">Neutral</span>
+                <span class="cp-tone-item-sub">โมโนโทน ธรรมชาติ เทา</span>
+              </div>
+            </button>
+          </div>
+        </div>
+
+        <button class="cp-btn-icon" id="cp-btn-minimize" onclick="minimizeColorPalette()" title="ย่อหน้าต่าง">
+          <svg class="cp-icon-minimize" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          <svg class="cp-icon-expand" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
+        </button>
+        <button class="cp-btn-icon" onclick="toggleColorPalette()" title="ปิด">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- 5 Color Bars -->
+    <div class="cp-bars-container" id="cp-bars-container"></div>
+
+    <!-- Spacebar hint overlay -->
+    <div class="cp-spacebar-hint">กด Spacebar เพื่อสุ่มสีใหม่</div>
+
+    <!-- Color Inspector Drawer -->
+    <div class="cp-inspector" id="cp-inspector">
+      <!-- Background Reveal Track (Undo / Redo Action Slots) -->
+      <div class="cp-inspector-track" aria-hidden="true">
+        <div class="cp-slot-side left" id="cp-slot-redo">
+          <div class="cp-slot-action" id="cp-action-redo">
+            <div class="cp-slot-icon-disc">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 7v6h-6"/>
+                <path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3l3 2.7"/>
+              </svg>
+            </div>
+            <span class="cp-slot-label">(Redo)</span>
+          </div>
+        </div>
+        <div class="cp-slot-side right" id="cp-slot-undo">
+          <div class="cp-slot-action" id="cp-action-undo">
+            <div class="cp-slot-icon-disc">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 7v6h6"/>
+                <path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/>
+              </svg>
+            </div>
+            <span class="cp-slot-label">(Undo)</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Foreground Sliding Inspector Card -->
+      <div class="cp-inspector-card" id="cp-inspector-card">
+        <div class="cp-inspector-head">
+          <div class="cp-inspector-title">
+            <div class="cp-inspector-swatch"></div>
+            <span>สี #1</span>
+          </div>
+          <button class="cp-inspector-close" id="cp-inspector-close" title="ปิด Inspector">✕</button>
+        </div>
+        <div class="cp-slider-group">
+          <div class="cp-slider-row">
+            <span class="cp-slider-label">H</span>
+            <div class="cp-slider-track hue"><div class="cp-slider-thumb h-thumb"></div></div>
+            <span class="cp-slider-value h-val">0°</span>
+          </div>
+          <div class="cp-slider-row">
+            <span class="cp-slider-label">S</span>
+            <div class="cp-slider-track sat"><div class="cp-slider-thumb s-thumb"></div></div>
+            <span class="cp-slider-value s-val">0%</span>
+          </div>
+          <div class="cp-slider-row">
+            <span class="cp-slider-label">V</span>
+            <div class="cp-slider-track val"><div class="cp-slider-thumb v-thumb"></div></div>
+            <span class="cp-slider-value v-val">0%</span>
+          </div>
+        </div>
+        <div class="cp-code-row">
+          <div class="cp-code-field">
+            <label>HEX</label>
+            <input type="text" class="cp-hex-field" maxlength="7" value="#000000">
+          </div>
+          <div class="cp-code-field">
+            <label>RGB</label>
+            <input type="text" class="cp-rgb-field" value="0, 0, 0">
+          </div>
+          <div class="cp-code-field">
+            <label>HSL</label>
+            <input type="text" class="cp-hsl-field" value="0, 0%, 0%" readonly>
+          </div>
+          <div class="cp-copy-btns">
+            <button class="cp-copy-btn" onclick="if(typeof copyColorHex==='function'){const i=document.querySelector('.cp-hex-field');copyColorHex(i?.value||'')}" title="Copy HEX">HEX</button>
+            <button class="cp-copy-btn" onclick="if(typeof copyColorArray==='function')copyColorArray()" title="Copy Array">Array</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Action Bar -->
+    <div class="cp-action-bar">
+      <!-- Target Mode Switcher Dropdown (Graphic vs Painting) -->
+      <div class="cp-mode-dropdown-wrap" id="cp-target-mode-wrap">
+        <button class="cp-action-btn mode-btn" id="cp-target-mode-btn" onclick="toggleTargetModeMenu(event)" title="สลับโหมดรูปแบบสี (กราฟิก / ภาพวาด)">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+          </svg>
+          <span id="cp-target-mode-label">รูปแบบสี ▾</span>
+        </button>
+        <div class="cp-mode-menu" id="cp-target-mode-menu">
+          <div class="cp-mode-item active" data-mode="graphic" onclick="selectTargetMode('graphic')">
+            <span class="cp-mode-icon">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+            </span>
+            <div class="cp-mode-text">
+              <div class="cp-mode-name">สีสำหรับกราฟิก</div>
+              <div class="cp-mode-desc">เน้นคอนทราสต์ อ่านง่าย 60-30-10</div>
+            </div>
+          </div>
+          <div class="cp-mode-item" data-mode="painting" onclick="selectTargetMode('painting')">
+            <span class="cp-mode-icon">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.563-2.512 5.563-5.563C22 6.5 17.5 2 12 2z"/></svg>
+            </span>
+            <div class="cp-mode-text">
+              <div class="cp-mode-name">สีสำหรับภาพวาด</div>
+              <div class="cp-mode-desc">เน้นแสงเงา อารมณ์ภาพ Hue Shift</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <button class="cp-action-btn primary" id="cp-btn-random">
+        <svg viewBox="0 0 24 24"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38"/></svg>
+        <span>สุ่มสีใหม่</span>
+      </button>
+      <button class="cp-action-btn" id="cp-btn-preview-theme" onclick="toggleThemePreview()" title="ดูตัวอย่างการใช้ชุดสีกับทั้งเว็บไซต์">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="2" y="3" width="20" height="14" rx="2"/>
+          <line x1="2" y1="8" x2="22" y2="8"/>
+          <line x1="8" y1="21" x2="16" y2="21"/>
+          <line x1="12" y1="17" x2="12" y2="21"/>
+        </svg>
+        <span>ดูตัวอย่างธีม</span>
+      </button>
+      <button class="cp-action-btn" id="cp-btn-toggle-saved" title="เปิดคลังชุดสีและรายการที่บันทึกไว้">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        <span>คลังชุดสี</span>
+      </button>
+      <button class="cp-action-btn" onclick="copyCssVariables()" title="คัดลอก CSS Variables" style="display:none;">
+        <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        <span>CSS</span>
+      </button>
+      <button class="cp-action-btn" onclick="openExportImageModal()" title="ส่งออก / บันทึกภาพชุดสี">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        <span>บันทึกภาพ</span>
+      </button>
+      <label class="cp-action-label" title="สกัดสีจากรูปภาพ">
+        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+        <span>จากภาพ</span>
+        <input type="file" accept="image/*" style="display:none;" onchange="extractPaletteFromImageFile(this.files[0])">
+      </label>
+    </div>
+
+    <!-- Export Palette Image Modal -->
+    <div class="cp-export-modal" id="cp-export-modal">
+      <div class="cp-export-card">
+        <div class="cp-export-head">
+          <div class="cp-export-title">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+            <span>บันทึกภาพชุดสี (Export Image)</span>
+          </div>
+          <div class="cp-export-head-controls">
+            <button class="cp-export-theme-btn" id="cp-export-theme-btn" onclick="toggleExportImageTheme()" title="สลับธีมภาพ (สว่าง / มืด)">
+              <span class="cp-export-theme-label" id="cp-export-theme-label">ธีมภาพ: สว่าง</span>
+              <svg class="cp-icon-sun" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+              <svg class="cp-icon-moon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            </button>
+            <button class="cp-export-close" onclick="closeExportImageModal()" title="ปิด">✕</button>
+          </div>
+        </div>
+        
+        <div class="cp-export-preview-container">
+          <canvas id="cp-export-canvas" style="display:none;"></canvas>
+          <img id="cp-export-img" alt="Color Palette Export">
+        </div>
+
+        <div class="cp-export-actions">
+          <button class="cp-action-btn primary" onclick="copyExportImageToClipboard()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            <span>คัดลอกภาพ</span>
+          </button>
+          <button class="cp-action-btn" onclick="importExportImageToRefBoard()" title="ส่งภาพชุดสีนี้ไปยังกระดานเรฟ">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M12 8v8M8 12h8"/></svg>
+            <span>นำเข้ากระดานเรฟ</span>
+          </button>
+          <button class="cp-action-btn" onclick="downloadExportImage()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            <span>ดาวน์โหลดภาพ (PNG)</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Saved Palettes & Presets Drawer -->
+    <div class="cp-saved-drawer" id="cp-saved-drawer">
+      <div class="cp-saved-head">
+        <div class="cp-saved-title">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          <span>คลังชุดสี & รายการที่บันทึกไว้</span>
+        </div>
+        <button class="cp-saved-close" id="cp-saved-close" title="ปิดคลังสี">✕</button>
+      </div>
+
+      <!-- Quick Save & Search Form -->
+      <div class="cp-save-input-group">
+        <div class="cp-save-input-wrapper">
+          <svg class="cp-save-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"/>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+          <input type="text" id="cp-palette-name-input" class="cp-save-input" placeholder="พิมพ์ค้นหา หรือตั้งชื่อเพื่อบันทึกสี..." maxlength="30">
+        </div>
+        <button class="cp-action-btn primary" id="cp-btn-save-submit" title="บันทึกชุดสีปัจจุบัน">
+          <svg viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+          <span>บันทึกสีปัจจุบัน</span>
+        </button>
+      </div>
+
+      <!-- Tabs -->
+      <div class="cp-drawer-tabs">
+        <button class="cp-drawer-tab active" id="cp-tab-saved">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          <span>ชุดสีของฉัน (<span id="cp-saved-count">0</span>)</span>
+        </button>
+        <button class="cp-drawer-tab" id="cp-tab-presets">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.563-2.512 5.563-5.563C22 6.5 17.5 2 12 2z"/></svg>
+          <span>Presets สำเร็จรูป (<span id="cp-presets-count">120</span>)</span>
+        </button>
+      </div>
+
+      <!-- List Container -->
+      <div class="cp-saved-list" id="cp-saved-list">
+        <!-- JS populates cards here -->
+      </div>
+    </div>
+  </div>
 
   <!-- ══ UNIFIED LIGHTBOX ══ -->
   <div class="lb-backdrop" id="lb-backdrop" onclick="lbBackdropClick(event)">
@@ -3052,6 +3075,9 @@
       const html = document.documentElement;
       html.setAttribute('data-theme', html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
       localStorage.setItem('theme', html.getAttribute('data-theme'));
+      if (typeof window.onWebsiteThemeChanged === 'function') {
+        window.onWebsiteThemeChanged();
+      }
     }
     (function () {
       const saved = localStorage.getItem('theme');
@@ -3251,11 +3277,11 @@
         motionVids.forEach(v => v.pause());
       }
 
-      // Show Ref Board and Color Palette buttons ONLY when on tools page
+      // Show Ref Board and Color Palette buttons in sidebar
       const refBtn = document.getElementById('sidebar-refboard');
       const cpBtn = document.getElementById('sidebar-colorpalette');
-      if (refBtn) refBtn.style.display = (name === 'tools') ? 'inline-flex' : 'none';
-      if (cpBtn) cpBtn.style.display = (name === 'tools') ? 'inline-flex' : 'none';
+      if (refBtn) refBtn.style.display = 'inline-flex';
+      if (cpBtn) cpBtn.style.display = 'inline-flex';
 
       if (!skipScroll && !skipNextScroll) {
         window.scrollTo(0, 0);
@@ -3271,11 +3297,10 @@
 
     // Check initial page for Ref Board & Color Palette button visibility
     document.addEventListener('DOMContentLoaded', () => {
-      const initPage = window.location.hash.slice(1) || 'home';
       const refBtn = document.getElementById('sidebar-refboard');
       const cpBtn = document.getElementById('sidebar-colorpalette');
-      if (refBtn) refBtn.style.display = (initPage === 'tools') ? 'inline-flex' : 'none';
-      if (cpBtn) cpBtn.style.display = (initPage === 'tools') ? 'inline-flex' : 'none';
+      if (refBtn) refBtn.style.display = 'inline-flex';
+      if (cpBtn) cpBtn.style.display = 'inline-flex';
     });
 
     // Handle back button for modals

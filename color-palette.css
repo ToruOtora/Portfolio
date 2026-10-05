@@ -4,7 +4,7 @@
    Toru_O Web Tools — Simple, Beautiful, Practical
    ═══════════════════════════════════════════════════════════════════════════ */
 
-/* ── Floating Action Button (FAB) on Desktop ── */
+/* ── Floating Action Button (FAB) on Desktop (Inside Tools Page Only) ── */
 .palette-fab {
   position: fixed;
   right: 2rem;
@@ -179,7 +179,36 @@
 .cp-modal.minimized {
   height: 48px !important;
   max-height: 48px !important;
-  overflow: hidden !important;
+  overflow: visible !important;
+  border-radius: 16px !important;
+}
+
+.cp-modal.minimized .cp-header {
+  border-radius: 16px !important;
+  border-bottom: none !important;
+}
+
+.cp-modal.minimized .cp-bars-container,
+.cp-modal.minimized .cp-spacebar-hint,
+.cp-modal.minimized .cp-inspector,
+.cp-modal.minimized .cp-action-bar,
+.cp-modal.minimized .cp-saved-drawer,
+.cp-modal.minimized .cp-resize-handle {
+  display: none !important;
+}
+
+/* Minimize & Expand Icon Toggle */
+.cp-icon-expand {
+  display: none;
+}
+.cp-icon-minimize {
+  display: block;
+}
+.cp-modal.minimized .cp-icon-minimize {
+  display: none;
+}
+.cp-modal.minimized .cp-icon-expand {
+  display: block;
 }
 
 /* ── Header ── */
@@ -206,10 +235,47 @@
   color: var(--text, #f0f0f0);
 }
 
+.cp-title-icon-btn {
+  background: transparent;
+  border: none;
+  padding: 4px;
+  margin: -4px 0 -4px -4px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text2, #888);
+  transition: color 0.2s ease, background 0.2s ease, transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.cp-title-icon-btn:hover {
+  color: var(--text, #f0f0f0);
+  background: var(--line, rgba(255, 255, 255, 0.08));
+  transform: rotate(35deg) scale(1.15);
+}
+
+.cp-title-icon-btn:active {
+  transform: rotate(180deg) scale(0.92);
+  transition: transform 0.12s ease;
+}
+
+@keyframes cp-title-spin {
+  0% { transform: rotate(0deg) scale(1); }
+  50% { transform: rotate(180deg) scale(1.18); }
+  100% { transform: rotate(360deg) scale(1); }
+}
+
+.cp-title-icon-btn.spinning {
+  animation: cp-title-spin 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
 .cp-title-wrap svg {
   width: 16px;
   height: 16px;
-  stroke: var(--text2, #888);
+  stroke: currentColor;
 }
 
 .cp-header-controls {
@@ -727,6 +793,7 @@
   border-top: 1px solid var(--line, #2a2a2a);
   flex-wrap: wrap;
   flex-shrink: 0;
+  border-radius: 0 0 15px 15px;
 }
 
 .cp-action-btn {
@@ -1115,6 +1182,53 @@
   gap: 8px;
 }
 
+.cp-export-head-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cp-export-theme-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--bg3, #222);
+  border: 1px solid var(--line, #333);
+  color: var(--text2, #888);
+  font-size: 12px;
+  font-family: inherit;
+  font-weight: 500;
+  padding: 4px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.cp-export-theme-btn:hover {
+  background: var(--line, #2a2a2a);
+  color: var(--text, #f0f0f0);
+  border-color: var(--line2, #444);
+}
+
+.cp-export-theme-btn svg {
+  stroke: currentColor;
+  flex-shrink: 0;
+}
+
+.cp-export-theme-btn .cp-icon-sun,
+.cp-export-theme-btn .cp-icon-moon {
+  display: none;
+}
+
+.cp-export-theme-btn[data-theme-mode="light"] .cp-icon-sun {
+  display: inline-block;
+}
+
+.cp-export-theme-btn[data-theme-mode="dark"] .cp-icon-moon {
+  display: inline-block;
+}
+
 .cp-export-close {
   background: transparent;
   border: none;
@@ -1134,7 +1248,7 @@
 .cp-export-preview-container {
   width: 100%;
   background: var(--bg, #0d0d0d);
-  border: 1px solid var(--line2, #333);
+  border: 1px solid var(--line, #2a2a2a);
   border-radius: 12px;
   padding: 12px;
   display: flex;
@@ -1156,6 +1270,43 @@
   gap: 10px;
   justify-content: flex-end;
   flex-wrap: wrap;
+}
+
+/* Light theme overrides for Export Modal */
+[data-theme="light"] .cp-export-modal {
+  background: rgba(15, 23, 42, 0.4);
+}
+
+[data-theme="light"] .cp-export-card {
+  background: var(--bg2, #f0f0f0);
+  border: 1px solid var(--line, #e0e0e0);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.12), 0 4px 16px rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="light"] .cp-export-theme-btn {
+  background: var(--bg, #fafafa);
+  border-color: var(--line, #e0e0e0);
+  color: var(--text2, #666);
+}
+
+[data-theme="light"] .cp-export-theme-btn:hover {
+  background: var(--bg3, #e8e8e8);
+  color: var(--text, #0a0a0a);
+}
+
+[data-theme="light"] .cp-export-close:hover {
+  background: var(--line, #e0e0e0);
+  color: var(--text, #0a0a0a);
+}
+
+[data-theme="light"] .cp-export-preview-container {
+  background: var(--bg, #fafafa);
+  border-color: var(--line, #e0e0e0);
+}
+
+[data-theme="light"] .cp-export-preview-container img {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--line, #e0e0e0);
 }
 
 /* ── Drag & Drop Overlay ── */
@@ -1577,6 +1728,7 @@
   padding: 0 18px;
   display: flex;
   flex-direction: column;
+  border-radius: 0 0 15px 15px;
 }
 
 .cp-saved-drawer.open {
