@@ -15,6 +15,7 @@
   const MAX_HISTORY = 40;
   let inspectorIdx = 0;
   let paletteTargetMode = 'graphic'; // 'graphic' | 'painting'
+  let isThemePreviewActive = false;
   let palette = [];
   let dragSrcIdx = -1;
   let isWindowDragging = false;
@@ -63,82 +64,200 @@
     { h: [190, 220], s: [60, 100], v: [60, 95], name: 'Cyan' }
   ];
 
-  // ── Curated Preset Palettes (60 total mapped across 8 Color Theory Harmony Modes) ──
+  // ── Curated Preset Palettes (120 total mapped across 7 Color Theory Harmony Modes & 8 Tones) ──
   const CURATED_PALETTES = [
-    // 🌸 1. Analogous (สีข้างเคียง)
-    { name: '🌸 Sakura Blossom', harmony: 'Analogous', hexes: ['#fdf2f4', '#fbc4ce', '#e56b8f', '#d84a75', '#3d1520'] },
-    { name: '🍂 Warm Earth', harmony: 'Analogous', hexes: ['#faf5ef', '#e6c594', '#d97724', '#b85c14', '#2b1e17'] },
-    { name: '🌲 Forest Pine', harmony: 'Analogous', hexes: ['#f0fdf4', '#dcfce7', '#22c55e', '#169846', '#14532d'] },
-    { name: '🍵 Matcha', harmony: 'Analogous', hexes: ['#fefae0', '#e9edc9', '#a3b18a', '#6b8e4e', '#2d3a27'] },
-    { name: '🌾 Golden Harvest', harmony: 'Analogous', hexes: ['#fcf4de', '#f5d68b', '#e6b85c', '#c2852c', '#2e1f0e'] },
-    { name: '🌲 Emerald Forest', harmony: 'Analogous', hexes: ['#d1fae5', '#50c878', '#228b57', '#134e32', '#091e13'] },
-    { name: '☕ Espresso Roast', harmony: 'Analogous', hexes: ['#e8d5c4', '#c49a80', '#9c6b4e', '#613b2b', '#180e0a'] },
-    { name: '🍁 Autumn Maple', harmony: 'Analogous', hexes: ['#ffaa44', '#ff8800', '#e66000', '#a83a00', '#1c0a00'] },
-    { name: '🌿 Olive Garden', harmony: 'Analogous', hexes: ['#e8f5e9', '#8fbc8f', '#556b2f', '#2d3b25', '#131a10'] },
-    { name: '🍊 Orange Sunset', harmony: 'Analogous', hexes: ['#f6ae2d', '#f26419', '#b83b0f', '#5c1704', '#210903'] },
+    // 🌸 1. Analogous (สีข้างเคียง) - 18 Presets
+    { name: '🌸 Sakura Blossom', harmony: 'Analogous', tone: 'pastel', hexes: ['#fdf2f4', '#fbc4ce', '#e56b8f', '#d84a75', '#3d1520'] },
+    { name: '🍂 Warm Earth', harmony: 'Analogous', tone: 'muted', hexes: ['#faf5ef', '#e6c594', '#d97724', '#b85c14', '#2b1e17'] },
+    { name: '🌲 Forest Pine', harmony: 'Analogous', tone: 'deep', hexes: ['#f0fdf4', '#dcfce7', '#22c55e', '#169846', '#14532d'] },
+    { name: '🍵 Matcha Latte', harmony: 'Analogous', tone: 'muted', hexes: ['#fefae0', '#e9edc9', '#a3b18a', '#6b8e4e', '#2d3a27'] },
+    { name: '🌾 Golden Harvest', harmony: 'Analogous', tone: 'bright', hexes: ['#fcf4de', '#f5d68b', '#e6b85c', '#c2852c', '#2e1f0e'] },
+    { name: '🌲 Emerald Forest', harmony: 'Analogous', tone: 'deep', hexes: ['#d1fae5', '#50c878', '#228b57', '#134e32', '#091e13'] },
+    { name: '☕ Espresso Roast', harmony: 'Analogous', tone: 'dark', hexes: ['#e8d5c4', '#c49a80', '#9c6b4e', '#613b2b', '#180e0a'] },
+    { name: '🍁 Autumn Maple', harmony: 'Analogous', tone: 'vivid', hexes: ['#ffaa44', '#ff8800', '#e66000', '#a83a00', '#1c0a00'] },
+    { name: '🌿 Olive Garden', harmony: 'Analogous', tone: 'muted', hexes: ['#e8f5e9', '#8fbc8f', '#556b2f', '#2d3b25', '#131a10'] },
+    { name: '🍊 Orange Sunset', harmony: 'Analogous', tone: 'vivid', hexes: ['#f6ae2d', '#f26419', '#b83b0f', '#5c1704', '#210903'] },
+    { name: '🍑 Peach Bellini', harmony: 'Analogous', tone: 'pastel', hexes: ['#fff4ed', '#fed7aa', '#fb923c', '#ea580c', '#431407'] },
+    { name: '🌊 Coral Reef', harmony: 'Analogous', tone: 'bright', hexes: ['#fff1f2', '#fecdd3', '#fb7185', '#e11d48', '#4c0519'] },
+    { name: '🍇 Lavender Mist', harmony: 'Analogous', tone: 'pastel', hexes: ['#f5f3ff', '#ddd6fe', '#a78bfa', '#7c3aed', '#2e1065'] },
+    { name: '🍋 Lemon Zest', harmony: 'Analogous', tone: 'bright', hexes: ['#fefce8', '#fef08a', '#facc15', '#ca8a04', '#422006'] },
+    { name: '🍃 Spearmint Breeze', harmony: 'Analogous', tone: 'light', hexes: ['#f0fdfa', '#ccfbf1', '#5eead4', '#0d9488', '#134e4a'] },
+    { name: '🌅 Sunrise Horizon', harmony: 'Analogous', tone: 'bright', hexes: ['#fff7ed', '#ffedd5', '#fed7aa', '#f97316', '#7c2d12'] },
+    { name: '🫐 Blue Berry Field', harmony: 'Analogous', tone: 'deep', hexes: ['#eff6ff', '#bfdbfe', '#60a5fa', '#2563eb', '#172554'] },
+    { name: '🪐 Velvet Amethyst', harmony: 'Analogous', tone: 'deep', hexes: ['#faf5ff', '#e9d5ff', '#c084fc', '#9333ea', '#3b0764'] },
 
-    // ⚡ 2. Complementary (สีตรงข้าม)
-    { name: '⚡ Cyberpunk Neon', harmony: 'Complementary', hexes: ['#0a0a1a', '#1a0533', '#0fefca', '#ff007f', '#ffe600'] },
-    { name: '🌊 Nordic Ocean', harmony: 'Complementary', hexes: ['#e0f2fe', '#38bdf8', '#0f766e', '#f97316', '#0c2d3f'] },
-    { name: '🔥 Sunset Fire', harmony: 'Complementary', hexes: ['#fef3c7', '#fbbf24', '#f97316', '#3b82f6', '#450a0a'] },
-    { name: '🍉 Summer Watermelon', harmony: 'Complementary', hexes: ['#f9f8f6', '#ff8589', '#ff5a60', '#1e6f47', '#0c3823'] },
-    { name: '🏮 Neon Cyber Alley', harmony: 'Complementary', hexes: ['#080914', '#1b1c3a', '#00f0ff', '#ff0055', '#ffe600'] },
-    { name: '🌌 Cosmic Aurora', harmony: 'Complementary', hexes: ['#03141f', '#093a4b', '#3caea3', '#f6d55c', '#ed553b'] },
-    { name: '🎴 Hanafuda Retro', harmony: 'Complementary', hexes: ['#f5f0eb', '#e6a100', '#c72c2c', '#1b4d3e', '#1a0505'] },
-    { name: '🧪 Poison Ivy', harmony: 'Complementary', hexes: ['#c2f0c7', '#69b071', '#2f6e42', '#a8325a', '#08170e'] },
-    { name: '🍨 Mango Sticky Rice', harmony: 'Complementary', hexes: ['#fffbeb', '#ffc107', '#bd8924', '#5c3a93', '#2e2008'] },
-    { name: '👑 Royal Gold & Velvet', harmony: 'Complementary', hexes: ['#fdf4dc', '#d4af37', '#731c77', '#3b1248', '#190a21'] },
+    // ⚡ 2. Complementary (สีตรงข้าม) - 18 Presets
+    { name: '⚡ Cyberpunk Neon', harmony: 'Complementary', tone: 'vivid', hexes: ['#0a0a1a', '#1a0533', '#0fefca', '#ff007f', '#ffe600'] },
+    { name: '🌊 Nordic Ocean', harmony: 'Complementary', tone: 'muted', hexes: ['#e0f2fe', '#38bdf8', '#0f766e', '#f97316', '#0c2d3f'] },
+    { name: '🔥 Sunset Fire', harmony: 'Complementary', tone: 'bright', hexes: ['#fef3c7', '#fbbf24', '#f97316', '#3b82f6', '#450a0a'] },
+    { name: '🍉 Summer Watermelon', harmony: 'Complementary', tone: 'vivid', hexes: ['#f9f8f6', '#ff8589', '#ff5a60', '#1e6f47', '#0c3823'] },
+    { name: '🏮 Neon Cyber Alley', harmony: 'Complementary', tone: 'dark', hexes: ['#080914', '#1b1c3a', '#00f0ff', '#ff0055', '#ffe600'] },
+    { name: '🌌 Cosmic Aurora', harmony: 'Complementary', tone: 'deep', hexes: ['#03141f', '#093a4b', '#3caea3', '#f6d55c', '#ed553b'] },
+    { name: '🎴 Hanafuda Retro', harmony: 'Complementary', tone: 'muted', hexes: ['#f5f0eb', '#e6a100', '#c72c2c', '#1b4d3e', '#1a0505'] },
+    { name: '🧪 Poison Ivy', harmony: 'Complementary', tone: 'dark', hexes: ['#c2f0c7', '#69b071', '#2f6e42', '#a8325a', '#08170e'] },
+    { name: '🍨 Mango Sticky Rice', harmony: 'Complementary', tone: 'light', hexes: ['#fffbeb', '#ffc107', '#bd8924', '#5c3a93', '#2e2008'] },
+    { name: '👑 Royal Gold & Velvet', harmony: 'Complementary', tone: 'deep', hexes: ['#fdf4dc', '#d4af37', '#731c77', '#3b1248', '#190a21'] },
+    { name: '🌺 Tropical Hibiscus', harmony: 'Complementary', tone: 'bright', hexes: ['#f0fdf4', '#4ade80', '#16a34a', '#f43f5e', '#881337'] },
+    { name: '🏜️ Desert Sky', harmony: 'Complementary', tone: 'muted', hexes: ['#fff7ed', '#fdba74', '#c2410c', '#0284c7', '#082f49'] },
+    { name: '🫐 Blueberry & Lemon', harmony: 'Complementary', tone: 'bright', hexes: ['#fefce8', '#facc15', '#4338ca', '#312e81', '#1e1b4b'] },
+    { name: '💎 Ruby & Emerald', harmony: 'Complementary', tone: 'deep', hexes: ['#022c22', '#059669', '#34d399', '#e11d48', '#4c0519'] },
+    { name: '🏙️ City at Night', harmony: 'Complementary', tone: 'dark', hexes: ['#0f172a', '#1e293b', '#38bdf8', '#f59e0b', '#020617'] },
+    { name: '🍓 Strawberry Kiwi', harmony: 'Complementary', tone: 'vivid', hexes: ['#fdf2f8', '#f472b6', '#db2777', '#84cc16', '#365314'] },
+    { name: '🧁 Mint Chocolate', harmony: 'Complementary', tone: 'pastel', hexes: ['#f0fdf4', '#86efac', '#22c55e', '#78350f', '#451a03'] },
+    { name: '🌅 Sun & Sea', harmony: 'Complementary', tone: 'light', hexes: ['#f0f9ff', '#7dd3fc', '#0284c7', '#f97316', '#7c2d12'] },
 
-    // 🔺 3. Triad (สามเหลี่ยม 3 ทิศทาง)
-    { name: '🍧 Anime Dream', harmony: 'Triad', hexes: ['#fef9f0', '#fbc531', '#487eb0', '#e84118', '#2c2c54'] },
-    { name: '🔮 Neon Retro Synth', harmony: 'Triad', hexes: ['#180828', '#4c1d95', '#c084fc', '#f43f5e', '#fbbf24'] },
-    { name: '🌌 Galaxy', harmony: 'Triad', hexes: ['#f0f0ff', '#a78bfa', '#7c3aed', '#06b6d4', '#0f0520'] },
-    { name: '🌇 Tokyo Dusk', harmony: 'Triad', hexes: ['#190924', '#3f1651', '#8c2474', '#e24e75', '#ff9e9d'] },
-    { name: '🛸 Deep Space Nebula', harmony: 'Triad', hexes: ['#050510', '#140c2d', '#683594', '#00d2ff', '#d89bfe'] },
-    { name: '🦄 Pastel Unicorn', harmony: 'Triad', hexes: ['#f5f0ff', '#e0c3fc', '#8ec5fc', '#ffb5e2', '#edafb8'] },
-    { name: '🍸 Velvet Lounge', harmony: 'Triad', hexes: ['#120817', '#2a1130', '#9b3092', '#309b78', '#f48fb1'] },
-    { name: '🫐 Wild Berry', harmony: 'Triad', hexes: ['#12081d', '#321447', '#a83db5', '#3db5a8', '#f19eec'] },
-    { name: '🔮 Mystic Quartz', harmony: 'Triad', hexes: ['#f3e8ff', '#d8b4fe', '#a855f7', '#06b6d4', '#160826'] },
-    { name: '🌌 Twilight Glow', harmony: 'Triad', hexes: ['#e2d6ff', '#b39ce3', '#8260bd', '#3cbfae', '#100b21'] },
+    // 🔺 3. Triad (สามเหลี่ยม 3 ทิศทาง) - 18 Presets
+    { name: '🍧 Anime Dream', harmony: 'Triad', tone: 'bright', hexes: ['#fef9f0', '#fbc531', '#487eb0', '#e84118', '#2c2c54'] },
+    { name: '🔮 Neon Retro Synth', harmony: 'Triad', tone: 'vivid', hexes: ['#180828', '#4c1d95', '#c084fc', '#f43f5e', '#fbbf24'] },
+    { name: '🌌 Galaxy', harmony: 'Triad', tone: 'deep', hexes: ['#f0f0ff', '#a78bfa', '#7c3aed', '#06b6d4', '#0f0520'] },
+    { name: '🌇 Tokyo Dusk', harmony: 'Triad', tone: 'dark', hexes: ['#190924', '#3f1651', '#8c2474', '#e24e75', '#ff9e9d'] },
+    { name: '🛸 Deep Space Nebula', harmony: 'Triad', tone: 'dark', hexes: ['#050510', '#140c2d', '#683594', '#00d2ff', '#d89bfe'] },
+    { name: '🦄 Pastel Unicorn', harmony: 'Triad', tone: 'pastel', hexes: ['#f5f0ff', '#e0c3fc', '#8ec5fc', '#ffb5e2', '#edafb8'] },
+    { name: '🍸 Velvet Lounge', harmony: 'Triad', tone: 'deep', hexes: ['#120817', '#2a1130', '#9b3092', '#309b78', '#f48fb1'] },
+    { name: '🫐 Wild Berry', harmony: 'Triad', tone: 'vivid', hexes: ['#12081d', '#321447', '#a83db5', '#3db5a8', '#f19eec'] },
+    { name: '🔮 Mystic Quartz', harmony: 'Triad', tone: 'light', hexes: ['#f3e8ff', '#d8b4fe', '#a855f7', '#06b6d4', '#160826'] },
+    { name: '🌌 Twilight Glow', harmony: 'Triad', tone: 'deep', hexes: ['#e2d6ff', '#b39ce3', '#8260bd', '#3cbfae', '#100b21'] },
+    { name: '🎪 Carnival Fun', harmony: 'Triad', tone: 'vivid', hexes: ['#fef2f2', '#ef4444', '#3b82f6', '#eab308', '#1e293b'] },
+    { name: '🍬 Bubblegum Pop', harmony: 'Triad', tone: 'pastel', hexes: ['#fff1f2', '#fda4af', '#93c5fd', '#fde047', '#475569'] },
+    { name: '🎭 Venetian Masquerade', harmony: 'Triad', tone: 'deep', hexes: ['#1e1b4b', '#4338ca', '#b45309', '#047857', '#0f172a'] },
+    { name: '🎨 Artist Atelier', harmony: 'Triad', tone: 'bright', hexes: ['#fafaf9', '#f97316', '#06b6d4', '#ec4899', '#292524'] },
+    { name: '🦜 Tropical Macaw', harmony: 'Triad', tone: 'vivid', hexes: ['#0284c7', '#e11d48', '#eab308', '#16a34a', '#0f172a'] },
+    { name: '🍨 Gelato Trio', harmony: 'Triad', tone: 'light', hexes: ['#fffbeb', '#fed7aa', '#bbf7d0', '#fbcfe8', '#334155'] },
+    { name: '🕹️ Arcade 1984', harmony: 'Triad', tone: 'dark', hexes: ['#0f051d', '#9333ea', '#06b6d4', '#f97316', '#ffffff'] },
+    { name: '🪷 Lotus Pavilion', harmony: 'Triad', tone: 'pastel', hexes: ['#fdf4ff', '#f0abfc', '#86efac', '#93c5fd', '#3b0764'] },
 
-    // 🌗 4. Split-Complementary (แยกตรงข้าม)
-    { name: '🍬 Pastel Candy', harmony: 'Split-Comp.', hexes: ['#fff8f0', '#ffb3ba', '#ffffba', '#baffc9', '#bae1ff'] },
-    { name: '🌙 Moonlight Serenade', harmony: 'Split-Comp.', hexes: ['#0c1021', '#1d2a44', '#3b537f', '#997ec3', '#e4ecf7'] },
-    { name: '🍧 Strawberry Bingsu', harmony: 'Split-Comp.', hexes: ['#fff0f3', '#ffccd5', '#ff4d6d', '#4dffb2', '#800f2f'] },
-    { name: '🍑 Sweet Peach', harmony: 'Split-Comp.', hexes: ['#fff3eb', '#fecdd3', '#fda4af', '#38bdf8', '#881337'] },
-    { name: '💎 Crystal Sapphire', harmony: 'Split-Comp.', hexes: ['#b3e0ff', '#438ecb', '#1e4f8a', '#cb8a43', '#030f26'] },
-    { name: '⚓ Royal Navy', harmony: 'Split-Comp.', hexes: ['#dce6f5', '#2c5d9e', '#1a3a6b', '#9e6a2c', '#050c1e'] },
-    { name: '🌸 Cherry Blossom Dusk', harmony: 'Split-Comp.', hexes: ['#f7c5dd', '#c76899', '#803c6b', '#3c8051', '#1f1124'] },
-    { name: '🐬 Tropical Cyan', harmony: 'Split-Comp.', hexes: ['#b3f7f8', '#22ccd3', '#0d808a', '#8a0d4c', '#02181c'] },
-    { name: '🦩 Flamingo Sunset', harmony: 'Split-Comp.', hexes: ['#fce4ec', '#f06292', '#b33b70', '#3bb37e', '#2b0d1e'] },
-    { name: '🌸 Cherry Blossom Light', harmony: 'Split-Comp.', hexes: ['#fff5f7', '#fecdd3', '#f472b6', '#34d399', '#831843'] },
+    // 🌗 4. Split-Complementary (แยกตรงข้าม) - 18 Presets
+    { name: '🍬 Pastel Candy', harmony: 'Split-Comp.', tone: 'pastel', hexes: ['#fff8f0', '#ffb3ba', '#ffffba', '#baffc9', '#bae1ff'] },
+    { name: '🌙 Moonlight Serenade', harmony: 'Split-Comp.', tone: 'dark', hexes: ['#0c1021', '#1d2a44', '#3b537f', '#997ec3', '#e4ecf7'] },
+    { name: '🍧 Strawberry Bingsu', harmony: 'Split-Comp.', tone: 'pastel', hexes: ['#fff0f3', '#ffccd5', '#ff4d6d', '#4dffb2', '#800f2f'] },
+    { name: '🍑 Sweet Peach', harmony: 'Split-Comp.', tone: 'light', hexes: ['#fff3eb', '#fecdd3', '#fda4af', '#38bdf8', '#881337'] },
+    { name: '💎 Crystal Sapphire', harmony: 'Split-Comp.', tone: 'deep', hexes: ['#b3e0ff', '#438ecb', '#1e4f8a', '#cb8a43', '#030f26'] },
+    { name: '⚓ Royal Navy', harmony: 'Split-Comp.', tone: 'deep', hexes: ['#dce6f5', '#2c5d9e', '#1a3a6b', '#9e6a2c', '#050c1e'] },
+    { name: '🌸 Cherry Blossom Dusk', harmony: 'Split-Comp.', tone: 'muted', hexes: ['#f7c5dd', '#c76899', '#803c6b', '#3c8051', '#1f1124'] },
+    { name: '🐬 Tropical Cyan', harmony: 'Split-Comp.', tone: 'bright', hexes: ['#b3f7f8', '#22ccd3', '#0d808a', '#8a0d4c', '#02181c'] },
+    { name: '🦩 Flamingo Sunset', harmony: 'Split-Comp.', tone: 'vivid', hexes: ['#fce4ec', '#f06292', '#b33b70', '#3bb37e', '#2b0d1e'] },
+    { name: '🌸 Cherry Blossom Light', harmony: 'Split-Comp.', tone: 'pastel', hexes: ['#fff5f7', '#fecdd3', '#f472b6', '#34d399', '#831843'] },
+    { name: '🍹 Blue Lagoon', harmony: 'Split-Comp.', tone: 'bright', hexes: ['#e0f2fe', '#38bdf8', '#fb923c', '#f43f5e', '#0c4a6e'] },
+    { name: '🪴 Terrarium Glass', harmony: 'Split-Comp.', tone: 'muted', hexes: ['#ecfdf5', '#6ee7b7', '#10b981', '#f43f5e', '#831843'] },
+    { name: '🔮 Amethyst & Amber', harmony: 'Split-Comp.', tone: 'deep', hexes: ['#2e1065', '#7c3aed', '#f59e0b', '#10b981', '#0f172a'] },
+    { name: '🪸 Sea Anemone', harmony: 'Split-Comp.', tone: 'vivid', hexes: ['#fff1f2', '#fb7185', '#e11d48', '#2dd4bf', '#134e4a'] },
+    { name: '🍵 Matcha & Azuki', harmony: 'Split-Comp.', tone: 'muted', hexes: ['#f7fee7', '#bef264', '#65a30d', '#be185d', '#365314'] },
+    { name: '🥞 Maple Syrup', harmony: 'Split-Comp.', tone: 'muted', hexes: ['#fffbeb', '#fde68a', '#b45309', '#4338ca', '#1e1b4b'] },
+    { name: '🌌 Stardust Beam', harmony: 'Split-Comp.', tone: 'dark', hexes: ['#030712', '#1f2937', '#818cf8', '#fbbf24', '#06b6d4'] },
+    { name: '🪷 Water Lily Pond', harmony: 'Split-Comp.', tone: 'pastel', hexes: ['#fdf2f8', '#fbcfe8', '#34d399', '#60a5fa', '#1e293b'] },
 
-    // 🔲 5. Square (สี่เหลี่ยม 4 ทิศทาง)
-    { name: '🍇 Vintage Plum', harmony: 'Square', hexes: ['#1e0a1c', '#4a154b', '#7c2570', '#257c31', '#f3d1ec'] },
-    { name: '🏜️ Sahara Dunes', harmony: 'Square', hexes: ['#f5e3d3', '#e8a87c', '#c47343', '#4394c4', '#2b1810'] },
-    { name: '🍵 Warm Genmaicha', harmony: 'Square', hexes: ['#ede6d1', '#b5ac8b', '#756f59', '#595f75', '#1c1b17'] },
-    { name: '🥐 Butter Croissant', harmony: 'Square', hexes: ['#f9f1e1', '#dfa85b', '#a67238', '#386ca6', '#26190e'] },
-    { name: '🏜️ Canyon Sunset', harmony: 'Square', hexes: ['#fadbcf', '#e67b5a', '#b84a32', '#32a0b8', '#2e110d'] },
-    { name: '🍁 Autumn Fire', harmony: 'Square', hexes: ['#ffbd59', '#f25c00', '#ab2a00', '#0081ab', '#2b0700'] },
-    { name: '🌴 Palm Island', harmony: 'Square', hexes: ['#bbf2db', '#44a191', '#24706c', '#702428', '#07191d'] },
-    { name: '🪵 Sandalwood', harmony: 'Square', hexes: ['#efe0d3', '#b58363', '#7e533b', '#3b667e', '#21150f'] },
-    { name: '🥐 Honey Toast', harmony: 'Square', hexes: ['#fff3c4', '#e09d24', '#9e6911', '#11469e', '#291a03'] },
-    { name: '🌋 Lava Core', harmony: 'Square', hexes: ['#ff8080', '#d92626', '#8a0f0f', '#0f8a8a', '#1f0303'] },
+    // 🔲 5. Square (สี่เหลี่ยม 4 ทิศทาง) - 16 Presets
+    { name: '🍇 Vintage Plum', harmony: 'Square', tone: 'deep', hexes: ['#1e0a1c', '#4a154b', '#7c2570', '#257c31', '#f3d1ec'] },
+    { name: '🏜️ Sahara Dunes', harmony: 'Square', tone: 'muted', hexes: ['#f5e3d3', '#e8a87c', '#c47343', '#4394c4', '#2b1810'] },
+    { name: '🍵 Warm Genmaicha', harmony: 'Square', tone: 'muted', hexes: ['#ede6d1', '#b5ac8b', '#756f59', '#595f75', '#1c1b17'] },
+    { name: '🥐 Butter Croissant', harmony: 'Square', tone: 'light', hexes: ['#f9f1e1', '#dfa85b', '#a67238', '#386ca6', '#26190e'] },
+    { name: '🏜️ Canyon Sunset', harmony: 'Square', tone: 'muted', hexes: ['#fadbcf', '#e67b5a', '#b84a32', '#32a0b8', '#2e110d'] },
+    { name: '🍁 Autumn Fire', harmony: 'Square', tone: 'vivid', hexes: ['#ffbd59', '#f25c00', '#ab2a00', '#0081ab', '#2b0700'] },
+    { name: '🌴 Palm Island', harmony: 'Square', tone: 'bright', hexes: ['#bbf2db', '#44a191', '#24706c', '#702428', '#07191d'] },
+    { name: '🪵 Sandalwood', harmony: 'Square', tone: 'muted', hexes: ['#efe0d3', '#b58363', '#7e533b', '#3b667e', '#21150f'] },
+    { name: '🥐 Honey Toast', harmony: 'Square', tone: 'bright', hexes: ['#fff3c4', '#e09d24', '#9e6911', '#11469e', '#291a03'] },
+    { name: '🌋 Lava Core', harmony: 'Square', tone: 'dark', hexes: ['#ff8080', '#d92626', '#8a0f0f', '#0f8a8a', '#1f0303'] },
+    { name: '🎡 Retro Fairground', harmony: 'Square', tone: 'vivid', hexes: ['#fef2f2', '#ef4444', '#10b981', '#3b82f6', '#f59e0b'] },
+    { name: '🍰 Pastel Macaron', harmony: 'Square', tone: 'pastel', hexes: ['#fdf2f8', '#f9a8d4', '#93c5fd', '#a7f3d0', '#fde68a'] },
+    { name: '🏰 Gothic Cathedral', harmony: 'Square', tone: 'dark', hexes: ['#0f172a', '#334155', '#991b1b', '#065f46', '#1e1b4b'] },
+    { name: '🌊 Deep Coral Trench', harmony: 'Square', tone: 'deep', hexes: ['#082f49', '#0284c7', '#e11d48', '#059669', '#ca8a04'] },
+    { name: '🏕️ Autumn Campfire', harmony: 'Square', tone: 'muted', hexes: ['#451a03', '#9a3412', '#d97706', '#0284c7', '#14532d'] },
+    { name: '🏙️ Neon Tokyo City', harmony: 'Square', tone: 'vivid', hexes: ['#050510', '#ff007f', '#00f0ff', '#ffe600', '#7928ca'] },
 
-    // 🔘 6. Monochromatic (สีเดียวเฉดต่าง)
-    { name: '🖤 Midnight Lux', harmony: 'Monochromatic', hexes: ['#f8fafc', '#94a3b8', '#3b82f6', '#1d4ed8', '#0f172a'] },
-    { name: '🪐 Saturn Rings', harmony: 'Monochromatic', hexes: ['#eedbce', '#b09e99', '#6d657b', '#37323e', '#151419'] },
-    { name: '🍨 Taro Ice Cream', harmony: 'Monochromatic', hexes: ['#f7f4fc', '#d8c5ed', '#b392d6', '#7e57c2', '#311b92'] },
-    { name: '🪨 Basalt Stone', harmony: 'Monochromatic', hexes: ['#d3d6df', '#7a7f8c', '#454952', '#25282e', '#121316'] },
-    { name: '🪐 Starlight Voyage', harmony: 'Monochromatic', hexes: ['#d6e5ff', '#4172b8', '#1e3a70', '#0c1a3a', '#040817'] },
+    // 🔘 6. Monochromatic (สีเดียวเฉดต่าง) - 16 Presets
+    { name: '🖤 Midnight Lux', harmony: 'Monochromatic', tone: 'dark', hexes: ['#f8fafc', '#94a3b8', '#3b82f6', '#1d4ed8', '#0f172a'] },
+    { name: '🪐 Saturn Rings', harmony: 'Monochromatic', tone: 'neutral', hexes: ['#eedbce', '#b09e99', '#6d657b', '#37323e', '#151419'] },
+    { name: '🍨 Taro Ice Cream', harmony: 'Monochromatic', tone: 'pastel', hexes: ['#f7f4fc', '#d8c5ed', '#b392d6', '#7e57c2', '#311b92'] },
+    { name: '🪨 Basalt Stone', harmony: 'Monochromatic', tone: 'neutral', hexes: ['#d3d6df', '#7a7f8c', '#454952', '#25282e', '#121316'] },
+    { name: '🪐 Starlight Voyage', harmony: 'Monochromatic', tone: 'dark', hexes: ['#d6e5ff', '#4172b8', '#1e3a70', '#0c1a3a', '#040817'] },
+    { name: '🌸 Baby Pink', harmony: 'Monochromatic', tone: 'pastel', hexes: ['#fff1f2', '#fecdd3', '#f43f5e', '#be123c', '#4c0519'] },
+    { name: '🌊 Ocean Deep Blue', harmony: 'Monochromatic', tone: 'deep', hexes: ['#f0f9ff', '#7dd3fc', '#0284c7', '#0369a1', '#082f49'] },
+    { name: '🌿 Minty Fresh', harmony: 'Monochromatic', tone: 'light', hexes: ['#f0fdf4', '#86efac', '#22c55e', '#15803d', '#14532d'] },
+    { name: '☕ Pure Mocha', harmony: 'Monochromatic', tone: 'muted', hexes: ['#faf5f0', '#d5bdaf', '#b08968', '#7f5539', '#382218'] },
+    { name: '☀️ Sunny Amber', harmony: 'Monochromatic', tone: 'bright', hexes: ['#fffbeb', '#fde68a', '#f59e0b', '#d97706', '#78350f'] },
+    { name: '💜 Royal Lavender', harmony: 'Monochromatic', tone: 'deep', hexes: ['#faf5ff', '#d8b4fe', '#9333ea', '#6b21a8', '#3b0764'] },
+    { name: '🌫️ Foggy Morning', harmony: 'Monochromatic', tone: 'neutral', hexes: ['#f8fafc', '#e2e8f0', '#94a3b8', '#475569', '#0f172a'] },
+    { name: '🍊 Citrus Punch', harmony: 'Monochromatic', tone: 'vivid', hexes: ['#fff7ed', '#fed7aa', '#f97316', '#ea580c', '#7c2d12'] },
+    { name: '🫒 Mediterranean Olive', harmony: 'Monochromatic', tone: 'muted', hexes: ['#f7fee7', '#d9f99d', '#84cc16', '#4d7c0f', '#1a2e05'] },
+    { name: '💎 Diamond Cyan', harmony: 'Monochromatic', tone: 'light', hexes: ['#ecfeff', '#a5f3fc', '#06b6d4', '#0891b2', '#164e63'] },
+    { name: '🪨 Obsidian Charcoal', harmony: 'Monochromatic', tone: 'dark', hexes: ['#f4f4f5', '#a1a1aa', '#52525b', '#27272a', '#09090b'] },
 
-    // 🌗 7. Shades (น้ำหนักเฉดสี)
-    { name: '🫐 Blueberry Muffin', harmony: 'Shades', hexes: ['#cbd5e1', '#64748b', '#334155', '#1e293b', '#0f172a'] },
-    { name: '🍷 Pinot Noir', harmony: 'Shades', hexes: ['#f07d8b', '#b02334', '#78101f', '#420811', '#1a0307'] },
-    { name: '🏙️ Metropolis Noir', harmony: 'Shades', hexes: ['#d0d0dc', '#78788a', '#3c3c48', '#1e1e24', '#0a0a0c'] },
-    { name: '🍫 Dark Chocolate', harmony: 'Shades', hexes: ['#dbb8a7', '#804935', '#542d1f', '#331b12', '#170c08'] },
-    { name: '🍵 Imperial Jade', harmony: 'Shades', hexes: ['#b4f7d4', '#31a673', '#186947', '#0b3826', '#03140e'] }
+    // 🌗 7. Shades (น้ำหนักเฉดสี) - 16 Presets
+    { name: '🫐 Blueberry Muffin', harmony: 'Shades', tone: 'dark', hexes: ['#cbd5e1', '#64748b', '#334155', '#1e293b', '#0f172a'] },
+    { name: '🍷 Pinot Noir', harmony: 'Shades', tone: 'deep', hexes: ['#f07d8b', '#b02334', '#78101f', '#420811', '#1a0307'] },
+    { name: '🏙️ Metropolis Noir', harmony: 'Shades', tone: 'dark', hexes: ['#d0d0dc', '#78788a', '#3c3c48', '#1e1e24', '#0a0a0c'] },
+    { name: '🍫 Dark Chocolate', harmony: 'Shades', tone: 'dark', hexes: ['#dbb8a7', '#804935', '#542d1f', '#331b12', '#170c08'] },
+    { name: '🍵 Imperial Jade', harmony: 'Shades', tone: 'deep', hexes: ['#b4f7d4', '#31a673', '#186947', '#0b3826', '#03140e'] },
+    { name: '☁️ Cloud White', harmony: 'Shades', tone: 'light', hexes: ['#ffffff', '#f8fafc', '#e2e8f0', '#cbd5e1', '#94a3b8'] },
+    { name: '🥀 Dried Crimson Rose', harmony: 'Shades', tone: 'deep', hexes: ['#fecdd3', '#e11d48', '#9f1239', '#881337', '#4c0519'] },
+    { name: '🌊 Mariana Trench', harmony: 'Shades', tone: 'dark', hexes: ['#bae6fd', '#0284c7', '#0369a1', '#075985', '#082f49'] },
+    { name: '🪵 Aged Oak', harmony: 'Shades', tone: 'muted', hexes: ['#e7dfd5', '#b5a18a', '#846f5b', '#5c4d3f', '#2c231b'] },
+    { name: '🍇 Concord Grape', harmony: 'Shades', tone: 'deep', hexes: ['#e9d5ff', '#a855f7', '#7e22ce', '#581c87', '#2e1065'] },
+    { name: '🍃 Eucalyptus', harmony: 'Shades', tone: 'muted', hexes: ['#d1fae5', '#6ee7b7', '#10b981', '#047857', '#064e3b'] },
+    { name: '🏺 Terracotta Clay', harmony: 'Shades', tone: 'muted', hexes: ['#ffedd5', '#fb923c', '#c2410c', '#9a3412', '#431407'] },
+    { name: '🪙 Silver Shadow', harmony: 'Shades', tone: 'neutral', hexes: ['#f1f5f9', '#cbd5e1', '#94a3b8', '#475569', '#1e293b'] },
+    { name: '🪐 Deep Void', harmony: 'Shades', tone: 'dark', hexes: ['#e2e8f0', '#64748b', '#334155', '#1e293b', '#020617'] },
+    { name: '🌸 Cherry Cream', harmony: 'Shades', tone: 'pastel', hexes: ['#fff1f2', '#fbcfe8', '#f472b6', '#db2777', '#831843'] },
+    { name: '🌾 Raw Linen', harmony: 'Shades', tone: 'light', hexes: ['#fdfbf7', '#f4eee1', '#dfd5c2', '#b5a894', '#6b6151'] }
   ];
+  window.CURATED_PALETTES = CURATED_PALETTES;
+
+  // ═══ HARMONY METADATA DICTIONARY ═══
+  const HARMONY_DATA = {
+    analogous: {
+      name: 'Analogous',
+      sub: 'สีข้างเคียง',
+      icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="5" r="1.8" fill="currentColor"/><circle cx="7" cy="15" r="1.8" fill="currentColor"/><circle cx="17" cy="15" r="1.8" fill="currentColor"/></svg>'
+    },
+    complementary: {
+      name: 'Complementary',
+      sub: 'สีตรงข้าม',
+      icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><line x1="6" y1="12" x2="18" y2="12"/><circle cx="6" cy="12" r="1.8" fill="currentColor"/><circle cx="18" cy="12" r="1.8" fill="currentColor"/></svg>'
+    },
+    triad: {
+      name: 'Triad',
+      sub: 'สามเหลี่ยม 3 ทิศทาง',
+      icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 4 20 18 4 18"/><circle cx="12" cy="4" r="1.8" fill="currentColor"/><circle cx="20" cy="18" r="1.8" fill="currentColor"/><circle cx="4" cy="18" r="1.8" fill="currentColor"/></svg>'
+    },
+    split: {
+      name: 'Split-Comp.',
+      sub: 'แยกตรงข้าม',
+      icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><line x1="12" y1="5" x2="12" y2="12"/><line x1="12" y1="12" x2="6" y2="17"/><line x1="12" y1="12" x2="18" y2="17"/><circle cx="12" cy="5" r="1.8" fill="currentColor"/><circle cx="6" cy="17" r="1.8" fill="currentColor"/><circle cx="18" cy="17" r="1.8" fill="currentColor"/></svg>'
+    },
+    square: {
+      name: 'Square',
+      sub: 'สี่เหลี่ยม 4 ทิศทาง',
+      icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="5" width="14" height="14"/><circle cx="5" cy="5" r="1.8" fill="currentColor"/><circle cx="19" cy="5" r="1.8" fill="currentColor"/><circle cx="19" cy="19" r="1.8" fill="currentColor"/><circle cx="5" cy="19" r="1.8" fill="currentColor"/></svg>'
+    },
+    monochromatic: {
+      name: 'Monochromatic',
+      sub: 'สีเดียวเฉดต่าง',
+      icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="2" fill="currentColor"/></svg>'
+    },
+    shades: {
+      name: 'Shades',
+      sub: 'น้ำหนักเฉดสี',
+      icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z"/><path d="M12 3v18a9 9 0 0 0 0-18z" fill="currentColor"/></svg>'
+    },
+    custom: {
+      name: 'Custom',
+      sub: 'เลือกสุ่มอิสระ',
+      icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>'
+    }
+  };
+
+  // ── TONE METADATA DICTIONARY ──
+  const TONE_DATA = {
+    all: { name: 'ทั้งหมด', thName: 'สุ่มอิสระ', sub: 'สุ่มอิสระตามทฤษฎีสี', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8z"/></svg>' },
+    light: { name: 'Light', thName: 'สว่างนุ่ม', sub: 'สว่างอ่อนนุ่ม คลีนโปร่ง', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>' },
+    pastel: { name: 'Pastel', thName: 'พาสเทล', sub: 'สีหวานละมุน นุ่มนวล', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>' },
+    bright: { name: 'Bright', thName: 'สดใส', sub: 'สว่างสดใส มีพลังชัดเจน', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a10 10 0 0 1 10 10"/><path d="M12 6a6 6 0 0 1 6 6"/></svg>' },
+    vivid: { name: 'Vivid', thName: 'สดจัดจ้าน', sub: 'สดจัดจ้าน อิ่มตัวสูง', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>' },
+    muted: { name: 'Muted', thName: 'เอิร์ธโทน', sub: 'เอิร์ธโทน มัวคลาสสิก', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/></svg>' },
+    dark: { name: 'Dark', thName: 'มืด', sub: 'โทนมืด ลึกลับ ดาร์ก', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>' },
+    deep: { name: 'Deep', thName: 'เข้มลึก', sub: 'เข้มลึก อัญมณี Jewel', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="6 3 18 3 22 9 12 22 2 9 6 3"/></svg>' },
+    neutral: { name: 'Neutral', thName: 'โมโนโทน', sub: 'โมโนโทน ธรรมชาติ เทา', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3" fill="currentColor"/></svg>' }
+  };
 
   // ═══ UI UTILS ═══
   function autoFitInput(input) {
@@ -212,11 +331,32 @@
     return { h: Math.round(h), s: Math.round(s * 100), l: Math.round(l * 100) };
   }
 
-  // Determine text color for contrast
-  function textColorFor(hex) {
+  // WCAG relative luminance calculation (0.0 to 1.0)
+  function getRelativeLuminance(hex) {
+    if (!hex) return 0;
     const [r, g, b] = hexToRgb(hex);
-    const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-    return lum > 0.55 ? 'rgba(0,0,0,0.8)' : 'rgba(255,255,255,0.9)';
+    const toLinear = c => {
+      const v = c / 255;
+      return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+    };
+    return 0.2126 * toLinear(r) + 0.7152 * toLinear(g) + 0.0722 * toLinear(b);
+  }
+
+  // WCAG contrast ratio between two hex colors (1:1 to 21:1)
+  function getContrastRatio(hex1, hex2) {
+    const l1 = getRelativeLuminance(hex1);
+    const l2 = getRelativeLuminance(hex2);
+    const lighter = Math.max(l1, l2);
+    const darker = Math.min(l1, l2);
+    return (lighter + 0.05) / (darker + 0.05);
+  }
+
+  // Determine guaranteed high-contrast text color for any background hex
+  function textColorFor(hex) {
+    if (!hex) return '#ffffff';
+    const contrastWhite = getContrastRatio(hex, '#ffffff');
+    const contrastBlack = getContrastRatio(hex, '#0d0d0d');
+    return contrastWhite >= contrastBlack ? '#ffffff' : '#0d0d0d';
   }
 
   // Get approximate Thai / English color name
@@ -945,8 +1085,12 @@
       const txtCol = textColorFor(col.hex);
       const colorName = getColorName(col.h, col.s, col.v);
       const roleNames = (paletteTargetMode === 'painting')
-        ? ['Deep Shadow', 'Core Shadow', 'Base Tone ⭐', 'Key Light', 'Rim / Accent']
-        : ['Background', 'Surface', 'Primary ⭐', 'Secondary', 'Text'];
+        ? ['Deep Shadow', 'Core Shadow', 'Base Tone (Primary)', 'Key Light', 'Rim / Accent']
+        : ['Background', 'Surface', 'Primary', 'Secondary', 'Text'];
+
+      const lockIcon = col.locked
+        ? `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>`
+        : `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg>`;
 
       const bar = document.createElement('div');
       bar.className = 'cp-color-bar';
@@ -959,7 +1103,7 @@
 
       bar.innerHTML = `
         <button class="cp-bar-lock ${col.locked ? 'is-locked' : ''}" data-lock="${idx}" title="${col.locked ? 'ปลดล็อค' : 'ล็อคสีนี้'}">
-          ${col.locked ? '🔒' : '🔓'}
+          ${lockIcon}
         </button>
         ${palette.length > 2 ? `<button class="cp-bar-remove" data-remove="${idx}" title="ลบแถบสีนี้">✕</button>` : ''}
         <div class="cp-bar-drag" title="ลากเพื่อสลับตำแหน่ง">
@@ -1068,6 +1212,10 @@
 
       container.appendChild(bar);
     });
+
+    if (isThemePreviewActive && palette && palette.length > 0) {
+      applyThemePreview(false);
+    }
   }
 
   // ═══ COLOR INSPECTOR ═══
@@ -1220,7 +1368,8 @@
         tabSaved.classList.remove('active');
         tabPresets.classList.add('active');
       }
-      tabPresets.textContent = `🎨 Presets สำเร็จรูป (${CURATED_PALETTES.length})`;
+      const presetsCountEl = document.getElementById('cp-presets-count');
+      if (presetsCountEl) presetsCountEl.textContent = CURATED_PALETTES.length;
     }
     renderSavedList();
   };
@@ -1241,16 +1390,26 @@
       finalName = `${heroColorName} Palette #${saved.length + 1}`;
     }
 
+    const harmObj = HARMONY_DATA[activeHarmony] || {};
+    const toneObj = TONE_DATA[activeTone] || {};
+
     const newItem = {
       id: 'palette_' + Date.now(),
       name: finalName,
       hexes: hexes,
+      harmony: activeHarmony || 'analogous',
+      harmonyName: harmObj.name || activeHarmony || 'Analogous',
+      harmonySub: harmObj.sub || 'สีข้างเคียง',
+      tone: activeTone || 'all',
+      toneName: toneObj.name || activeTone || 'ทั้งหมด',
+      toneTh: toneObj.thName || 'สุ่มอิสระ',
+      toneSub: toneObj.sub || 'สุ่มอิสระตามทฤษฎีสี',
       createdAt: new Date().toLocaleDateString('th-TH', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
     };
 
     saved.unshift(newItem);
     savePalettesToStorage(saved);
-    showToast(`บันทึกชุดสี "${finalName}" เรียบร้อยแล้ว! ⭐`);
+    showToast(`บันทึกชุดสี "${finalName}" เรียบร้อยแล้ว!`);
     
     // Clear search/name input bar so all saved palettes are listed
     const input = document.getElementById('cp-palette-name-input');
@@ -1294,8 +1453,170 @@
 
     renderBars();
     updateInspector();
-    showToast(`โหลดชุดสี "${paletteName}" เรียบร้อย! 🎨`);
+    showToast(`โหลดชุดสี "${paletteName}" เรียบร้อย!`);
   };
+
+  // ── Color Keyword Matcher for Search ──
+  const COLOR_KEYWORD_MAP = [
+    {
+      terms: ['ส้ม', 'orange', 'แสด', 'พีช', 'peach', 'amber', 'ส้มแสด', 'ส้มทอง', 'ส้มพีช', 'ส้มเบจ', 'โอรส', 'โอลด์โรส'],
+      test: (h, s, v) => (s > 15 && v > 20 && ((h >= 14 && h <= 48) || (h >= 10 && h <= 52 && s > 30)))
+    },
+    {
+      terms: ['แดง', 'red', 'เลือดหมู', 'maroon', 'crimson', 'แดงสด', 'ชมพูแดง', 'ทับทิม', 'แดงเข้ม'],
+      test: (h, s, v) => (s > 20 && v > 15 && ((h >= 345 || h <= 14) || (h <= 18 && v <= 55)))
+    },
+    {
+      terms: ['ชมพู', 'pink', 'rose', 'magenta', 'บานเย็น', 'ชมพูกะปิ', 'ชมพูสด', 'ชมพูเข้ม', 'ชมพูหวาน'],
+      test: (h, s, v) => (s > 12 && v > 25 && (h >= 315 && h < 345))
+    },
+    {
+      terms: ['เหลือง', 'yellow', 'ทอง', 'gold', 'mustard', 'มัสตาร์ด', 'เหลืองสด', 'เหลืองครีม'],
+      test: (h, s, v) => (s > 15 && v > 35 && (h >= 45 && h <= 68))
+    },
+    {
+      terms: ['เขียว', 'green', 'ตอง', 'lime', 'มินต์', 'มิ้นต์', 'mint', 'emerald', 'olive', 'ขี้ม้า', 'เขียวตอง', 'เขียวมรกต', 'เขียวไผ่', 'เขียวแก่', 'เขียวพาสเทล', 'เขียวขี้ม้า'],
+      test: (h, s, v) => (s > 12 && v > 15 && (h >= 68 && h <= 170))
+    },
+    {
+      terms: ['ฟ้า', 'cyan', 'sky', 'teal', 'azure', 'ฟ้าอมเขียว', 'ฟ้าสดใส', 'ฟ้าเทา', 'น้ำทะเล'],
+      test: (h, s, v) => (s > 12 && v > 20 && (h >= 170 && h <= 218))
+    },
+    {
+      terms: ['น้ำเงิน', 'blue', 'navy', 'sapphire', 'คราม', 'น้ำเงินไพลิน', 'น้ำเงินคราม', 'น้ำเงินเข้ม'],
+      test: (h, s, v) => (s > 15 && v > 15 && (h >= 218 && h <= 255))
+    },
+    {
+      terms: ['ม่วง', 'purple', 'violet', 'lavender', 'ลาเวนเดอร์', 'orchid', 'กล้วยไม้', 'ม่วงอเมทิสต์', 'ม่วงกล้วยไม้', 'ม่วงลาเวนเดอร์', 'ม่วงพาสเทล', 'ม่วงเข้ม'],
+      test: (h, s, v) => (s > 12 && v > 15 && (h >= 255 && h <= 315))
+    },
+    {
+      terms: ['น้ำตาล', 'brown', 'ช็อกโกแลต', 'chocolate', 'coffee', 'กาแฟ', 'earth', 'น้ำตาลเข้ม', 'น้ำตาลส้ม'],
+      test: (h, s, v) => (s > 15 && v <= 55 && (h >= 10 && h <= 45))
+    },
+    {
+      terms: ['ดำ', 'black', 'มืด', 'charcoal', 'เทาอมมืด'],
+      test: (h, s, v) => (v <= 18)
+    },
+    {
+      terms: ['ขาว', 'white', 'สว่าง', 'ขาวควันบุหรี่'],
+      test: (h, s, v) => (s <= 14 && v >= 82)
+    },
+    {
+      terms: ['เทา', 'gray', 'grey', 'ควันบุหรี่', 'เทาเข้ม'],
+      test: (h, s, v) => (s <= 18 && v > 18 && v < 82)
+    },
+    {
+      terms: ['ครีม', 'cream', 'เบจ', 'beige'],
+      test: (h, s, v) => (s <= 35 && s >= 6 && v >= 75 && (h >= 25 && h <= 65))
+    }
+  ];
+
+  function matchColorSwatch(hex, q) {
+    if (!hex || !q) return false;
+    const cleanHex = hex.replace('#', '').toLowerCase();
+    const cleanQ = q.replace('#', '').trim();
+    if (cleanQ && cleanHex.includes(cleanQ)) return true;
+
+    const [r, g, b] = hexToRgb(hex);
+    const hsv = rgbToHsv(r, g, b);
+    const colorName = getColorName(hsv.h, hsv.s, hsv.v).toLowerCase();
+    if (colorName.includes(q)) return true;
+
+    // Check if query starts with "สี" (e.g. "สีส้ม", "สีฟ้า") and strip it for keyword matching
+    const strippedQ = q.startsWith('สี') && q.length > 2 ? q.slice(2).trim() : q;
+
+    for (const km of COLOR_KEYWORD_MAP) {
+      const isTermMatch = km.terms.some(t => {
+        const tLower = t.toLowerCase();
+        return tLower === q || 
+               tLower === strippedQ || 
+               q.includes(tLower) || 
+               (q.length >= 2 && tLower.startsWith(strippedQ));
+      });
+      if (isTermMatch && km.test(hsv.h, hsv.s, hsv.v)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  // ── Ranked Search Match Scoring ──
+  // Priority: 1. ชื่อหลัก (Title) > 2. สีที่อยู่ในช่อง (Colors) > 3. รูปแบบการจับคู่สี (Harmony) > 4. หมวดหมู่โทนสี (Tone) > 5. วันที่ (Date)
+  function calculatePaletteSearchMatch(item, query) {
+    if (!query) return { matched: true, score: 0 };
+    const q = query.toLowerCase().trim();
+
+    let score = 0;
+
+    // 1. ชื่อหลัก (Main Name / Title) - Highest Priority (10,000+)
+    if (item.name) {
+      const nameLower = item.name.toLowerCase();
+      if (nameLower === q) {
+        score += 100000;
+      } else if (nameLower.startsWith(q)) {
+        score += 50000;
+      } else if (nameLower.includes(q)) {
+        score += 10000;
+      }
+    }
+
+    // 2. สีที่อยู่ในช่อง (Colors in slots) - Second Priority (1,000+)
+    const hexList = item.hexes || [];
+    if (Array.isArray(hexList)) {
+      let matchCount = 0;
+      for (const hex of hexList) {
+        if (matchColorSwatch(hex, q)) {
+          matchCount++;
+        }
+      }
+      if (matchCount > 0) {
+        score += 1000 + (matchCount - 1) * 50;
+      }
+    }
+
+    // 3. รูปแบบการจับคู่สี (Harmony / Pairing Rule) - Third Priority (100+)
+    const harmKey = (item.harmony || '').toLowerCase().replace('-comp.', '').replace('-comp', '');
+    const harmObj = HARMONY_DATA[harmKey] || HARMONY_DATA[item.harmony] || {};
+    const harmTerms = [
+      item.harmony,
+      item.harmonyName,
+      item.harmonySub,
+      harmObj.name,
+      harmObj.sub
+    ].filter(Boolean).map(s => s.toLowerCase());
+
+    if (harmTerms.some(t => t.includes(q) || q.includes(t))) {
+      score += 100;
+    }
+
+    // 4. หมวดหมู่โทนสี (Tone Category) - Fourth Priority (10+)
+    const toneKey = (item.tone || '').toLowerCase();
+    const toneObj = TONE_DATA[toneKey] || TONE_DATA[item.tone] || {};
+    const toneTerms = [
+      item.tone,
+      item.toneName,
+      item.toneTh,
+      item.toneSub,
+      toneObj.name,
+      toneObj.thName,
+      toneObj.sub
+    ].filter(Boolean).map(s => s.toLowerCase());
+
+    if (toneTerms.some(t => t.includes(q) || q.includes(t))) {
+      score += 10;
+    }
+
+    // 5. วันที่ (Date / CreatedAt) - Fifth Priority (1+)
+    if (item.createdAt && item.createdAt.toLowerCase().includes(q)) {
+      score += 1;
+    }
+
+    return { matched: score > 0, score };
+  }
+
+  window.matchColorSwatch = matchColorSwatch;
+  window.calculatePaletteSearchMatch = calculatePaletteSearchMatch;
 
   function renderSavedList() {
     const listContainer = document.getElementById('cp-saved-list');
@@ -1311,25 +1632,38 @@
     listContainer.innerHTML = '';
 
     if (activeSavedTab === 'saved') {
-      const itemsToRender = query
-        ? saved.filter(item => (item.name && item.name.toLowerCase().includes(query)) || (item.hexes && item.hexes.some(h => h.toLowerCase().includes(query))))
-        : saved;
+      let itemsToRender = [];
+      if (query) {
+        itemsToRender = saved
+          .map((item, originalIndex) => {
+            const { matched, score } = calculatePaletteSearchMatch(item, query);
+            return { item, originalIndex, score, matched };
+          })
+          .filter(r => r.matched)
+          .sort((a, b) => {
+            if (b.score !== a.score) return b.score - a.score;
+            return a.originalIndex - b.originalIndex;
+          })
+          .map(r => r.item);
+      } else {
+        itemsToRender = saved;
+      }
 
       if (itemsToRender.length === 0) {
         if (query) {
           listContainer.innerHTML = `
             <div class="cp-empty-state">
-              <div style="font-size:24px;margin-bottom:6px;">🔍</div>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom:6px;"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
               <div>ไม่พบชุดสีที่ตรงกับ "${query}"</div>
-              <div style="font-size:11px;opacity:0.7;margin-top:2px;">ลองค้นหาชื่ออื่น หรือกด "บันทึกสีปัจจุบัน" เพื่อบันทึกชื่อนี้</div>
+              <div style="font-size:11px;opacity:0.7;margin-top:2px;">ลองค้นหาด้วยชื่อชุดสี, ชื่อสีในช่อง (เช่น ส้ม, ชมพู), รูปแบบสี หรือโทนสี</div>
             </div>
           `;
         } else {
           listContainer.innerHTML = `
             <div class="cp-empty-state">
-              <div style="font-size:24px;margin-bottom:6px;">⭐</div>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom:6px;"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
               <div>ยังไม่มีชุดสีที่บันทึกไว้</div>
-              <div style="font-size:11px;opacity:0.7;margin-top:2px;">พิมพ์ชื่อแล้วกด "บันทึกสีปัจจุบัน" หรือกด "⭐ เซฟสีนี้" ด้านล่าง</div>
+              <div style="font-size:11px;opacity:0.7;margin-top:2px;">พิมพ์ชื่อแล้วกด "บันทึกสีปัจจุบัน" เพื่อเก็บชุดสีโปรดของคุณ</div>
             </div>
           `;
         }
@@ -1344,35 +1678,59 @@
         const safeHexesArray = JSON.stringify(item.hexes).replace(/"/g, '&quot;');
         const safeName = item.name.replace(/'/g, "\\'");
 
+        const harmLabel = item.harmonySub || item.harmonyName || (HARMONY_DATA[item.harmony] && (HARMONY_DATA[item.harmony].sub || HARMONY_DATA[item.harmony].name)) || '';
+        const toneLabel = item.toneTh || item.toneName || (TONE_DATA[item.tone] && (TONE_DATA[item.tone].thName || TONE_DATA[item.tone].name)) || (item.tone && item.tone !== 'all' ? item.tone : '');
+
+        const metaParts = [];
+        if (item.createdAt) metaParts.push(`<span class="cp-card-date">${item.createdAt}</span>`);
+        if (harmLabel) metaParts.push(`<span class="cp-card-meta-dot">•</span><span class="cp-card-harmony" title="รูปแบบการจับคู่สี: ${harmLabel}">${harmLabel}</span>`);
+        if (toneLabel) metaParts.push(`<span class="cp-card-meta-dot">•</span><span class="cp-card-tone" title="หมวดหมู่โทนสี: ${item.toneSub || toneLabel}">${toneLabel}</span>`);
+
         card.innerHTML = `
           <div class="cp-card-info">
             <div class="cp-card-name" title="${item.name}">${item.name}</div>
-            <div class="cp-card-date">${item.createdAt || ''}</div>
+            <div class="cp-card-meta">${metaParts.join('')}</div>
           </div>
           <div class="cp-card-swatches">${swatchesHtml}</div>
           <div class="cp-card-actions">
-            <button class="cp-card-btn primary" onclick="loadPaletteHexes(${safeHexesArray}, '${safeName}')">📥 โหลดชุดสี</button>
-            <button class="cp-card-btn" onclick="copyColorHex('${item.hexes.join(', ')}')">📋 Copy</button>
-            <button class="cp-card-btn danger" onclick="deleteSavedPalette('${item.id}')">🗑️</button>
+            <button class="cp-card-btn primary" onclick="loadPaletteHexes(${safeHexesArray}, '${safeName}')" title="โหลดชุดสีนี้มาใช้งาน">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              <span>โหลดชุดสี</span>
+            </button>
+            <button class="cp-card-btn" onclick="copyColorHex('${item.hexes.join(', ')}')" title="คัดลอกรหัสสี">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              <span>Copy</span>
+            </button>
+            <button class="cp-card-btn danger" onclick="deleteSavedPalette('${item.id}')" title="ลบชุดสีนี้">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+            </button>
           </div>
         `;
         listContainer.appendChild(card);
       });
     } else {
-      const itemsToRender = query
-        ? CURATED_PALETTES.map((item, originalIdx) => ({ item, originalIdx })).filter(({ item }) =>
-            (item.name && item.name.toLowerCase().includes(query)) ||
-            (item.harmony && item.harmony.toLowerCase().includes(query)) ||
-            (item.hexes && item.hexes.some(h => h.toLowerCase().includes(query)))
-          )
-        : CURATED_PALETTES.map((item, originalIdx) => ({ item, originalIdx }));
+      let itemsToRender = [];
+      if (query) {
+        itemsToRender = CURATED_PALETTES
+          .map((item, originalIdx) => {
+            const { matched, score } = calculatePaletteSearchMatch(item, query);
+            return { item, originalIdx, score, matched };
+          })
+          .filter(r => r.matched)
+          .sort((a, b) => {
+            if (b.score !== a.score) return b.score - a.score;
+            return a.originalIdx - b.originalIdx;
+          });
+      } else {
+        itemsToRender = CURATED_PALETTES.map((item, originalIdx) => ({ item, originalIdx }));
+      }
 
       if (itemsToRender.length === 0) {
         listContainer.innerHTML = `
           <div class="cp-empty-state">
-            <div style="font-size:24px;margin-bottom:6px;">🔍</div>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom:6px;"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
             <div>ไม่พบ Preset ที่ตรงกับ "${query}"</div>
-            <div style="font-size:11px;opacity:0.7;margin-top:2px;">ลองค้นหาคำอื่น เช่น Pastel, Cyberpunk, Jade</div>
+            <div style="font-size:11px;opacity:0.7;margin-top:2px;">ลองค้นหาคำอื่น เช่น ส้ม, ชมพู, Pastel, Cyberpunk, Jade</div>
           </div>
         `;
         return;
@@ -1385,17 +1743,36 @@
         const heroHex = item.hexes[2] || item.hexes[0];
         const computedHexes = calculateHarmonyPalette(heroHex, item.harmony);
         const swatchesHtml = computedHexes.map(hex => `<div class="cp-card-swatch-item" style="background:${hex}" title="${hex}"></div>`).join('');
-        const harmonyLabel = item.harmony || 'Custom';
+        const harmKey = (item.harmony || '').toLowerCase().replace('-comp.', '').replace('-comp', '');
+        const harmObj = HARMONY_DATA[harmKey] || HARMONY_DATA[item.harmony] || {};
+        const harmLabel = item.harmony || 'Custom';
+        const harmSub = harmObj.sub || '';
+
+        const toneKey = (item.tone || '').toLowerCase();
+        const toneObj = TONE_DATA[toneKey] || {};
+        const toneLabel = toneObj.thName || toneObj.name || item.tone || '';
+
+        const metaParts = [];
+        metaParts.push(`<span class="cp-card-harmony" title="รูปแบบการจับคู่สี: ${harmSub ? `${harmLabel} (${harmSub})` : harmLabel}">${harmLabel}</span>`);
+        if (toneLabel) {
+          metaParts.push(`<span class="cp-card-meta-dot">•</span><span class="cp-card-tone" title="หมวดหมู่โทนสี: ${toneObj.sub || toneLabel}">${toneLabel}</span>`);
+        }
 
         card.innerHTML = `
           <div class="cp-card-info">
             <div class="cp-card-name" title="${item.name}">${item.name}</div>
-            <div class="cp-card-date"><span class="cp-harmony-badge">${harmonyLabel}</span></div>
+            <div class="cp-card-meta">${metaParts.join('')}</div>
           </div>
           <div class="cp-card-swatches">${swatchesHtml}</div>
           <div class="cp-card-actions">
-            <button class="cp-card-btn primary" onclick="loadCuratedPreset(${originalIdx})">📥 โหลดชุดสี</button>
-            <button class="cp-card-btn" onclick="copyColorHex('${computedHexes.join(', ')}')">📋 Copy</button>
+            <button class="cp-card-btn primary" onclick="loadCuratedPreset(${originalIdx})" title="โหลดชุดสีนี้มาใช้งาน">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              <span>โหลดชุดสี</span>
+            </button>
+            <button class="cp-card-btn" onclick="copyColorHex('${computedHexes.join(', ')}')" title="คัดลอกรหัสสี">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              <span>Copy</span>
+            </button>
           </div>
         `;
         listContainer.appendChild(card);
@@ -1407,6 +1784,18 @@
     const preset = CURATED_PALETTES[presetIndex];
     if (!preset) return;
     pushHistory();
+
+    // 1. Activate tone in Tone Menu UI if preset defines tone
+    if (preset.tone && TONE_DATA[preset.tone]) {
+      activeTone = preset.tone;
+      const iconEl = document.getElementById('cp-tone-current-icon');
+      const labelEl = document.getElementById('cp-tone-current-label');
+      if (iconEl) iconEl.innerHTML = TONE_DATA[preset.tone].icon;
+      if (labelEl) labelEl.textContent = TONE_DATA[preset.tone].name;
+      document.querySelectorAll('.cp-tone-item').forEach(item => {
+        item.classList.toggle('active', item.dataset.tone === preset.tone);
+      });
+    }
 
     const heroHex = preset.hexes[2] || preset.hexes[0];
     const key = (preset.harmony || '').toLowerCase();
@@ -1423,7 +1812,7 @@
     palette[2] = { hex: heroHex, h: hsv.h, s: hsv.s, v: hsv.v, locked: false };
     applyHarmonyFromBase();
 
-    showToast(`โหลดชุดสี "${preset.name}" เรียบร้อย! 🎨`);
+    showToast(`โหลดชุดสี "${preset.name}" เรียบร้อย!`);
   };
 
   // ═══ IMAGE EXTRACTION — Median Cut + Role Assignment ═══
@@ -2086,6 +2475,164 @@
     toast._timer = setTimeout(() => toast.classList.remove('show'), 2200);
   }
 
+  // ═══ THEME PREVIEW ENGINE (Live Website Theme Mapping) ═══
+
+  function mixHex(hexA, hexB, weightB) {
+    const [rA, gA, bA] = hexToRgb(hexA);
+    const [rB, gB, bB] = hexToRgb(hexB);
+    const r = Math.round(rA * (1 - weightB) + rB * weightB);
+    const g = Math.round(gA * (1 - weightB) + gB * weightB);
+    const b = Math.round(bA * (1 - weightB) + bB * weightB);
+    return rgbToHex(r, g, b);
+  }
+
+  function hexWithAlpha(hex, alpha) {
+    const [r, g, b] = hexToRgb(hex);
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+  }
+
+  function getThemeMappingFromPalette() {
+    if (!palette || palette.length === 0) return null;
+    const pLen = palette.length;
+    let bg, surface, primary, secondary, text;
+
+    if (pLen >= 5 && paletteTargetMode === 'graphic') {
+      bg = palette[0].hex;
+      surface = palette[1].hex;
+      primary = palette[2].hex;
+      secondary = palette[3].hex;
+      text = palette[4].hex;
+    } else {
+      const sorted = [...palette].sort((a, b) => a.v - b.v);
+      const avgV = palette.reduce((acc, c) => acc + c.v, 0) / pLen;
+      const isDark = avgV < 50;
+
+      bg = isDark ? sorted[0].hex : sorted[sorted.length - 1].hex;
+      surface = isDark ? (sorted[1] ? sorted[1].hex : sorted[0].hex) : (sorted[sorted.length - 2] ? sorted[sorted.length - 2].hex : sorted[0].hex);
+      text = isDark ? sorted[sorted.length - 1].hex : sorted[0].hex;
+
+      const satSorted = [...palette].sort((a, b) => b.s - a.s);
+      primary = satSorted[0] ? satSorted[0].hex : text;
+      secondary = satSorted[1] ? satSorted[1].hex : surface;
+    }
+
+    // Ensure contrast between body text and bg is at least 4.5:1 (WCAG AA standard)
+    if (getContrastRatio(bg, text) < 4.5) {
+      const bgLum = getRelativeLuminance(bg);
+      text = bgLum < 0.4 ? '#f5f5f7' : '#0d0d0d';
+    }
+
+    return { bg, surface, primary, secondary, text };
+  }
+
+  function applyThemePreview(showToastFlag = false) {
+    const mapping = getThemeMappingFromPalette();
+    if (!mapping) return;
+
+    // Calculate guaranteed high-contrast text color for elements on top of Primary/Accent
+    const accentTextColor = textColorFor(mapping.primary);
+    const bgTextColor = textColorFor(mapping.bg);
+
+    const themeProps = {
+      '--bg': mapping.bg,
+      '--bg2': mapping.surface,
+      '--bg3': mixHex(mapping.surface, mapping.text, 0.08),
+      '--line': mixHex(mapping.surface, mapping.text, 0.16),
+      '--line2': mixHex(mapping.surface, mapping.text, 0.24),
+      '--text': mapping.text,
+      '--text2': mixHex(mapping.bg, mapping.text, 0.62),
+      '--text3': mixHex(mapping.bg, mapping.text, 0.38),
+      '--accent': mapping.primary,
+      '--accent-text': accentTextColor,
+      '--primary': mapping.primary,
+      '--primary-text': accentTextColor,
+      '--secondary': mapping.secondary,
+      '--inv': bgTextColor,
+      '--inv-bg': mapping.text,
+      '--lb-bg': hexWithAlpha(mapping.bg, 0.96),
+      '--lb-close-bg': hexWithAlpha(mapping.text, 0.08),
+      '--lb-close-border': hexWithAlpha(mapping.text, 0.15),
+      '--lb-close-color': mapping.text,
+      '--lb-close-hover': hexWithAlpha(mapping.text, 0.18),
+      '--lb-title-color': mapping.text,
+      '--lb-desc-color': mixHex(mapping.bg, mapping.text, 0.62),
+      '--lb-price-bg': hexWithAlpha(mapping.text, 0.08),
+      '--lb-price-border': hexWithAlpha(mapping.text, 0.15),
+      '--lb-price-color': mapping.text,
+      '--lb-divider': hexWithAlpha(mapping.text, 0.08),
+      '--lb-card-bg': hexWithAlpha(mapping.text, 0.03),
+      '--lb-card-border': hexWithAlpha(mapping.text, 0.06)
+    };
+
+    const docEl = document.documentElement;
+    for (const [key, val] of Object.entries(themeProps)) {
+      docEl.style.setProperty(key, val);
+    }
+    docEl.setAttribute('data-theme-preview', 'active');
+
+    const previewBtn = document.getElementById('cp-btn-preview-theme');
+    if (previewBtn) {
+      previewBtn.classList.add('active');
+      previewBtn.title = 'ปิดการแสดงตัวอย่างธีมเว็บ (กลับสู่ธีมเดิม)';
+    }
+
+    const fab = document.getElementById('palette-fab');
+    if (fab) fab.classList.add('theme-previewing');
+
+    try {
+      localStorage.setItem('cp_theme_preview_active', 'true');
+      localStorage.setItem('cp_theme_preview_mapping', JSON.stringify(mapping));
+    } catch (e) {}
+
+    if (showToastFlag) {
+      showToast('เปิดการแสดงตัวอย่างธีมเว็บ');
+    }
+  }
+
+  function revertThemePreview(showToastFlag = true) {
+    const keys = [
+      '--bg', '--bg2', '--bg3', '--line', '--line2',
+      '--text', '--text2', '--text3', '--accent', '--accent-text',
+      '--primary', '--primary-text',
+      '--secondary', '--inv', '--inv-bg', '--lb-bg',
+      '--lb-close-bg', '--lb-close-border', '--lb-close-color',
+      '--lb-close-hover', '--lb-title-color', '--lb-desc-color',
+      '--lb-price-bg', '--lb-price-border', '--lb-price-color',
+      '--lb-divider', '--lb-card-bg', '--lb-card-border'
+    ];
+
+    const docEl = document.documentElement;
+    keys.forEach(k => docEl.style.removeProperty(k));
+    docEl.removeAttribute('data-theme-preview');
+
+    const previewBtn = document.getElementById('cp-btn-preview-theme');
+    if (previewBtn) {
+      previewBtn.classList.remove('active');
+      previewBtn.title = 'ดูตัวอย่างการใช้ชุดสีกับทั้งเว็บไซต์';
+    }
+
+    const fab = document.getElementById('palette-fab');
+    if (fab) fab.classList.remove('theme-previewing');
+
+    try {
+      localStorage.removeItem('cp_theme_preview_active');
+      localStorage.removeItem('cp_theme_preview_mapping');
+    } catch (e) {}
+
+    if (showToastFlag) {
+      showToast('ปิดการแสดงตัวอย่างธีม คืนค่าสีเดิมเรียบร้อย');
+    }
+  }
+
+  window.toggleThemePreview = function () {
+    isThemePreviewActive = !isThemePreviewActive;
+    if (isThemePreviewActive) {
+      applyThemePreview(true);
+    } else {
+      revertThemePreview(true);
+    }
+  };
+
   // ═══ MODAL WINDOW MANAGEMENT ═══
 
   function bringToFront(el) {
@@ -2103,6 +2650,7 @@
       modal.classList.remove('open');
       if (fab) fab.classList.remove('active');
       closeInspector();
+      closeAllDropdowns();
 
       const toolsPage = document.getElementById('page-tools');
       if (toolsPage) {
@@ -2114,6 +2662,9 @@
       modal.classList.add('open');
       if (fab) fab.classList.add('active');
       renderBars();
+
+      const previewBtn = document.getElementById('cp-btn-preview-theme');
+      if (previewBtn) previewBtn.classList.toggle('active', isThemePreviewActive);
 
       if (window.innerWidth <= 1024) {
         // Mobile: Auto-open BOTH Color Inspector (Primary Accent index 2) and Saved Palettes drawer
@@ -2270,61 +2821,52 @@
             e.stopPropagation();
             e.stopImmediatePropagation();
             redo();
+          } else if (e.key === 'Escape') {
+            closeAllDropdowns();
           }
         }
       }
     }
   });
 
-  // ═══ CUSTOM HARMONY SELECTOR ═══
+  // ═══ CUSTOM HARMONY & TONE SELECTORS ═══
 
-  const HARMONY_DATA = {
-    analogous: {
-      name: 'Analogous',
-      sub: 'สีข้างเคียง',
-      icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="5" r="1.8" fill="currentColor"/><circle cx="7" cy="15" r="1.8" fill="currentColor"/><circle cx="17" cy="15" r="1.8" fill="currentColor"/></svg>'
-    },
-    complementary: {
-      name: 'Complementary',
-      sub: 'สีตรงข้าม',
-      icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><line x1="6" y1="12" x2="18" y2="12"/><circle cx="6" cy="12" r="1.8" fill="currentColor"/><circle cx="18" cy="12" r="1.8" fill="currentColor"/></svg>'
-    },
-    triad: {
-      name: 'Triad',
-      sub: 'สามเหลี่ยม 3 ทิศทาง',
-      icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 4 20 18 4 18"/><circle cx="12" cy="4" r="1.8" fill="currentColor"/><circle cx="20" cy="18" r="1.8" fill="currentColor"/><circle cx="4" cy="18" r="1.8" fill="currentColor"/></svg>'
-    },
-    split: {
-      name: 'Split-Comp.',
-      sub: 'แยกตรงข้าม',
-      icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><line x1="12" y1="5" x2="12" y2="12"/><line x1="12" y1="12" x2="6" y2="17"/><line x1="12" y1="12" x2="18" y2="17"/><circle cx="12" cy="5" r="1.8" fill="currentColor"/><circle cx="6" cy="17" r="1.8" fill="currentColor"/><circle cx="18" cy="17" r="1.8" fill="currentColor"/></svg>'
-    },
-    square: {
-      name: 'Square',
-      sub: 'สี่เหลี่ยม 4 ทิศทาง',
-      icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="5" width="14" height="14"/><circle cx="5" cy="5" r="1.8" fill="currentColor"/><circle cx="19" cy="5" r="1.8" fill="currentColor"/><circle cx="19" cy="19" r="1.8" fill="currentColor"/><circle cx="5" cy="19" r="1.8" fill="currentColor"/></svg>'
-    },
-    monochromatic: {
-      name: 'Monochromatic',
-      sub: 'สีเดียวเฉดต่าง',
-      icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="2" fill="currentColor"/></svg>'
-    },
-    shades: {
-      name: 'Shades',
-      sub: 'น้ำหนักเฉดสี',
-      icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z"/><path d="M12 3v18a9 9 0 0 0 0-18z" fill="currentColor"/></svg>'
-    },
-    custom: {
-      name: 'Custom',
-      sub: 'เลือกสุ่มอิสระ',
-      icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>'
-    }
-  };
+  function closeAllDropdowns(exceptMenuId) {
+    const dropdowns = [
+      { menuId: 'cp-harmony-menu', btnId: 'cp-harmony-btn', wrapId: 'cp-harmony-dropdown-wrap' },
+      { menuId: 'cp-tone-menu', btnId: 'cp-tone-btn', wrapId: 'cp-tone-dropdown-wrap' },
+      { menuId: 'cp-target-mode-menu', btnId: 'cp-target-mode-btn', wrapId: 'cp-target-mode-wrap' }
+    ];
+
+    dropdowns.forEach(d => {
+      if (!exceptMenuId || d.menuId !== exceptMenuId) {
+        const menu = document.getElementById(d.menuId);
+        if (menu) menu.classList.remove('open');
+        if (d.wrapId) {
+          const wrap = document.getElementById(d.wrapId);
+          if (wrap) wrap.classList.remove('open');
+        }
+        if (d.btnId) {
+          const btn = document.getElementById(d.btnId);
+          if (btn) btn.classList.remove('active');
+        }
+      }
+    });
+  }
 
   window.toggleHarmonyMenu = function (e) {
-    if (e) e.stopPropagation();
+    e = e || window.event;
+    if (e && e.stopPropagation) e.stopPropagation();
     const menu = document.getElementById('cp-harmony-menu');
-    if (menu) menu.classList.toggle('open');
+    const wrap = document.getElementById('cp-harmony-dropdown-wrap');
+    const btn = document.getElementById('cp-harmony-btn');
+    const willOpen = menu ? !menu.classList.contains('open') : false;
+
+    closeAllDropdowns('cp-harmony-menu');
+
+    if (menu) menu.classList.toggle('open', willOpen);
+    if (wrap) wrap.classList.toggle('open', willOpen);
+    if (btn) btn.classList.toggle('active', willOpen);
   };
 
   window.selectHarmony = function (mode) {
@@ -2341,33 +2883,23 @@
       item.classList.toggle('active', item.dataset.harmony === mode);
     });
 
-    const menu = document.getElementById('cp-harmony-menu');
-    if (menu) menu.classList.remove('open');
-
+    closeAllDropdowns();
     applyHarmonyFromBase();
   };
 
-  // ── Tone Metadata Dictionary ──
-  const TONE_DATA = {
-    all: { name: 'ทั้งหมด', sub: 'สุ่มอิสระตามทฤษฎีสี', icon: '✨' },
-    light: { name: 'Light', sub: 'สว่างอ่อนนุ่ม คลีนโปร่ง', icon: '☀️' },
-    pastel: { name: 'Pastel', sub: 'สีหวานละมุน นุ่มนวล', icon: '🌸' },
-    bright: { name: 'Bright', sub: 'สว่างสดใส มีพลังชัดเจน', icon: '🌈' },
-    vivid: { name: 'Vivid', sub: 'สดจัดจ้าน อิ่มตัวสูง', icon: '⚡' },
-    muted: { name: 'Muted', sub: 'เอิร์ธโทน มัวคลาสสิก', icon: '🌫️' },
-    dark: { name: 'Dark', sub: 'โทนมืด ลึกลับ ดาร์ก', icon: '🌑' },
-    deep: { name: 'Deep', sub: 'เข้มลึก อัญมณี Jewel', icon: '🌌' },
-    neutral: { name: 'Neutral', sub: 'โมโนโทน ธรรมชาติ เทา', icon: '🪨' }
-  };
-
   window.toggleToneMenu = function (e) {
-    if (e) e.stopPropagation();
+    e = e || window.event;
+    if (e && e.stopPropagation) e.stopPropagation();
     const menu = document.getElementById('cp-tone-menu');
-    if (menu) menu.classList.toggle('open');
-    const harmMenu = document.getElementById('cp-harmony-menu');
-    if (harmMenu) harmMenu.classList.remove('open');
-    const modeMenu = document.getElementById('cp-target-mode-menu');
-    if (modeMenu) modeMenu.classList.remove('open');
+    const wrap = document.getElementById('cp-tone-dropdown-wrap');
+    const btn = document.getElementById('cp-tone-btn');
+    const willOpen = menu ? !menu.classList.contains('open') : false;
+
+    closeAllDropdowns('cp-tone-menu');
+
+    if (menu) menu.classList.toggle('open', willOpen);
+    if (wrap) wrap.classList.toggle('open', willOpen);
+    if (btn) btn.classList.toggle('active', willOpen);
   };
 
   window.selectTone = function (tone) {
@@ -2376,50 +2908,54 @@
 
     const iconEl = document.getElementById('cp-tone-current-icon');
     const labelEl = document.getElementById('cp-tone-current-label');
-    if (iconEl) iconEl.textContent = TONE_DATA[tone].icon;
+    if (iconEl) iconEl.innerHTML = TONE_DATA[tone].icon;
     if (labelEl) labelEl.textContent = TONE_DATA[tone].name;
 
     document.querySelectorAll('.cp-tone-item').forEach(item => {
       item.classList.toggle('active', item.dataset.tone === tone);
     });
 
-    const menu = document.getElementById('cp-tone-menu');
-    if (menu) menu.classList.remove('open');
-
-    showToast(`เลือกโทนสี "${TONE_DATA[tone].icon} ${TONE_DATA[tone].name}"`);
+    closeAllDropdowns();
+    showToast(`เลือกโทนสี "${TONE_DATA[tone].name} (${TONE_DATA[tone].thName})"`);
     randomizePalette();
   };
 
   document.addEventListener('click', function (e) {
-    const menu = document.getElementById('cp-harmony-menu');
-    const btn = document.getElementById('cp-harmony-btn');
-    if (menu && menu.classList.contains('open')) {
-      if (!menu.contains(e.target) && (!btn || !btn.contains(e.target))) {
-        menu.classList.remove('open');
-      }
-    }
+    const dropdowns = [
+      { menuId: 'cp-harmony-menu', btnId: 'cp-harmony-btn', wrapId: 'cp-harmony-dropdown-wrap' },
+      { menuId: 'cp-tone-menu', btnId: 'cp-tone-btn', wrapId: 'cp-tone-dropdown-wrap' },
+      { menuId: 'cp-target-mode-menu', btnId: 'cp-target-mode-btn', wrapId: 'cp-target-mode-wrap' }
+    ];
 
-    const toneMenu = document.getElementById('cp-tone-menu');
-    const toneBtn = document.getElementById('cp-tone-btn');
-    if (toneMenu && toneMenu.classList.contains('open')) {
-      if (!toneMenu.contains(e.target) && (!toneBtn || !toneBtn.contains(e.target))) {
-        toneMenu.classList.remove('open');
+    dropdowns.forEach(d => {
+      const menu = document.getElementById(d.menuId);
+      const btn = document.getElementById(d.btnId);
+      if (menu && menu.classList.contains('open')) {
+        if (!menu.contains(e.target) && (!btn || !btn.contains(e.target))) {
+          menu.classList.remove('open');
+          if (d.wrapId) {
+            const wrap = document.getElementById(d.wrapId);
+            if (wrap) wrap.classList.remove('open');
+          }
+          if (btn) btn.classList.remove('active');
+        }
       }
-    }
-
-    const modeMenu = document.getElementById('cp-target-mode-menu');
-    const modeBtn = document.getElementById('cp-target-mode-btn');
-    if (modeMenu && modeMenu.classList.contains('open')) {
-      if (!modeMenu.contains(e.target) && (!modeBtn || !modeBtn.contains(e.target))) {
-        modeMenu.classList.remove('open');
-      }
-    }
+    });
   });
 
   window.toggleTargetModeMenu = function (e) {
-    if (e) e.stopPropagation();
+    e = e || window.event;
+    if (e && e.stopPropagation) e.stopPropagation();
     const menu = document.getElementById('cp-target-mode-menu');
-    if (menu) menu.classList.toggle('open');
+    const wrap = document.getElementById('cp-target-mode-wrap');
+    const btn = document.getElementById('cp-target-mode-btn');
+    const willOpen = menu ? !menu.classList.contains('open') : false;
+
+    closeAllDropdowns('cp-target-mode-menu');
+
+    if (menu) menu.classList.toggle('open', willOpen);
+    if (wrap) wrap.classList.toggle('open', willOpen);
+    if (btn) btn.classList.toggle('active', willOpen);
   };
 
   window.selectTargetMode = function (mode) {
@@ -2435,10 +2971,8 @@
       item.classList.toggle('active', item.dataset.mode === mode);
     });
 
-    const menu = document.getElementById('cp-target-mode-menu');
-    if (menu) menu.classList.remove('open');
-
-    showToast(`เปลี่ยนเป็นโหมด "${mode === 'painting' ? 'สีสำหรับภาพวาด 🎨' : 'สีสำหรับกราฟิก 📐'}"`);
+    closeAllDropdowns();
+    showToast(`เปลี่ยนเป็นโหมด "${mode === 'painting' ? 'สีสำหรับภาพวาด' : 'สีสำหรับกราฟิก'}"`);
     randomizePalette();
   };
 
@@ -2447,6 +2981,14 @@
   document.addEventListener('DOMContentLoaded', function () {
     // Init palette data
     initPalette();
+
+    // Check saved theme preview state
+    try {
+      if (localStorage.getItem('cp_theme_preview_active') === 'true') {
+        isThemePreviewActive = true;
+        applyThemePreview(false);
+      }
+    } catch (e) {}
 
     // Randomize button
     const randBtn = document.getElementById('cp-btn-random');
