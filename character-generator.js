@@ -2470,16 +2470,16 @@
     const edgeMargin = 16;
     const gap = 8;
 
-    // Default to BELOW the target element as requested by user
-    let top = rect.bottom + gap;
+    // Default to ABOVE the target element as requested by user
+    let top = rect.top - ttRect.height - gap;
 
-    // If it overflows viewport bottom and fits above, flip above:
-    if (top + ttRect.height > window.innerHeight - edgeMargin) {
-      const topAbove = rect.top - ttRect.height - gap;
-      if (topAbove >= edgeMargin) {
-        top = topAbove;
+    // If not enough room above and fits below, flip below:
+    if (top < edgeMargin) {
+      const topBelow = rect.bottom + gap;
+      if (topBelow + ttRect.height <= window.innerHeight - edgeMargin) {
+        top = topBelow;
       } else {
-        top = Math.max(edgeMargin, window.innerHeight - ttRect.height - edgeMargin);
+        top = edgeMargin;
       }
     }
 
@@ -4591,7 +4591,7 @@
         max-width: min(340px, calc(100vw - 36px));
         line-height: 1.4;
         opacity: 0;
-        transform: translateY(-4px);
+        transform: translateY(4px);
         transition: opacity 0.15s ease, transform 0.15s ease;
         box-sizing: border-box;
       }
