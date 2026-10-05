@@ -269,8 +269,14 @@
     display: none !important;
   }
   [data-theme-mode="random"] .theme-btn {
-    border-color: var(--accent, var(--line2));
-    color: var(--accent, var(--text));
+    border-color: var(--line2);
+    color: var(--text);
+    background: var(--bg2);
+  }
+  [data-theme-mode="random"] .theme-btn:hover {
+    border-color: var(--text2);
+    background: var(--bg3);
+    color: var(--text);
   }
 
   .nav-commission {

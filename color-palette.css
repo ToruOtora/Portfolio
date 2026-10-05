@@ -822,13 +822,13 @@
 
 .cp-action-btn.primary {
   background: var(--text, #f0f0f0);
-  color: var(--accent-text, var(--bg, #0d0d0d));
+  color: var(--bg, #0d0d0d);
   border-color: var(--text, #f0f0f0);
   font-weight: 600;
 }
 
 .cp-action-btn.primary svg {
-  stroke: var(--accent-text, var(--bg, #0d0d0d));
+  stroke: var(--bg, #0d0d0d);
 }
 
 .cp-action-btn.primary:hover {
@@ -839,14 +839,14 @@
 .cp-action-btn.active,
 #cp-btn-preview-theme.active {
   background: var(--text, #f0f0f0);
-  color: var(--accent-text, var(--bg, #0d0d0d));
+  color: var(--bg, #0d0d0d);
   border-color: var(--text, #f0f0f0);
   font-weight: 600;
 }
 
 .cp-action-btn.active svg,
 #cp-btn-preview-theme.active svg {
-  stroke: var(--accent-text, var(--bg, #0d0d0d));
+  stroke: var(--bg, #0d0d0d);
 }
 
 .cp-action-btn.active:hover,

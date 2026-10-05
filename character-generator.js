@@ -3821,7 +3821,7 @@
         border-radius: 50%;
         background: var(--bg2, #18181c);
         border: 1px solid var(--line2, #383842);
-        color: var(--text2, #888);
+        color: var(--text, #f0f0f0);
         display: inline-flex;
         align-items: center;
         justify-content: flex-start;
@@ -3888,41 +3888,47 @@
       }
       .cg-title-trans-btn.active {
         background: var(--text, #fff);
-        color: var(--accent-text, var(--bg, #0d0d0d));
+        color: var(--bg, #0d0d0d);
         border-color: var(--text, #fff);
         box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
       }
       .cg-title-trans-btn.active .cg-trans-icon svg {
-        stroke: var(--accent-text, var(--bg, #0d0d0d));
+        stroke: var(--bg, #0d0d0d);
       }
       .cg-title-trans-btn.active:hover {
         background: var(--text, #fff);
-        color: var(--accent-text, var(--bg, #0d0d0d));
+        color: var(--bg, #0d0d0d);
         border-color: var(--text, #fff);
+      }
+      .cg-title-trans-btn.active .cg-trans-label {
+        color: var(--bg, #0d0d0d);
       }
 
       [data-theme="light"] .cg-title-trans-btn {
         background: var(--bg2, #f0f0f0);
-        border-color: var(--line, #e0e0e0);
-        color: var(--text2, #666);
+        border-color: var(--line2, #d0d0d0);
+        color: var(--text, #0a0a0a);
       }
       [data-theme="light"] .cg-title-trans-btn:hover,
       [data-theme="light"] .cg-title-trans-btn:focus-visible {
         background: var(--bg3, #e8e8e8);
         color: var(--text, #0a0a0a);
-        border-color: var(--text2, #999);
+        border-color: var(--text, #0a0a0a);
       }
       [data-theme="light"] .cg-title-trans-btn.active {
         background: var(--text, #0a0a0a);
-        color: var(--accent-text, #fafafa);
+        color: var(--bg, #fafafa);
         border-color: var(--text, #0a0a0a);
       }
       [data-theme="light"] .cg-title-trans-btn.active .cg-trans-icon svg {
-        stroke: var(--accent-text, #fafafa);
+        stroke: var(--bg, #fafafa);
       }
       [data-theme="light"] .cg-title-trans-btn.active:hover {
         background: var(--text, #0a0a0a);
-        color: var(--accent-text, #fafafa);
+        color: var(--bg, #fafafa);
+      }
+      [data-theme="light"] .cg-title-trans-btn.active .cg-trans-label {
+        color: var(--bg, #fafafa);
       }
       .cg-subtitle {
         color: var(--text2);

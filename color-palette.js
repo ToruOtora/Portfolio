@@ -2670,6 +2670,8 @@
     for (const [key, val] of Object.entries(themeProps)) {
       docEl.style.setProperty(key, val);
     }
+    const isLight = textColorFor(mapping.bg) === '#0d0d0d';
+    docEl.setAttribute('data-theme', isLight ? 'light' : 'dark');
     docEl.setAttribute('data-theme-preview', 'active');
     docEl.setAttribute('data-theme-mode', 'random');
 
