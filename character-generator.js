@@ -2467,14 +2467,29 @@
     const rect = targetEl.getBoundingClientRect();
     const ttRect = tt.getBoundingClientRect();
 
-    let top = rect.top - ttRect.height - 8;
-    if (top < 8) {
-      top = rect.bottom + 8;
+    const edgeMargin = 16;
+    const gap = 8;
+
+    // Default to BELOW the target element as requested by user
+    let top = rect.bottom + gap;
+
+    // If it overflows viewport bottom and fits above, flip above:
+    if (top + ttRect.height > window.innerHeight - edgeMargin) {
+      const topAbove = rect.top - ttRect.height - gap;
+      if (topAbove >= edgeMargin) {
+        top = topAbove;
+      } else {
+        top = Math.max(edgeMargin, window.innerHeight - ttRect.height - edgeMargin);
+      }
     }
+
+    // Horizontal centering with safe edge margins so it never clings to edges
     let left = rect.left + (rect.width / 2) - (ttRect.width / 2);
-    if (left < 8) left = 8;
-    if (left + ttRect.width > window.innerWidth - 8) {
-      left = window.innerWidth - ttRect.width - 8;
+    if (left < edgeMargin) {
+      left = edgeMargin;
+    }
+    if (left + ttRect.width > window.innerWidth - edgeMargin) {
+      left = window.innerWidth - ttRect.width - edgeMargin;
     }
 
     tt.style.top = `${Math.round(top)}px`;
@@ -4567,38 +4582,41 @@
         background: var(--bg2, #18181c);
         border: 1px solid var(--line2, #383842);
         border-radius: 12px;
-        padding: 9px 13px;
-        box-shadow: 0 12px 32px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.06);
-        backdrop-filter: blur(16px);
+        padding: 10px 14px;
+        box-shadow: none !important;
+        backdrop-filter: blur(12px);
         color: var(--text, #f0f0f5);
         font-family: inherit;
         font-size: 13px;
-        max-width: 290px;
+        max-width: min(340px, calc(100vw - 36px));
         line-height: 1.4;
         opacity: 0;
-        transform: translateY(4px) scale(0.96);
-        transition: opacity 0.16s cubic-bezier(0.16, 1, 0.3, 1), transform 0.16s cubic-bezier(0.16, 1, 0.3, 1);
+        transform: translateY(-4px);
+        transition: opacity 0.15s ease, transform 0.15s ease;
         box-sizing: border-box;
       }
       .cg-tooltip-popup.show {
         opacity: 1;
-        transform: translateY(0) scale(1);
+        transform: translateY(0);
       }
       .cg-tt-header {
         display: flex;
         align-items: baseline;
-        gap: 6px;
+        flex-wrap: wrap;
+        gap: 6px 10px;
         font-weight: 700;
       }
       .cg-tt-en {
         color: var(--text, #fff);
         font-size: 13px;
         font-weight: 700;
+        line-height: 1.35;
       }
       .cg-tt-th {
         color: #ff4757;
         font-size: 12px;
         font-weight: 600;
+        line-height: 1.35;
       }
       .cg-tt-desc {
         display: flex;
