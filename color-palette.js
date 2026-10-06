@@ -448,83 +448,83 @@
           switch (role) {
             case 'deepShadow': return { s: rand(18, 35), v: rand(28, 45) };
             case 'coreShadow': return { s: rand(15, 30), v: rand(52, 68) };
-            case 'baseTone':   return { s: rand(22, 42), v: rand(78, 90) };
-            case 'keyLight':   return { s: rand(8, 20),  v: rand(92, 98) };
-            case 'rimLight':   return { s: rand(22, 45), v: rand(88, 97) };
-            default:           return { s: rand(15, 35), v: rand(60, 85) };
+            case 'baseTone': return { s: rand(22, 42), v: rand(78, 90) };
+            case 'keyLight': return { s: rand(8, 20), v: rand(92, 98) };
+            case 'rimLight': return { s: rand(22, 45), v: rand(88, 97) };
+            default: return { s: rand(15, 35), v: rand(60, 85) };
           }
         case 'pastel':
           switch (role) {
             case 'deepShadow': return { s: rand(22, 38), v: rand(32, 48) };
             case 'coreShadow': return { s: rand(18, 32), v: rand(58, 74) };
-            case 'baseTone':   return { s: rand(20, 36), v: rand(85, 94) };
-            case 'keyLight':   return { s: rand(8, 18),  v: rand(95, 99) };
-            case 'rimLight':   return { s: rand(25, 42), v: rand(90, 98) };
-            default:           return { s: rand(18, 35), v: rand(75, 92) };
+            case 'baseTone': return { s: rand(20, 36), v: rand(85, 94) };
+            case 'keyLight': return { s: rand(8, 18), v: rand(95, 99) };
+            case 'rimLight': return { s: rand(25, 42), v: rand(90, 98) };
+            default: return { s: rand(18, 35), v: rand(75, 92) };
           }
         case 'bright':
           switch (role) {
             case 'deepShadow': return { s: rand(45, 70), v: rand(15, 28) };
             case 'coreShadow': return { s: rand(40, 65), v: rand(32, 50) };
-            case 'baseTone':   return { s: rand(58, 82), v: rand(72, 88) };
-            case 'keyLight':   return { s: rand(20, 40), v: rand(90, 98) };
-            case 'rimLight':   return { s: rand(65, 90), v: rand(85, 98) };
-            default:           return { s: rand(45, 75), v: rand(50, 80) };
+            case 'baseTone': return { s: rand(58, 82), v: rand(72, 88) };
+            case 'keyLight': return { s: rand(20, 40), v: rand(90, 98) };
+            case 'rimLight': return { s: rand(65, 90), v: rand(85, 98) };
+            default: return { s: rand(45, 75), v: rand(50, 80) };
           }
         case 'vivid':
           switch (role) {
             case 'deepShadow': return { s: rand(65, 90), v: rand(10, 22) };
             case 'coreShadow': return { s: rand(60, 85), v: rand(26, 44) };
-            case 'baseTone':   return { s: rand(78, 98), v: rand(62, 85) };
-            case 'keyLight':   return { s: rand(35, 60), v: rand(88, 98) };
-            case 'rimLight':   return { s: rand(85, 100),v: rand(80, 100) };
-            default:           return { s: rand(60, 90), v: rand(40, 75) };
+            case 'baseTone': return { s: rand(78, 98), v: rand(62, 85) };
+            case 'keyLight': return { s: rand(35, 60), v: rand(88, 98) };
+            case 'rimLight': return { s: rand(85, 100), v: rand(80, 100) };
+            default: return { s: rand(60, 90), v: rand(40, 75) };
           }
         case 'muted':
           switch (role) {
             case 'deepShadow': return { s: rand(25, 45), v: rand(14, 25) };
             case 'coreShadow': return { s: rand(22, 40), v: rand(28, 44) };
-            case 'baseTone':   return { s: rand(24, 44), v: rand(50, 68) };
-            case 'keyLight':   return { s: rand(12, 25), v: rand(78, 88) };
-            case 'rimLight':   return { s: rand(28, 48), v: rand(65, 80) };
-            default:           return { s: rand(20, 40), v: rand(35, 65) };
+            case 'baseTone': return { s: rand(24, 44), v: rand(50, 68) };
+            case 'keyLight': return { s: rand(12, 25), v: rand(78, 88) };
+            case 'rimLight': return { s: rand(28, 48), v: rand(65, 80) };
+            default: return { s: rand(20, 40), v: rand(35, 65) };
           }
         case 'dark':
           switch (role) {
             case 'deepShadow': return { s: rand(35, 65), v: rand(5, 14) };
             case 'coreShadow': return { s: rand(30, 60), v: rand(15, 25) };
-            case 'baseTone':   return { s: rand(40, 70), v: rand(28, 45) };
-            case 'keyLight':   return { s: rand(20, 45), v: rand(55, 72) };
-            case 'rimLight':   return { s: rand(45, 75), v: rand(65, 82) };
-            default:           return { s: rand(30, 60), v: rand(20, 40) };
+            case 'baseTone': return { s: rand(40, 70), v: rand(28, 45) };
+            case 'keyLight': return { s: rand(20, 45), v: rand(55, 72) };
+            case 'rimLight': return { s: rand(45, 75), v: rand(65, 82) };
+            default: return { s: rand(30, 60), v: rand(20, 40) };
           }
         case 'deep':
           switch (role) {
             case 'deepShadow': return { s: rand(55, 80), v: rand(8, 16) };
             case 'coreShadow': return { s: rand(60, 85), v: rand(18, 32) };
-            case 'baseTone':   return { s: rand(72, 96), v: rand(38, 58) };
-            case 'keyLight':   return { s: rand(40, 65), v: rand(70, 88) };
-            case 'rimLight':   return { s: rand(72, 96), v: rand(58, 82) };
-            default:           return { s: rand(50, 80), v: rand(25, 50) };
+            case 'baseTone': return { s: rand(72, 96), v: rand(38, 58) };
+            case 'keyLight': return { s: rand(40, 65), v: rand(70, 88) };
+            case 'rimLight': return { s: rand(72, 96), v: rand(58, 82) };
+            default: return { s: rand(50, 80), v: rand(25, 50) };
           }
         case 'neutral':
           switch (role) {
             case 'deepShadow': return { s: rand(4, 12), v: rand(8, 18) };
             case 'coreShadow': return { s: rand(3, 10), v: rand(24, 38) };
-            case 'baseTone':   return { s: rand(4, 14), v: rand(48, 65) };
-            case 'keyLight':   return { s: rand(2, 8),  v: rand(78, 90) };
-            case 'rimLight':   return { s: rand(3, 10), v: rand(88, 97) };
-            default:           return { s: rand(2, 10), v: rand(40, 70) };
+            case 'baseTone': return { s: rand(4, 14), v: rand(48, 65) };
+            case 'keyLight': return { s: rand(2, 8), v: rand(78, 90) };
+            case 'rimLight': return { s: rand(3, 10), v: rand(88, 97) };
+            default: return { s: rand(2, 10), v: rand(40, 70) };
           }
         case 'all':
         default:
           switch (role) {
             case 'deepShadow': return { s: (harmony === 'monochromatic') ? rand(30, 55) : rand(45, 80), v: rand(8, 22) };
             case 'coreShadow': return { s: (harmony === 'monochromatic') ? rand(25, 50) : rand(40, 72), v: rand(24, 42) };
-            case 'baseTone':   return { s: rand(35, 65), v: rand(55, 85) };
-            case 'keyLight':   return { s: rand(22, 50), v: rand(82, 96) };
-            case 'rimLight':   return { s: (harmony === 'monochromatic') ? rand(50, 80) : rand(55, 95), v: (harmony === 'shades') ? rand(50, 72) : rand(68, 95) };
-            default:           return { s: rand(40, 80), v: rand(20, 50) };
+            case 'baseTone': return { s: rand(35, 65), v: rand(55, 85) };
+            case 'keyLight': return { s: rand(22, 50), v: rand(82, 96) };
+            case 'rimLight': return { s: (harmony === 'monochromatic') ? rand(50, 80) : rand(55, 95), v: (harmony === 'shades') ? rand(50, 72) : rand(68, 95) };
+            default: return { s: rand(40, 80), v: rand(20, 50) };
           }
       }
     } else {
@@ -532,85 +532,85 @@
       switch (tone) {
         case 'light':
           switch (role) {
-            case 'bg':        return { s: rand(4, 12),  v: rand(96, 99) };
-            case 'surface':   return { s: rand(10, 22), v: rand(90, 95) };
-            case 'primary':   return { s: rand(25, 45), v: rand(86, 96) };
+            case 'bg': return { s: rand(4, 12), v: rand(96, 99) };
+            case 'surface': return { s: rand(10, 22), v: rand(90, 95) };
+            case 'primary': return { s: rand(25, 45), v: rand(86, 96) };
             case 'secondary': return { s: rand(22, 42), v: rand(85, 95) };
-            case 'text':      return { s: rand(15, 30), v: rand(18, 30) };
-            default:          return { s: rand(15, 35), v: rand(85, 95) };
+            case 'text': return { s: rand(15, 30), v: rand(18, 30) };
+            default: return { s: rand(15, 35), v: rand(85, 95) };
           }
         case 'pastel':
           switch (role) {
-            case 'bg':        return { s: rand(6, 14),  v: rand(97, 100) };
-            case 'surface':   return { s: rand(14, 25), v: rand(92, 96) };
-            case 'primary':   return { s: rand(22, 38), v: rand(90, 98) };
+            case 'bg': return { s: rand(6, 14), v: rand(97, 100) };
+            case 'surface': return { s: rand(14, 25), v: rand(92, 96) };
+            case 'primary': return { s: rand(22, 38), v: rand(90, 98) };
             case 'secondary': return { s: rand(18, 35), v: rand(90, 97) };
-            case 'text':      return { s: rand(20, 40), v: rand(22, 38) };
-            default:          return { s: rand(15, 35), v: rand(90, 98) };
+            case 'text': return { s: rand(20, 40), v: rand(22, 38) };
+            default: return { s: rand(15, 35), v: rand(90, 98) };
           }
         case 'bright':
           switch (role) {
-            case 'bg':        return { s: rand(6, 16),  v: rand(94, 98) };
-            case 'surface':   return { s: rand(25, 45), v: rand(86, 94) };
-            case 'primary':   return { s: rand(62, 88), v: rand(85, 98) };
+            case 'bg': return { s: rand(6, 16), v: rand(94, 98) };
+            case 'surface': return { s: rand(25, 45), v: rand(86, 94) };
+            case 'primary': return { s: rand(62, 88), v: rand(85, 98) };
             case 'secondary': return { s: rand(58, 85), v: rand(82, 96) };
-            case 'text':      return { s: rand(70, 92), v: rand(15, 28) };
-            default:          return { s: rand(50, 80), v: rand(75, 95) };
+            case 'text': return { s: rand(70, 92), v: rand(15, 28) };
+            default: return { s: rand(50, 80), v: rand(75, 95) };
           }
         case 'vivid':
           switch (role) {
-            case 'bg':        return { s: rand(25, 55), v: rand(10, 18) };
-            case 'surface':   return { s: rand(60, 85), v: rand(25, 45) };
-            case 'primary':   return { s: rand(85, 100),v: rand(85, 100) };
-            case 'secondary': return { s: rand(82, 100),v: rand(80, 100) };
-            case 'text':      return { s: rand(90, 100),v: rand(92, 100) };
-            default:          return { s: rand(80, 100),v: rand(75, 98) };
+            case 'bg': return { s: rand(25, 55), v: rand(10, 18) };
+            case 'surface': return { s: rand(60, 85), v: rand(25, 45) };
+            case 'primary': return { s: rand(85, 100), v: rand(85, 100) };
+            case 'secondary': return { s: rand(82, 100), v: rand(80, 100) };
+            case 'text': return { s: rand(90, 100), v: rand(92, 100) };
+            default: return { s: rand(80, 100), v: rand(75, 98) };
           }
         case 'muted':
           switch (role) {
-            case 'bg':        return { s: rand(8, 18),  v: rand(88, 94) };
-            case 'surface':   return { s: rand(15, 28), v: rand(75, 85) };
-            case 'primary':   return { s: rand(25, 48), v: rand(55, 75) };
+            case 'bg': return { s: rand(8, 18), v: rand(88, 94) };
+            case 'surface': return { s: rand(15, 28), v: rand(75, 85) };
+            case 'primary': return { s: rand(25, 48), v: rand(55, 75) };
             case 'secondary': return { s: rand(22, 45), v: rand(50, 72) };
-            case 'text':      return { s: rand(12, 28), v: rand(18, 30) };
-            default:          return { s: rand(20, 42), v: rand(45, 70) };
+            case 'text': return { s: rand(12, 28), v: rand(18, 30) };
+            default: return { s: rand(20, 42), v: rand(45, 70) };
           }
         case 'dark':
           switch (role) {
-            case 'bg':        return { s: rand(15, 35), v: rand(6, 14) };
-            case 'surface':   return { s: rand(20, 45), v: rand(14, 24) };
-            case 'primary':   return { s: rand(45, 75), v: rand(28, 48) };
+            case 'bg': return { s: rand(15, 35), v: rand(6, 14) };
+            case 'surface': return { s: rand(20, 45), v: rand(14, 24) };
+            case 'primary': return { s: rand(45, 75), v: rand(28, 48) };
             case 'secondary': return { s: rand(40, 70), v: rand(22, 42) };
-            case 'text':      return { s: rand(10, 25), v: rand(86, 96) };
-            default:          return { s: rand(35, 65), v: rand(20, 40) };
+            case 'text': return { s: rand(10, 25), v: rand(86, 96) };
+            default: return { s: rand(35, 65), v: rand(20, 40) };
           }
         case 'deep':
           switch (role) {
-            case 'bg':        return { s: rand(35, 60), v: rand(8, 16) };
-            case 'surface':   return { s: rand(50, 75), v: rand(18, 30) };
-            case 'primary':   return { s: rand(75, 98), v: rand(38, 58) };
+            case 'bg': return { s: rand(35, 60), v: rand(8, 16) };
+            case 'surface': return { s: rand(50, 75), v: rand(18, 30) };
+            case 'primary': return { s: rand(75, 98), v: rand(38, 58) };
             case 'secondary': return { s: rand(70, 95), v: rand(32, 52) };
-            case 'text':      return { s: rand(60, 90), v: rand(78, 96) };
-            default:          return { s: rand(65, 95), v: rand(30, 55) };
+            case 'text': return { s: rand(60, 90), v: rand(78, 96) };
+            default: return { s: rand(65, 95), v: rand(30, 55) };
           }
         case 'neutral':
           switch (role) {
-            case 'bg':        return { s: rand(2, 8),   v: rand(94, 98) };
-            case 'surface':   return { s: rand(4, 12),  v: rand(82, 90) };
-            case 'primary':   return { s: rand(6, 16),  v: rand(48, 68) };
-            case 'secondary': return { s: rand(5, 14),  v: rand(28, 44) };
-            case 'text':      return { s: rand(2, 10),  v: rand(10, 20) };
-            default:          return { s: rand(3, 12),  v: rand(35, 75) };
+            case 'bg': return { s: rand(2, 8), v: rand(94, 98) };
+            case 'surface': return { s: rand(4, 12), v: rand(82, 90) };
+            case 'primary': return { s: rand(6, 16), v: rand(48, 68) };
+            case 'secondary': return { s: rand(5, 14), v: rand(28, 44) };
+            case 'text': return { s: rand(2, 10), v: rand(10, 20) };
+            default: return { s: rand(3, 12), v: rand(35, 75) };
           }
         case 'all':
         default:
           switch (role) {
-            case 'bg':        return { s: isDark ? rand(5, 18) : rand(3, 12), v: isDark ? rand(6, 14) : rand(95, 99) };
-            case 'surface':   return { s: isDark ? rand(8, 22) : rand(5, 18), v: isDark ? rand(16, 28) : rand(88, 95) };
-            case 'primary':   return { s: rand(65, 92), v: rand(70, 95) };
+            case 'bg': return { s: isDark ? rand(5, 18) : rand(3, 12), v: isDark ? rand(6, 14) : rand(95, 99) };
+            case 'surface': return { s: isDark ? rand(8, 22) : rand(5, 18), v: isDark ? rand(16, 28) : rand(88, 95) };
+            case 'primary': return { s: rand(65, 92), v: rand(70, 95) };
             case 'secondary': return { s: (harmony === 'monochromatic') ? rand(40, 65) : rand(55, 85), v: (harmony === 'shades') ? rand(40, 60) : rand(60, 88) };
-            case 'text':      return { s: isDark ? rand(2, 10) : rand(10, 25), v: isDark ? rand(88, 97) : rand(10, 22) };
-            default:          return { s: isDark ? rand(30, 85) : rand(25, 80), v: isDark ? rand(45, 90) : rand(40, 95) };
+            case 'text': return { s: isDark ? rand(2, 10) : rand(10, 25), v: isDark ? rand(88, 97) : rand(10, 22) };
+            default: return { s: isDark ? rand(30, 85) : rand(25, 80), v: isDark ? rand(45, 90) : rand(40, 95) };
           }
       }
     }
@@ -621,7 +621,7 @@
     const baseHue = (overrideBaseHue !== null) ? overrideBaseHue : pickCuratedHue();
     const isDark = (activeTone === 'dark' || activeTone === 'vivid' || activeTone === 'deep') ? true :
       (activeTone === 'light' || activeTone === 'pastel' || activeTone === 'bright') ? false :
-      (Math.random() > 0.5);
+        (Math.random() > 0.5);
 
     const colors = [];
 
@@ -915,7 +915,7 @@
     const mode = map[key] || 'analogous';
 
     const isDarkBg = base.v < 50;
-    
+
     // Slot 0: Background
     const bgH = base.h;
     const bgS = isDarkBg ? 12 : 6;
@@ -1128,8 +1128,8 @@
       // Click bar to open inspector
       bar.addEventListener('click', (e) => {
         if (e.target.closest('.cp-bar-lock') || e.target.closest('.cp-bar-remove') ||
-            e.target.closest('.cp-bar-drag') || e.target.closest('.cp-add-bar-btn') ||
-            e.target.closest('.cp-bar-hex-label')) return;
+          e.target.closest('.cp-bar-drag') || e.target.closest('.cp-add-bar-btn') ||
+          e.target.closest('.cp-bar-hex-label')) return;
         openInspector(idx);
       });
 
@@ -1394,7 +1394,7 @@
   window.saveCurrentPalette = function (customName) {
     const saved = getSavedPalettesFromStorage();
     const hexes = palette.map(c => c.hex);
-    
+
     let finalName = customName;
     if (!finalName) {
       const heroColorName = (palette[2] ? getColorName(palette[2].h, palette[2].s, palette[2].v) : '') || 'Custom';
@@ -1421,7 +1421,7 @@
     saved.unshift(newItem);
     savePalettesToStorage(saved);
     showToast(`บันทึกชุดสี "${finalName}" เรียบร้อยแล้ว!`);
-    
+
     // Clear search/name input bar so all saved palettes are listed
     const input = document.getElementById('cp-palette-name-input');
     if (input) input.value = '';
@@ -1540,10 +1540,10 @@
     for (const km of COLOR_KEYWORD_MAP) {
       const isTermMatch = km.terms.some(t => {
         const tLower = t.toLowerCase();
-        return tLower === q || 
-               tLower === strippedQ || 
-               q.includes(tLower) || 
-               (q.length >= 2 && tLower.startsWith(strippedQ));
+        return tLower === q ||
+          tLower === strippedQ ||
+          q.includes(tLower) ||
+          (q.length >= 2 && tLower.startsWith(strippedQ));
       });
       if (isTermMatch && km.test(hsv.h, hsv.s, hsv.v)) {
         return true;
@@ -1816,7 +1816,7 @@
     if (window.selectHarmony) {
       window.selectHarmony(mode);
     }
-    
+
     // Explicitly set hero color and apply harmony
     const [r, g, b] = hexToRgb(heroHex);
     const hsv = rgbToHsv(r, g, b);
@@ -2204,8 +2204,8 @@
         // 2. Check Reference Board Custom Drag or URLs / DataURLs
         if (e.dataTransfer) {
           const refImg = e.dataTransfer.getData('application/x-toruo-ref-image') ||
-                         e.dataTransfer.getData('text/uri-list') ||
-                         e.dataTransfer.getData('text/plain');
+            e.dataTransfer.getData('text/uri-list') ||
+            e.dataTransfer.getData('text/plain');
 
           if (refImg && (refImg.startsWith('data:image') || refImg.startsWith('blob:') || refImg.startsWith('http') || refImg.startsWith('./') || refImg.startsWith('/'))) {
             window.extractPaletteFromImageSource(refImg);
@@ -2689,7 +2689,7 @@
       localStorage.setItem('cp_theme_preview_active', 'true');
       localStorage.setItem('cp_theme_preview_mapping', JSON.stringify(mapping));
       localStorage.setItem('theme_mode', 'random');
-    } catch (e) {}
+    } catch (e) { }
 
     const navThemeBtn = document.getElementById('nav-theme-btn');
     if (navThemeBtn) {
@@ -2740,7 +2740,7 @@
       localStorage.removeItem('cp_theme_preview_active');
       localStorage.removeItem('cp_theme_preview_mapping');
       localStorage.setItem('theme_mode', baseTheme);
-    } catch (e) {}
+    } catch (e) { }
 
     const navThemeBtn = document.getElementById('nav-theme-btn');
     if (navThemeBtn) {
@@ -2820,7 +2820,7 @@
       modal.classList.add('open');
       try {
         history.pushState({ colorPaletteModalOpen: true }, '');
-      } catch (err) {}
+      } catch (err) { }
       if (fab) fab.classList.add('active');
       renderBars();
 
@@ -2991,9 +2991,9 @@
       const isInput = e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT';
       if (!isInput) {
         const isOverModal = modal.contains(e.target) ||
-                            modal.contains(document.activeElement) ||
-                            modal.matches(':hover') ||
-                            (document.querySelector('#color-palette-modal:hover') !== null);
+          modal.contains(document.activeElement) ||
+          modal.matches(':hover') ||
+          (document.querySelector('#color-palette-modal:hover') !== null);
         if (isOverModal) {
           if (e.code === 'Space') {
             e.preventDefault();
@@ -3180,7 +3180,7 @@
         isThemePreviewActive = true;
         applyThemePreview(false);
       }
-    } catch (e) {}
+    } catch (e) { }
 
     // Randomize button
     const randBtn = document.getElementById('cp-btn-random');
@@ -3289,8 +3289,9 @@
     renderBars();
 
     // Setup Touch Gestures (Option A: Inspector Swipe | Option B: 2/3 Finger Tap)
+    const modalEl = document.getElementById('color-palette-modal');
     setupInspectorGestures();
-    setupMultiFingerTapGestures(modalEl, undo, redo);
+    if (modalEl) setupMultiFingerTapGestures(modalEl, undo, redo);
 
     // Auto update split layout when modal height changes
     if (modalEl && window.ResizeObserver) {
@@ -3458,7 +3459,7 @@
     card.addEventListener('pointerdown', (e) => {
       if (e.pointerType === 'mouse' && e.button !== 0) return;
       if (handleStart(e.clientX, e.clientY, e.target, e.pointerId)) {
-        try { card.setPointerCapture(e.pointerId); } catch (_) {}
+        try { card.setPointerCapture(e.pointerId); } catch (_) { }
       }
     });
 
@@ -3473,14 +3474,14 @@
 
     card.addEventListener('pointerup', (e) => {
       if (activePointerId !== null && e.pointerId === activePointerId) {
-        try { card.releasePointerCapture(e.pointerId); } catch (_) {}
+        try { card.releasePointerCapture(e.pointerId); } catch (_) { }
         handleEnd(true);
       }
     });
 
     card.addEventListener('pointercancel', (e) => {
       if (activePointerId !== null && e.pointerId === activePointerId) {
-        try { card.releasePointerCapture(e.pointerId); } catch (_) {}
+        try { card.releasePointerCapture(e.pointerId); } catch (_) { }
         handleEnd(false);
       }
     });
