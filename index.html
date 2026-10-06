@@ -3313,6 +3313,14 @@
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script>
+    /* Clean tracking query parameters (e.g. Instagram fbclid, utm_*) */
+    if (window.location.search) {
+      try {
+        const cleanUrl = window.location.pathname + window.location.hash;
+        window.history.replaceState(null, '', cleanUrl);
+      } catch (e) {}
+    }
+
     /* ══ 3-MODE THEME SYSTEM: DARK -> LIGHT -> RANDOM -> DARK ══ */
     const THEME_OVERRIDE_KEYS = [
       '--bg', '--bg2', '--bg3', '--line', '--line2',
