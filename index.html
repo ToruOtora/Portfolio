@@ -601,8 +601,6 @@
     position: fixed;
     top: 0;
     left: 0;
-    width: 42px;
-    height: 42px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -611,7 +609,6 @@
     color: var(--text);
     border: 1.5px solid var(--line);
     font-family: var(--font);
-    font-size: 22px;
     font-weight: 700;
     line-height: 1;
     pointer-events: auto;
@@ -5531,18 +5528,32 @@
         animId = requestAnimationFrame(chaseLoop);
       }
 
-      const BADGE_SIZE = 42;
+      let badgeSize = 44;
 
       function startChasing(originEl) {
         if (isChasing) return;
         const floatEl = createFloatingO();
         const rect = originEl.getBoundingClientRect();
+        const comp = window.getComputedStyle(originEl);
+
+        // Keep the exact same size and typography as original 'O'
+        floatEl.style.fontSize = comp.fontSize;
+        floatEl.style.fontWeight = comp.fontWeight;
+        floatEl.style.fontFamily = comp.fontFamily;
+        floatEl.style.letterSpacing = comp.letterSpacing;
+        floatEl.style.lineHeight = '1';
+
+        // Circular background badge proportionally wraps the 'O'
+        const fontPx = parseFloat(comp.fontSize) || 32;
+        badgeSize = Math.round(Math.max(rect.width, rect.height, fontPx) * 1.35);
+        floatEl.style.width = `${badgeSize}px`;
+        floatEl.style.height = `${badgeSize}px`;
 
         const originCenterX = rect.left + (rect.width / 2);
         const originCenterY = rect.top + (rect.height / 2);
 
-        currentX = originCenterX - (BADGE_SIZE / 2);
-        currentY = originCenterY - (BADGE_SIZE / 2);
+        currentX = originCenterX - (badgeSize / 2);
+        currentY = originCenterY - (badgeSize / 2);
 
         floatEl.classList.remove('returning');
         floatEl.style.transition = 'none';
@@ -5570,8 +5581,8 @@
         const rect = originEl.getBoundingClientRect();
         const originCenterX = rect.left + (rect.width / 2);
         const originCenterY = rect.top + (rect.height / 2);
-        const targetX = originCenterX - (BADGE_SIZE / 2);
-        const targetY = originCenterY - (BADGE_SIZE / 2);
+        const targetX = originCenterX - (badgeSize / 2);
+        const targetY = originCenterY - (badgeSize / 2);
 
         floatingEl.classList.add('returning');
         floatingEl.style.transform = `translate3d(${targetX}px, ${targetY}px, 0) rotate(0deg)`;
