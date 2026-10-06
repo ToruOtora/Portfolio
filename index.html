@@ -5197,7 +5197,7 @@
       const digitMidEls = container.querySelectorAll('.char-digit');
       if (tracks.length !== 10 || digitMidEls.length !== 6) return;
 
-      let realVisitorCount = 0;
+      let realVisitorCount = 6; // Synced with GoatCounter dashboard
 
       // Restore from cached count if present
       try {
@@ -5210,26 +5210,35 @@
       // Count session visit if not yet recorded
       try {
         if (!sessionStorage.getItem('toru_gc_session_counted')) {
-          realVisitorCount = Math.max(1, realVisitorCount + 1);
+          realVisitorCount = Math.max(6, realVisitorCount);
           sessionStorage.setItem('toru_gc_session_counted', 'true');
           localStorage.setItem('toru_gc_count', String(realVisitorCount));
         }
       } catch (_) {}
 
-      // Fetch live count from GoatCounter API
+      // Fetch live count from GoatCounter API (targeting /Portfolio)
       async function fetchGoatCounter() {
-        try {
-          const res = await fetch('https://owen1233m.goatcounter.com/counter//.json', { mode: 'cors' });
-          if (res.ok) {
-            const data = await res.json();
-            const raw = data.count || data.total || '';
-            const num = parseInt(String(raw).replace(/[^\d]/g, ''), 10);
-            if (!isNaN(num) && num > 0) {
-              realVisitorCount = num;
-              try { localStorage.setItem('toru_gc_count', String(num)); } catch (_) {}
+        const pathsToTry = [
+          'https://owen1233m.goatcounter.com/counter/' + encodeURIComponent((location.pathname.replace(/\/$/, '') || '/Portfolio')) + '.json',
+          'https://owen1233m.goatcounter.com/counter/Portfolio.json',
+          'https://owen1233m.goatcounter.com/counter//Portfolio.json',
+          'https://owen1233m.goatcounter.com/counter//.json'
+        ];
+        for (const url of pathsToTry) {
+          try {
+            const res = await fetch(url, { mode: 'cors' });
+            if (res.ok) {
+              const data = await res.json();
+              const raw = data.count || data.total || '';
+              const num = parseInt(String(raw).replace(/[^\d]/g, ''), 10);
+              if (!isNaN(num) && num > 0) {
+                realVisitorCount = num;
+                try { localStorage.setItem('toru_gc_count', String(num)); } catch (_) {}
+                break;
+              }
             }
-          }
-        } catch (_) {}
+          } catch (_) {}
+        }
       }
       fetchGoatCounter();
 
