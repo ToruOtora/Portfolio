@@ -5482,6 +5482,13 @@
         document.body.appendChild(floatingEl);
 
         floatingEl.addEventListener('click', e => {
+          e.preventDefault();
+          e.stopPropagation();
+          returnHome();
+        });
+
+        floatingEl.addEventListener('touchend', e => {
+          e.preventDefault();
           e.stopPropagation();
           returnHome();
         });
@@ -5513,9 +5520,18 @@
       function chaseLoop() {
         if (!isChasing || !floatingEl) return;
 
-        // Target: float gently beside the cursor (+16px offset)
-        const targetX = mouseX + 16;
-        const targetY = mouseY + 16;
+        // Calculate distance from cursor to badge center
+        const badgeCenterX = currentX + (badgeSize / 2);
+        const badgeCenterY = currentY + (badgeSize / 2);
+        const distToCursor = Math.hypot(mouseX - badgeCenterX, mouseY - badgeCenterY);
+
+        // When mouse approaches/hovers over the badge, let it pause so user can click it effortlessly
+        let targetX = mouseX + 16;
+        let targetY = mouseY + 16;
+        if (distToCursor < badgeSize * 0.75) {
+          targetX = currentX;
+          targetY = currentY;
+        }
 
         // Smooth physics lerp (~0.055): gentle and graceful pursuit
         const lerp = 0.055;
@@ -5593,18 +5609,26 @@
         const targetX = originCenterX - (badgeSize / 2);
         const targetY = originCenterY - (badgeSize / 2);
 
+        // 1. Explicitly assign transition on style to override inline 'transition: none'
         floatingEl.classList.add('returning');
-        // Smoothly animate back to dock coordinates AND scale back up to 1.0 (full size)
+        floatingEl.style.transition = 'transform 0.68s cubic-bezier(0.16, 1.15, 0.3, 1), opacity 0.35s ease, background 0.25s ease, border-color 0.25s ease';
+
+        // 2. Force reflow so browser registers current position and scale BEFORE animating to target
+        void floatingEl.offsetWidth;
+
+        // 3. Smoothly animate back to dock coordinates AND scale back up to 1.0 (full original size)
         floatingEl.style.transform = `translate3d(${targetX}px, ${targetY}px, 0) rotate(0deg) scale(1)`;
 
+        // 4. Settle back into place cleanly
         setTimeout(() => {
           floatingEl.classList.remove('active');
           floatingEl.classList.remove('returning');
+          floatingEl.style.transition = 'none';
           originEl.classList.remove('is-detached');
-        }, 620);
+        }, 680);
       }
 
-      // Delegate click on #easter-egg-o
+      // Delegate click on #easter-egg-o or #floating-o
       document.addEventListener('click', e => {
         const oTarget = e.target.closest('#easter-egg-o');
         if (oTarget) {
@@ -5614,6 +5638,15 @@
             returnHome();
           } else {
             startChasing(oTarget);
+          }
+          return;
+        }
+
+        if (e.target.closest('#floating-o')) {
+          e.preventDefault();
+          e.stopPropagation();
+          if (isChasing) {
+            returnHome();
           }
         }
       });
