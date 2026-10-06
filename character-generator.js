@@ -2990,7 +2990,7 @@
       <div class="cg-tt-header">
         <span class="cg-tt-en">${escapeHTML(enWord)}</span>
         ${parsed.main ? `<span class="cg-tt-th">${escapeHTML(parsed.main)}</span>` : ''}
-        <button type="button" class="cg-tt-close-btn" onclick="event.stopPropagation(); CharacterGenerator.hideWordTooltip();" title="ปิด">✕</button>
+        <button type="button" class="cg-tt-close-btn" onclick="event.stopPropagation(); CharacterGenerator.hideWordTooltip();" aria-label="ปิด">✕</button>
       </div>
     `;
 
