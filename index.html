@@ -601,6 +601,19 @@
     position: fixed;
     top: 0;
     left: 0;
+    width: 42px;
+    height: 42px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: var(--bg2);
+    color: var(--text);
+    border: 1.5px solid var(--line);
+    font-family: var(--font);
+    font-size: 22px;
+    font-weight: 700;
+    line-height: 1;
     pointer-events: auto;
     z-index: 99999;
     user-select: none;
@@ -609,6 +622,11 @@
     opacity: 0;
     visibility: hidden;
     transform: translate3d(-100px, -100px, 0);
+    transition: opacity 0.25s ease, background 0.25s ease, color 0.25s ease, border-color 0.25s ease;
+  }
+
+  .floating-o:hover {
+    border-color: var(--accent);
   }
 
   .floating-o.active {
@@ -617,7 +635,7 @@
   }
 
   .floating-o.returning {
-    transition: transform 0.62s cubic-bezier(0.16, 1.15, 0.3, 1), opacity 0.3s ease;
+    transition: transform 0.62s cubic-bezier(0.16, 1.15, 0.3, 1), opacity 0.3s ease, background 0.25s ease, color 0.25s ease, border-color 0.25s ease;
   }
 
   .profile-tags {
@@ -5513,21 +5531,19 @@
         animId = requestAnimationFrame(chaseLoop);
       }
 
+      const BADGE_SIZE = 42;
+
       function startChasing(originEl) {
         if (isChasing) return;
         const floatEl = createFloatingO();
         const rect = originEl.getBoundingClientRect();
 
-        // Dynamically inherit exact font metrics and color
-        const comp = window.getComputedStyle(originEl);
-        floatEl.style.fontSize = comp.fontSize;
-        floatEl.style.fontWeight = comp.fontWeight;
-        floatEl.style.lineHeight = comp.lineHeight;
-        floatEl.style.fontFamily = comp.fontFamily;
-        floatEl.style.color = comp.color;
+        const originCenterX = rect.left + (rect.width / 2);
+        const originCenterY = rect.top + (rect.height / 2);
 
-        currentX = rect.left;
-        currentY = rect.top;
+        currentX = originCenterX - (BADGE_SIZE / 2);
+        currentY = originCenterY - (BADGE_SIZE / 2);
+
         floatEl.classList.remove('returning');
         floatEl.style.transition = 'none';
         floatEl.style.transform = `translate3d(${currentX}px, ${currentY}px, 0) rotate(0deg)`;
@@ -5552,8 +5568,13 @@
         }
 
         const rect = originEl.getBoundingClientRect();
+        const originCenterX = rect.left + (rect.width / 2);
+        const originCenterY = rect.top + (rect.height / 2);
+        const targetX = originCenterX - (BADGE_SIZE / 2);
+        const targetY = originCenterY - (BADGE_SIZE / 2);
+
         floatingEl.classList.add('returning');
-        floatingEl.style.transform = `translate3d(${rect.left}px, ${rect.top}px, 0) rotate(0deg)`;
+        floatingEl.style.transform = `translate3d(${targetX}px, ${targetY}px, 0) rotate(0deg)`;
 
         setTimeout(() => {
           floatingEl.classList.remove('active');
