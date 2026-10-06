@@ -348,9 +348,14 @@
     height: 28px;
     line-height: 28px;
     overflow: hidden;
-    width: 9.4px;
+    width: var(--w-compact, 7.5px);
     text-align: center;
     position: relative;
+    transition: width 1s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .nav-comm-slots.spaced .nav-slot-col {
+    width: 9.6px;
   }
 
   .nav-slot-track {
@@ -2540,16 +2545,16 @@
       </button>
       <a class="nav-commission" id="nav-commission-btn" href="#" onclick="showPage('terms'); return false;" aria-label="Commission & ข้อตกลง">
         <span class="nav-comm-slots" id="nav-comm-slots">
-          <span class="nav-slot-col" data-col="0"><span class="nav-slot-track"><span class="nav-slot-char">C</span><span class="nav-slot-char char-mid">-</span><span class="nav-slot-char">C</span></span></span>
-          <span class="nav-slot-col" data-col="1"><span class="nav-slot-track"><span class="nav-slot-char">O</span><span class="nav-slot-char char-mid">-</span><span class="nav-slot-char">O</span></span></span>
-          <span class="nav-slot-col" data-col="2"><span class="nav-slot-track"><span class="nav-slot-char">M</span><span class="nav-slot-char char-mid char-digit">0</span><span class="nav-slot-char">M</span></span></span>
-          <span class="nav-slot-col" data-col="3"><span class="nav-slot-track"><span class="nav-slot-char">M</span><span class="nav-slot-char char-mid char-digit">0</span><span class="nav-slot-char">M</span></span></span>
-          <span class="nav-slot-col" data-col="4"><span class="nav-slot-track"><span class="nav-slot-char">I</span><span class="nav-slot-char char-mid char-digit">0</span><span class="nav-slot-char">I</span></span></span>
-          <span class="nav-slot-col" data-col="5"><span class="nav-slot-track"><span class="nav-slot-char">S</span><span class="nav-slot-char char-mid char-digit">0</span><span class="nav-slot-char">S</span></span></span>
-          <span class="nav-slot-col" data-col="6"><span class="nav-slot-track"><span class="nav-slot-char">S</span><span class="nav-slot-char char-mid char-digit">0</span><span class="nav-slot-char">S</span></span></span>
-          <span class="nav-slot-col" data-col="7"><span class="nav-slot-track"><span class="nav-slot-char">I</span><span class="nav-slot-char char-mid char-digit">0</span><span class="nav-slot-char">I</span></span></span>
-          <span class="nav-slot-col" data-col="8"><span class="nav-slot-track"><span class="nav-slot-char">O</span><span class="nav-slot-char char-mid">-</span><span class="nav-slot-char">O</span></span></span>
-          <span class="nav-slot-col" data-col="9"><span class="nav-slot-track"><span class="nav-slot-char">N</span><span class="nav-slot-char char-mid">-</span><span class="nav-slot-char">N</span></span></span>
+          <span class="nav-slot-col" data-col="0" style="--w-compact: 7.0px;"><span class="nav-slot-track"><span class="nav-slot-char">C</span><span class="nav-slot-char char-mid">-</span><span class="nav-slot-char">C</span></span></span>
+          <span class="nav-slot-col" data-col="1" style="--w-compact: 7.6px;"><span class="nav-slot-track"><span class="nav-slot-char">O</span><span class="nav-slot-char char-mid">-</span><span class="nav-slot-char">O</span></span></span>
+          <span class="nav-slot-col" data-col="2" style="--w-compact: 8.8px;"><span class="nav-slot-track"><span class="nav-slot-char">M</span><span class="nav-slot-char char-mid char-digit">0</span><span class="nav-slot-char">M</span></span></span>
+          <span class="nav-slot-col" data-col="3" style="--w-compact: 8.8px;"><span class="nav-slot-track"><span class="nav-slot-char">M</span><span class="nav-slot-char char-mid char-digit">0</span><span class="nav-slot-char">M</span></span></span>
+          <span class="nav-slot-col" data-col="4" style="--w-compact: 3.4px;"><span class="nav-slot-track"><span class="nav-slot-char">I</span><span class="nav-slot-char char-mid char-digit">0</span><span class="nav-slot-char">I</span></span></span>
+          <span class="nav-slot-col" data-col="5" style="--w-compact: 6.2px;"><span class="nav-slot-track"><span class="nav-slot-char">S</span><span class="nav-slot-char char-mid char-digit">0</span><span class="nav-slot-char">S</span></span></span>
+          <span class="nav-slot-col" data-col="6" style="--w-compact: 6.2px;"><span class="nav-slot-track"><span class="nav-slot-char">S</span><span class="nav-slot-char char-mid char-digit">0</span><span class="nav-slot-char">S</span></span></span>
+          <span class="nav-slot-col" data-col="7" style="--w-compact: 3.4px;"><span class="nav-slot-track"><span class="nav-slot-char">I</span><span class="nav-slot-char char-mid char-digit">0</span><span class="nav-slot-char">I</span></span></span>
+          <span class="nav-slot-col" data-col="8" style="--w-compact: 7.6px;"><span class="nav-slot-track"><span class="nav-slot-char">O</span><span class="nav-slot-char char-mid">-</span><span class="nav-slot-char">O</span></span></span>
+          <span class="nav-slot-col" data-col="9" style="--w-compact: 7.4px;"><span class="nav-slot-track"><span class="nav-slot-char">N</span><span class="nav-slot-char char-mid">-</span><span class="nav-slot-char">N</span></span></span>
         </span>
       </a>
       <button class="hamburger" onclick="toggleMobileMenu()" aria-label="เมนู">
@@ -5260,10 +5265,12 @@
         requestAnimationFrame(update);
       }
 
-      let showingCount = false;
+      function startCycle() {
+        // Step 1: 1-second expansion from compact COMMISSION -> spaced C O M M I S S I O N
+        container.classList.add('spaced');
 
-      function cycle() {
-        if (!showingCount) {
+        // Step 2: After 1s of expansion (at 1000ms), start the roll
+        setTimeout(() => {
           // Reset digits to 000000 before rolling
           for (let d = 0; d < 6; d++) digitMidEls[d].textContent = '0';
 
@@ -5273,44 +5280,45 @@
             track.style.transform = `translateY(-${ITEM_HEIGHT}px)`;
           });
 
-          showingCount = true;
-
           // As wave lands on --000000--, smoothly run numbers up to realVisitorCount
           const waveLandTime = (9 * STAGGER_MS) + 200;
           setTimeout(() => {
             runCountUp(realVisitorCount, 850);
           }, waveLandTime);
 
-          // Hold showing the count for 5 seconds after roll and count finish
-          setTimeout(cycle, 6400);
-
-        } else {
-          // Roll from --000[count]-- back to COMMISSION
-          tracks.forEach((track, i) => {
-            track.style.transitionDelay = `${i * STAGGER_MS}ms`;
-            track.classList.add('animating');
-            track.style.transform = `translateY(-${ITEM_HEIGHT * 2}px)`;
-          });
-
-          showingCount = false;
-
-          const totalRollTime = (9 * STAGGER_MS) + TRANSITION_MS + 40;
+          // Step 3: Hold showing the count for 5 seconds after roll and count finish (~1400ms + 5000ms = 6400ms)
           setTimeout(() => {
-            tracks.forEach(track => {
-              track.classList.remove('animating');
-              track.style.transitionDelay = '0ms';
-              track.style.transform = 'translateY(0px)';
+            // Step 4: Roll from count back to spaced C O M M I S S I O N
+            tracks.forEach((track, i) => {
+              track.style.transitionDelay = `${i * STAGGER_MS}ms`;
+              track.classList.add('animating');
+              track.style.transform = `translateY(-${ITEM_HEIGHT * 2}px)`;
             });
-            for (let d = 0; d < 6; d++) digitMidEls[d].textContent = '0';
-          }, totalRollTime);
 
-          // Hold COMMISSION for 10 seconds before next cycle
-          setTimeout(cycle, 10000 + totalRollTime);
-        }
+            const totalRollTime = (9 * STAGGER_MS) + TRANSITION_MS + 40;
+            setTimeout(() => {
+              // Silently reset tracks to 0px
+              tracks.forEach(track => {
+                track.classList.remove('animating');
+                track.style.transitionDelay = '0ms';
+                track.style.transform = 'translateY(0px)';
+              });
+              for (let d = 0; d < 6; d++) digitMidEls[d].textContent = '0';
+
+              // Step 5: 1-second collapse from spaced C O M M I S S I O N back to compact COMMISSION
+              container.classList.remove('spaced');
+
+              // Step 6: Hold compact COMMISSION for 8 seconds after 1s collapse = 9000ms total
+              setTimeout(startCycle, 9000);
+            }, totalRollTime);
+
+          }, 6400);
+
+        }, 1000);
       }
 
-      // Initial 10 seconds display of COMMISSION before first roll
-      setTimeout(cycle, 10000);
+      // Initial rest: hold compact COMMISSION for 8 seconds before first expansion
+      setTimeout(startCycle, 8000);
     })();
   </script>
   <script src="character-generator.js"></script>
