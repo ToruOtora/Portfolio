@@ -3445,6 +3445,17 @@
       });
     });
 
+    /* ══ HTML ESCAPING HELPER ══ */
+    function escapeHTML(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
     /* Clean tracking query parameters (e.g. Instagram fbclid, utm_*) */
     if (window.location.search) {
       try {
@@ -3735,7 +3746,10 @@
     function dismissHomePreloader() {
       if (window.preloaderDismissed) return;
       window.preloaderDismissed = true;
-      if (preloaderTimer) clearTimeout(preloaderTimer);
+      if (preloaderTimer) {
+        clearTimeout(preloaderTimer);
+        preloaderTimer = null;
+      }
 
       const loader = document.getElementById('home-preloader');
       const vid = document.getElementById('hero-video');
@@ -3756,16 +3770,19 @@
     }
 
     function setupHomePreloader() {
+      if (window.preloaderDismissed) return;
       const isHome = document.getElementById('page-home')?.classList.contains('active');
       if (!isHome) {
         dismissHomePreloader();
         return;
       }
 
-      preloaderTimer = setTimeout(dismissHomePreloader, 2800);
+      if (!preloaderTimer) {
+        preloaderTimer = setTimeout(dismissHomePreloader, 2800);
+      }
 
       const vid = document.getElementById('hero-video');
-      if (vid) {
+      if (vid && vid.src) {
         const onReady = () => {
           dismissHomePreloader();
           vid.removeEventListener('loadeddata', onReady);
@@ -3778,6 +3795,13 @@
         }
       }
     }
+
+    // Baseline safeguard: ensure preloader dismisses even if assets lag or error
+    setupHomePreloader();
+    setTimeout(dismissHomePreloader, 3200);
+    window.addEventListener('load', () => {
+      setTimeout(dismissHomePreloader, 600);
+    });
 
     /* ══ GLOBAL TOAST NOTIFICATION ══ */
     function showToast(msg) {
@@ -4877,8 +4901,10 @@
           const navPh = document.getElementById('nav-avatar-ph');
           const heroImg = document.getElementById('profile-hero-img');
           const heroPh = document.getElementById('profile-hero-ph');
-          navImg.src = m.profile; navImg.style.display = 'block'; navPh.style.display = 'none';
-          heroImg.src = m.profile; heroImg.style.display = 'block'; heroPh.style.display = 'none';
+          if (navImg) { navImg.src = m.profile; navImg.style.display = 'block'; }
+          if (navPh) navPh.style.display = 'none';
+          if (heroImg) { heroImg.src = m.profile; heroImg.style.display = 'block'; }
+          if (heroPh) heroPh.style.display = 'none';
         }
         if (m.name) {
           const pnEl = document.getElementById('profile-name-el');
@@ -4886,18 +4912,29 @@
             if (m.name.endsWith(' O')) {
               const base = m.name.slice(0, -2);
               pnEl.innerHTML = `${escapeHTML(base)} <span class="easter-egg-o" id="easter-egg-o" aria-label="O">O</span>`;
+            } else if (m.name.endsWith('_O')) {
+              const base = m.name.slice(0, -2);
+              pnEl.innerHTML = `${escapeHTML(base)}_<span class="easter-egg-o" id="easter-egg-o" aria-label="O">O</span>`;
             } else {
               pnEl.textContent = m.name;
             }
           }
-          document.getElementById('nav-brand-name').textContent = m.name;
+          const brandEl = document.getElementById('nav-brand-name');
+          if (brandEl) brandEl.textContent = m.name;
         }
-        if (m.tags) document.getElementById('profile-tags-el').textContent = m.tags;
+        if (m.tags) {
+          const tagsEl = document.getElementById('profile-tags-el');
+          if (tagsEl) tagsEl.textContent = m.tags;
+        }
         if (m.socials) {
-          if (m.socials.x) document.getElementById('social-x').href = m.socials.x;
-          if (m.socials.facebook) document.getElementById('social-fb').href = m.socials.facebook;
-          if (m.socials.instagram) document.getElementById('social-ig').href = m.socials.instagram;
-          if (m.socials.deviantart) document.getElementById('social-da').href = m.socials.deviantart;
+          const sx = document.getElementById('social-x');
+          const sfb = document.getElementById('social-fb');
+          const sig = document.getElementById('social-ig');
+          const sda = document.getElementById('social-da');
+          if (m.socials.x && sx) sx.href = m.socials.x;
+          if (m.socials.facebook && sfb) sfb.href = m.socials.facebook;
+          if (m.socials.instagram && sig) sig.href = m.socials.instagram;
+          if (m.socials.deviantart && sda) sda.href = m.socials.deviantart;
         }
         if (m.video) {
           window.heroVideoUrl = m.video;
@@ -4906,10 +4943,15 @@
             syncHeroVideo(true);
           }
         }
-        if (m.contact) document.getElementById('footer-contact').innerHTML = m.contact;
+        if (m.contact) {
+          const fc = document.getElementById('footer-contact');
+          if (fc) fc.innerHTML = m.contact;
+        }
 
       } catch (e) {
-        console.warn('manifest.json not found:', e);
+        console.warn('manifest.json error:', e);
+      } finally {
+        setupHomePreloader();
       }
     }
 
