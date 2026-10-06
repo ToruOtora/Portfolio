@@ -581,6 +581,45 @@
     margin-bottom: 6px;
   }
 
+  /* ══ EASTER EGG: FLOATING "O" ══ */
+  .easter-egg-o {
+    display: inline-block;
+    cursor: pointer;
+    user-select: none;
+    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease;
+  }
+
+  .easter-egg-o:hover {
+    transform: translateY(-3px) scale(1.08);
+  }
+
+  .easter-egg-o.is-detached {
+    opacity: 0.15;
+  }
+
+  .floating-o {
+    position: fixed;
+    top: 0;
+    left: 0;
+    pointer-events: auto;
+    z-index: 99999;
+    user-select: none;
+    cursor: pointer;
+    will-change: transform;
+    opacity: 0;
+    visibility: hidden;
+    transform: translate3d(-100px, -100px, 0);
+  }
+
+  .floating-o.active {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  .floating-o.returning {
+    transition: transform 0.62s cubic-bezier(0.16, 1.15, 0.3, 1), opacity 0.3s ease;
+  }
+
   .profile-tags {
     font-size: 12px;
     font-weight: 300;
@@ -2658,7 +2697,7 @@
           <div class="profile-circle-ph" id="profile-hero-ph">รูปโปรไฟล</div>
         </div>
         <div class="profile-info">
-          <div class="profile-name" id="profile-name-el">Toru O</div>
+          <div class="profile-name" id="profile-name-el">Toru <span class="easter-egg-o" id="easter-egg-o" aria-label="O">O</span></div>
           <div class="profile-tags" id="profile-tags-el">motion · digital art · adoptable</div>
           <div class="profile-contact-row">
             <div class="profile-socials">
@@ -4842,7 +4881,15 @@
           heroImg.src = m.profile; heroImg.style.display = 'block'; heroPh.style.display = 'none';
         }
         if (m.name) {
-          document.getElementById('profile-name-el').textContent = m.name;
+          const pnEl = document.getElementById('profile-name-el');
+          if (pnEl) {
+            if (m.name.endsWith(' O')) {
+              const base = m.name.slice(0, -2);
+              pnEl.innerHTML = `${escapeHTML(base)} <span class="easter-egg-o" id="easter-egg-o" aria-label="O">O</span>`;
+            } else {
+              pnEl.textContent = m.name;
+            }
+          }
           document.getElementById('nav-brand-name').textContent = m.name;
         }
         if (m.tags) document.getElementById('profile-tags-el').textContent = m.tags;
@@ -5351,6 +5398,141 @@
 
       // Initial rest: hold compact COMMISSION for 8 seconds before first expansion
       setTimeout(startCycle, 8000);
+    })();
+
+    /* ══ EASTER EGG: FLOATING "O" CURSOR COMPANION ══ */
+    (function initEasterEggO() {
+      let isChasing = false;
+      let floatingEl = null;
+      let mouseX = window.innerWidth / 2;
+      let mouseY = window.innerHeight / 2;
+      let currentX = 0;
+      let currentY = 0;
+      let animId = null;
+
+      function createFloatingO() {
+        if (floatingEl) return floatingEl;
+        floatingEl = document.createElement('div');
+        floatingEl.id = 'floating-o';
+        floatingEl.className = 'floating-o';
+        floatingEl.textContent = 'O';
+        floatingEl.setAttribute('aria-hidden', 'true');
+        document.body.appendChild(floatingEl);
+
+        floatingEl.addEventListener('click', e => {
+          e.stopPropagation();
+          returnHome();
+        });
+
+        return floatingEl;
+      }
+
+      function updatePos(cx, cy) {
+        mouseX = cx;
+        mouseY = cy;
+      }
+
+      window.addEventListener('mousemove', e => {
+        updatePos(e.clientX, e.clientY);
+      }, { passive: true });
+
+      window.addEventListener('touchmove', e => {
+        if (e.touches && e.touches.length > 0) {
+          updatePos(e.touches[0].clientX, e.touches[0].clientY);
+        }
+      }, { passive: true });
+
+      window.addEventListener('keydown', e => {
+        if (e.key === 'Escape' && isChasing) {
+          returnHome();
+        }
+      });
+
+      function chaseLoop() {
+        if (!isChasing || !floatingEl) return;
+
+        // Target: float gently beside the cursor (+16px offset)
+        const targetX = mouseX + 16;
+        const targetY = mouseY + 16;
+
+        // Smooth physics lerp (~0.055): gentle and graceful pursuit
+        const lerp = 0.055;
+        const dx = targetX - currentX;
+        const dy = targetY - currentY;
+
+        currentX += dx * lerp;
+        currentY += dy * lerp;
+
+        // Subtle physical tilt based on horizontal speed
+        const tilt = Math.max(-14, Math.min(14, (dx * lerp) * 1.6));
+
+        floatingEl.style.transform = `translate3d(${currentX}px, ${currentY}px, 0) rotate(${tilt}deg)`;
+
+        animId = requestAnimationFrame(chaseLoop);
+      }
+
+      function startChasing(originEl) {
+        if (isChasing) return;
+        const floatEl = createFloatingO();
+        const rect = originEl.getBoundingClientRect();
+
+        // Dynamically inherit exact font metrics and color
+        const comp = window.getComputedStyle(originEl);
+        floatEl.style.fontSize = comp.fontSize;
+        floatEl.style.fontWeight = comp.fontWeight;
+        floatEl.style.lineHeight = comp.lineHeight;
+        floatEl.style.fontFamily = comp.fontFamily;
+        floatEl.style.color = comp.color;
+
+        currentX = rect.left;
+        currentY = rect.top;
+        floatEl.classList.remove('returning');
+        floatEl.style.transition = 'none';
+        floatEl.style.transform = `translate3d(${currentX}px, ${currentY}px, 0) rotate(0deg)`;
+
+        originEl.classList.add('is-detached');
+        floatEl.classList.add('active');
+
+        isChasing = true;
+        cancelAnimationFrame(animId);
+        animId = requestAnimationFrame(chaseLoop);
+      }
+
+      function returnHome() {
+        if (!isChasing || !floatingEl) return;
+        isChasing = false;
+        cancelAnimationFrame(animId);
+
+        const originEl = document.getElementById('easter-egg-o');
+        if (!originEl) {
+          floatingEl.classList.remove('active');
+          return;
+        }
+
+        const rect = originEl.getBoundingClientRect();
+        floatingEl.classList.add('returning');
+        floatingEl.style.transform = `translate3d(${rect.left}px, ${rect.top}px, 0) rotate(0deg)`;
+
+        setTimeout(() => {
+          floatingEl.classList.remove('active');
+          floatingEl.classList.remove('returning');
+          originEl.classList.remove('is-detached');
+        }, 620);
+      }
+
+      // Delegate click on #easter-egg-o
+      document.addEventListener('click', e => {
+        const oTarget = e.target.closest('#easter-egg-o');
+        if (oTarget) {
+          e.preventDefault();
+          e.stopPropagation();
+          if (isChasing) {
+            returnHome();
+          } else {
+            startChasing(oTarget);
+          }
+        }
+      });
     })();
   </script>
   <script src="character-generator.js"></script>
