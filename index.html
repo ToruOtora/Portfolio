@@ -310,17 +310,55 @@
     text-transform: uppercase;
     color: var(--text);
     border: 1px solid var(--line2);
-    padding: 5px 14px;
+    padding: 0 14px;
+    height: 28px;
+    line-height: 28px;
     border-radius: 100px;
     text-decoration: none;
     transition: background 0.15s, color 0.15s, border-color 0.15s;
     white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    position: relative;
+    min-width: 110px;
+    box-sizing: border-box;
+    cursor: pointer;
+    vertical-align: middle;
   }
 
   .nav-commission:hover {
     background: var(--text);
     color: var(--bg);
     border-color: var(--text);
+  }
+
+  .nav-comm-reel {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    will-change: transform;
+  }
+
+  .nav-comm-reel.animating {
+    transition: transform 0.8s cubic-bezier(0.16, 1.1, 0.3, 1);
+  }
+
+  .nav-comm-item {
+    height: 28px;
+    line-height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    flex-shrink: 0;
+  }
+
+  .nav-comm-item.count {
+    font-variant-numeric: tabular-nums;
+    font-family: inherit;
+    letter-spacing: 0.12em;
   }
 
   .hamburger {
@@ -2486,7 +2524,13 @@
           <path d="M12 2C6.49 2 2 6.49 2 12c0 2.8 1.15 5.35 3.01 7.19.4.4.95.63 1.52.59.62-.04 1.15-.48 1.27-1.1.2-.95 1.05-1.68 2.05-1.68h1.65c3.58 0 6.5-2.92 6.5-6.5C18 5.75 14.77 2 12 2zm-5.5 9c-.83 0-1.5-.67-1.5-1.5S5.67 8 6.5 8s1.5.67 1.5 1.5S7.33 11 6.5 11zm3-4c-.83 0-1.5-.67-1.5-1.5S8.67 4 9.5 4s1.5.67 1.5 1.5S10.33 7 9.5 7zm5 0c-.83 0-1.5-.67-1.5-1.5S13.67 4 14.5 4s1.5.67 1.5 1.5S15.33 7 14.5 7zm2.5 4c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z" />
         </svg>
       </button>
-      <a class="nav-commission" href="#" onclick="showPage('terms'); return false;">commission</a>
+      <a class="nav-commission" id="nav-commission-btn" href="#" onclick="showPage('terms'); return false;" aria-label="Commission & ข้อตกลง">
+        <span class="nav-comm-reel" id="nav-comm-reel">
+          <span class="nav-comm-item">commission</span>
+          <span class="nav-comm-item count" id="nav-comm-count">--001123--</span>
+          <span class="nav-comm-item">commission</span>
+        </span>
+      </a>
       <button class="hamburger" onclick="toggleMobileMenu()" aria-label="เมนู">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
           <line x1="3" y1="7" x2="21" y2="7" />
@@ -5117,6 +5161,88 @@
     document.addEventListener('dragstart', e => {
       if (['IMG', 'VIDEO'].includes(e.target.tagName)) e.preventDefault();
     });
+
+    /* ══ ROLLING COMMISSION & VISITOR TICKER (10s COMMISSION -> 5s COUNT) ══ */
+    (function initCommissionTicker() {
+      const reel = document.getElementById('nav-comm-reel');
+      const countEl = document.getElementById('nav-comm-count');
+      if (!reel || !countEl) return;
+
+      let currentVisitorCount = 1123;
+
+      function formatCount(num) {
+        const padded = String(Math.max(1, num)).padStart(6, '0');
+        return `--${padded}--`;
+      }
+
+      // Restore from cache if available
+      try {
+        const cached = localStorage.getItem('toru_visitor_count');
+        if (cached && !isNaN(parseInt(cached, 10))) {
+          currentVisitorCount = parseInt(cached, 10);
+        }
+      } catch (_) {}
+
+      // Count session visit once per browser session
+      try {
+        if (!sessionStorage.getItem('toru_session_counted')) {
+          currentVisitorCount += 1;
+          sessionStorage.setItem('toru_session_counted', 'true');
+          localStorage.setItem('toru_visitor_count', String(currentVisitorCount));
+        }
+      } catch (_) {}
+
+      // Background fetch from GoatCounter if accessible
+      async function syncGoatCounter() {
+        try {
+          const res = await fetch('https://owen1233m.goatcounter.com/counter//.json', { mode: 'cors' });
+          if (res.ok) {
+            const data = await res.json();
+            const val = parseInt(String(data.count || data.total || '').replace(/,/g, ''), 10);
+            if (!isNaN(val) && val > 0) {
+              currentVisitorCount = val;
+              try { localStorage.setItem('toru_visitor_count', String(val)); } catch (_) {}
+              if (countEl) countEl.textContent = formatCount(currentVisitorCount);
+            }
+          }
+        } catch (_) {
+          // GoatCounter offline/unreachable: smoothly relies on local storage
+        }
+      }
+      syncGoatCounter();
+
+      countEl.textContent = formatCount(currentVisitorCount);
+
+      // Loop: COMMISSION (10s) -> Roll up to count (5s) -> Roll up to COMMISSION (10s)
+      const ITEM_HEIGHT = 28;
+      let showingCount = false;
+
+      function rollNext() {
+        if (!showingCount) {
+          // Current: COMMISSION (slot 0). Animate up to Count (slot 1)
+          reel.classList.add('animating');
+          reel.style.transform = `translateY(-${ITEM_HEIGHT}px)`;
+          showingCount = true;
+          setTimeout(rollNext, 5000); // Hold count for 5 seconds
+        } else {
+          // Current: Count (slot 1). Animate up to COMMISSION clone (slot 2)
+          reel.classList.add('animating');
+          reel.style.transform = `translateY(-${ITEM_HEIGHT * 2}px)`;
+          showingCount = false;
+
+          // After roll animation completes, seamlessly snap back to slot 0 without transition
+          setTimeout(() => {
+            reel.classList.remove('animating');
+            reel.style.transform = 'translateY(0px)';
+          }, 820);
+
+          setTimeout(rollNext, 10000); // Hold COMMISSION for 10 seconds
+        }
+      }
+
+      // Initial delay: hold COMMISSION for 10 seconds before the first roll
+      setTimeout(rollNext, 10000);
+    })();
   </script>
   <script src="character-generator.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/ag-psd/dist/bundle.js"></script>
