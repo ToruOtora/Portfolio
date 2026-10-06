@@ -305,12 +305,12 @@
 
   .nav-commission {
     font-size: 10px;
-    font-weight: 500;
-    letter-spacing: 0.12em;
+    font-weight: 600;
+    letter-spacing: 0.05em;
     text-transform: uppercase;
     color: var(--text);
     border: 1px solid var(--line2);
-    padding: 0 14px;
+    padding: 0 10px;
     height: 28px;
     line-height: 28px;
     border-radius: 100px;
@@ -322,10 +322,11 @@
     justify-content: center;
     overflow: hidden;
     position: relative;
-    min-width: 110px;
+    min-width: 114px;
     box-sizing: border-box;
     cursor: pointer;
     vertical-align: middle;
+    user-select: none;
   }
 
   .nav-commission:hover {
@@ -334,18 +335,36 @@
     border-color: var(--text);
   }
 
-  .nav-comm-reel {
+  .nav-comm-slots {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 28px;
+  }
+
+  .nav-slot-col {
+    display: inline-flex;
+    flex-direction: column;
+    height: 28px;
+    line-height: 28px;
+    overflow: hidden;
+    width: 9.4px;
+    text-align: center;
+    position: relative;
+  }
+
+  .nav-slot-track {
     display: flex;
     flex-direction: column;
-    width: 100%;
     will-change: transform;
+    transform: translateY(0px);
   }
 
-  .nav-comm-reel.animating {
-    transition: transform 0.8s cubic-bezier(0.16, 1.1, 0.3, 1);
+  .nav-slot-track.animating {
+    transition: transform 0.65s cubic-bezier(0.16, 1.15, 0.3, 1);
   }
 
-  .nav-comm-item {
+  .nav-slot-char {
     height: 28px;
     line-height: 28px;
     display: flex;
@@ -353,12 +372,7 @@
     justify-content: center;
     text-align: center;
     flex-shrink: 0;
-  }
-
-  .nav-comm-item.count {
     font-variant-numeric: tabular-nums;
-    font-family: inherit;
-    letter-spacing: 0.12em;
   }
 
   .hamburger {
@@ -2525,10 +2539,17 @@
         </svg>
       </button>
       <a class="nav-commission" id="nav-commission-btn" href="#" onclick="showPage('terms'); return false;" aria-label="Commission & ข้อตกลง">
-        <span class="nav-comm-reel" id="nav-comm-reel">
-          <span class="nav-comm-item">commission</span>
-          <span class="nav-comm-item count" id="nav-comm-count">--001123--</span>
-          <span class="nav-comm-item">commission</span>
+        <span class="nav-comm-slots" id="nav-comm-slots">
+          <span class="nav-slot-col" data-col="0"><span class="nav-slot-track"><span class="nav-slot-char">C</span><span class="nav-slot-char char-mid">-</span><span class="nav-slot-char">C</span></span></span>
+          <span class="nav-slot-col" data-col="1"><span class="nav-slot-track"><span class="nav-slot-char">O</span><span class="nav-slot-char char-mid">-</span><span class="nav-slot-char">O</span></span></span>
+          <span class="nav-slot-col" data-col="2"><span class="nav-slot-track"><span class="nav-slot-char">M</span><span class="nav-slot-char char-mid char-digit">0</span><span class="nav-slot-char">M</span></span></span>
+          <span class="nav-slot-col" data-col="3"><span class="nav-slot-track"><span class="nav-slot-char">M</span><span class="nav-slot-char char-mid char-digit">0</span><span class="nav-slot-char">M</span></span></span>
+          <span class="nav-slot-col" data-col="4"><span class="nav-slot-track"><span class="nav-slot-char">I</span><span class="nav-slot-char char-mid char-digit">0</span><span class="nav-slot-char">I</span></span></span>
+          <span class="nav-slot-col" data-col="5"><span class="nav-slot-track"><span class="nav-slot-char">S</span><span class="nav-slot-char char-mid char-digit">0</span><span class="nav-slot-char">S</span></span></span>
+          <span class="nav-slot-col" data-col="6"><span class="nav-slot-track"><span class="nav-slot-char">S</span><span class="nav-slot-char char-mid char-digit">0</span><span class="nav-slot-char">S</span></span></span>
+          <span class="nav-slot-col" data-col="7"><span class="nav-slot-track"><span class="nav-slot-char">I</span><span class="nav-slot-char char-mid char-digit">0</span><span class="nav-slot-char">I</span></span></span>
+          <span class="nav-slot-col" data-col="8"><span class="nav-slot-track"><span class="nav-slot-char">O</span><span class="nav-slot-char char-mid">-</span><span class="nav-slot-char">O</span></span></span>
+          <span class="nav-slot-col" data-col="9"><span class="nav-slot-track"><span class="nav-slot-char">N</span><span class="nav-slot-char char-mid">-</span><span class="nav-slot-char">N</span></span></span>
         </span>
       </a>
       <button class="hamburger" onclick="toggleMobileMenu()" aria-label="เมนู">
@@ -5162,86 +5183,134 @@
       if (['IMG', 'VIDEO'].includes(e.target.tagName)) e.preventDefault();
     });
 
-    /* ══ ROLLING COMMISSION & VISITOR TICKER (10s COMMISSION -> 5s COUNT) ══ */
-    (function initCommissionTicker() {
-      const reel = document.getElementById('nav-comm-reel');
-      const countEl = document.getElementById('nav-comm-count');
-      if (!reel || !countEl) return;
+    /* ══ ROLLING MULTI-COLUMN COMMISSION & VISITOR TICKER ══ */
+    (function initCommissionSlotTicker() {
+      const container = document.getElementById('nav-comm-slots');
+      if (!container) return;
 
-      let currentVisitorCount = 1123;
+      const tracks = container.querySelectorAll('.nav-slot-track');
+      const digitMidEls = container.querySelectorAll('.char-digit');
+      if (tracks.length !== 10 || digitMidEls.length !== 6) return;
 
-      function formatCount(num) {
-        const padded = String(Math.max(1, num)).padStart(6, '0');
-        return `--${padded}--`;
-      }
+      let realVisitorCount = 0;
 
-      // Restore from cache if available
+      // Restore from cached count if present
       try {
-        const cached = localStorage.getItem('toru_visitor_count');
+        const cached = localStorage.getItem('toru_gc_count');
         if (cached && !isNaN(parseInt(cached, 10))) {
-          currentVisitorCount = parseInt(cached, 10);
+          realVisitorCount = parseInt(cached, 10);
         }
       } catch (_) {}
 
-      // Count session visit once per browser session
+      // Count session visit if not yet recorded
       try {
-        if (!sessionStorage.getItem('toru_session_counted')) {
-          currentVisitorCount += 1;
-          sessionStorage.setItem('toru_session_counted', 'true');
-          localStorage.setItem('toru_visitor_count', String(currentVisitorCount));
+        if (!sessionStorage.getItem('toru_gc_session_counted')) {
+          realVisitorCount = Math.max(1, realVisitorCount + 1);
+          sessionStorage.setItem('toru_gc_session_counted', 'true');
+          localStorage.setItem('toru_gc_count', String(realVisitorCount));
         }
       } catch (_) {}
 
-      // Background fetch from GoatCounter if accessible
-      async function syncGoatCounter() {
+      // Fetch live count from GoatCounter API
+      async function fetchGoatCounter() {
         try {
           const res = await fetch('https://owen1233m.goatcounter.com/counter//.json', { mode: 'cors' });
           if (res.ok) {
             const data = await res.json();
-            const val = parseInt(String(data.count || data.total || '').replace(/,/g, ''), 10);
-            if (!isNaN(val) && val > 0) {
-              currentVisitorCount = val;
-              try { localStorage.setItem('toru_visitor_count', String(val)); } catch (_) {}
-              if (countEl) countEl.textContent = formatCount(currentVisitorCount);
+            const raw = data.count || data.total || '';
+            const num = parseInt(String(raw).replace(/[^\d]/g, ''), 10);
+            if (!isNaN(num) && num > 0) {
+              realVisitorCount = num;
+              try { localStorage.setItem('toru_gc_count', String(num)); } catch (_) {}
             }
           }
-        } catch (_) {
-          // GoatCounter offline/unreachable: smoothly relies on local storage
-        }
+        } catch (_) {}
       }
-      syncGoatCounter();
+      fetchGoatCounter();
 
-      countEl.textContent = formatCount(currentVisitorCount);
-
-      // Loop: COMMISSION (10s) -> Roll up to count (5s) -> Roll up to COMMISSION (10s)
       const ITEM_HEIGHT = 28;
+      const STAGGER_MS = 32;
+      const TRANSITION_MS = 650;
+
+      function runCountUp(finalCount, duration = 850) {
+        if (finalCount <= 0) {
+          const zeroStr = "000000";
+          for (let d = 0; d < 6; d++) digitMidEls[d].textContent = zeroStr[d];
+          return;
+        }
+
+        const startT = performance.now();
+        function update(now) {
+          const p = Math.min(1, (now - startT) / duration);
+          const eased = p === 1 ? 1 : 1 - Math.pow(2, -10 * p);
+          const current = Math.floor(eased * finalCount);
+          const str = String(current).padStart(6, '0');
+          for (let d = 0; d < 6; d++) {
+            digitMidEls[d].textContent = str[d] || '0';
+          }
+          if (p < 1) {
+            requestAnimationFrame(update);
+          } else {
+            const finalStr = String(finalCount).padStart(6, '0');
+            for (let d = 0; d < 6; d++) {
+              digitMidEls[d].textContent = finalStr[d] || '0';
+            }
+          }
+        }
+        requestAnimationFrame(update);
+      }
+
       let showingCount = false;
 
-      function rollNext() {
+      function cycle() {
         if (!showingCount) {
-          // Current: COMMISSION (slot 0). Animate up to Count (slot 1)
-          reel.classList.add('animating');
-          reel.style.transform = `translateY(-${ITEM_HEIGHT}px)`;
+          // Reset digits to 000000 before rolling
+          for (let d = 0; d < 6; d++) digitMidEls[d].textContent = '0';
+
+          tracks.forEach((track, i) => {
+            track.style.transitionDelay = `${i * STAGGER_MS}ms`;
+            track.classList.add('animating');
+            track.style.transform = `translateY(-${ITEM_HEIGHT}px)`;
+          });
+
           showingCount = true;
-          setTimeout(rollNext, 5000); // Hold count for 5 seconds
+
+          // As wave lands on --000000--, smoothly run numbers up to realVisitorCount
+          const waveLandTime = (9 * STAGGER_MS) + 200;
+          setTimeout(() => {
+            runCountUp(realVisitorCount, 850);
+          }, waveLandTime);
+
+          // Hold showing the count for 5 seconds after roll and count finish
+          setTimeout(cycle, 6400);
+
         } else {
-          // Current: Count (slot 1). Animate up to COMMISSION clone (slot 2)
-          reel.classList.add('animating');
-          reel.style.transform = `translateY(-${ITEM_HEIGHT * 2}px)`;
+          // Roll from --000[count]-- back to COMMISSION
+          tracks.forEach((track, i) => {
+            track.style.transitionDelay = `${i * STAGGER_MS}ms`;
+            track.classList.add('animating');
+            track.style.transform = `translateY(-${ITEM_HEIGHT * 2}px)`;
+          });
+
           showingCount = false;
 
-          // After roll animation completes, seamlessly snap back to slot 0 without transition
+          const totalRollTime = (9 * STAGGER_MS) + TRANSITION_MS + 40;
           setTimeout(() => {
-            reel.classList.remove('animating');
-            reel.style.transform = 'translateY(0px)';
-          }, 820);
+            tracks.forEach(track => {
+              track.classList.remove('animating');
+              track.style.transitionDelay = '0ms';
+              track.style.transform = 'translateY(0px)';
+            });
+            for (let d = 0; d < 6; d++) digitMidEls[d].textContent = '0';
+          }, totalRollTime);
 
-          setTimeout(rollNext, 10000); // Hold COMMISSION for 10 seconds
+          // Hold COMMISSION for 10 seconds before next cycle
+          setTimeout(cycle, 10000 + totalRollTime);
         }
       }
 
-      // Initial delay: hold COMMISSION for 10 seconds before the first roll
-      setTimeout(rollNext, 10000);
+      // Initial 10 seconds display of COMMISSION before first roll
+      setTimeout(cycle, 10000);
     })();
   </script>
   <script src="character-generator.js"></script>
