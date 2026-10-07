@@ -628,7 +628,10 @@
       pointer-events: auto;
       z-index: 2147483647 !important;
       user-select: none;
-      cursor: pointer;
+      -webkit-user-select: none;
+      touch-action: none !important;
+      -webkit-touch-callout: none !important;
+      cursor: grab;
       will-change: transform;
       opacity: 0;
       visibility: hidden;
@@ -665,6 +668,10 @@
     .floating-o.active {
       opacity: 1;
       visibility: visible;
+    }
+
+    .floating-o.is-dragging {
+      cursor: grabbing !important;
     }
 
     .floating-o.returning {

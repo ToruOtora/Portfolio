@@ -671,12 +671,14 @@ const FLOATING_O_CONFIG = {
   let pinnedX = 0;               // พิกัด X ที่ปักหมุด
   let pinnedY = 0;               // พิกัด Y ที่ปักหมุด
   let isDraggingO = false;       // กำลังลากตัว O อยู่หรือไม่
+  let activeDragPointerId = null;// Pointer ID ที่กำลังลากอยู่
   let dragStartX = 0;            // จุดเริ่มต้น Pointer X ตอนลาก
   let dragStartY = 0;            // จุดเริ่มต้น Pointer Y ตอนลาก
   let dragInitialX = 0;          // ตำแหน่งเริ่มต้นของตัว O ก่อนลาก
   let dragInitialY = 0;          // ตำแหน่งเริ่มต้นของตัว O ก่อนลาก
   let hasMovedSignificantly = false; // มีการลากขยับเกิน threshold หรือไม่
   let touchHoldTimer = null;     // ตัวจับเวลากดค้าง 1 วินาทีบนมือถือเพื่อส่งกลับบ้าน
+  let cleanupDragListeners = () => {}; // ฟังก์ชันเคลียร์ Event Listeners ของการลาก
   let greetingExpandTimer = null;
   let greetingTimer = null;
   let seqTransitionTimer = null;
@@ -1552,6 +1554,9 @@ const FLOATING_O_CONFIG = {
     floatingEl.setAttribute('aria-hidden', 'true');
     floatingEl.style.zIndex = '2147483647';
     floatingEl.style.cursor = 'grab';
+    floatingEl.style.touchAction = 'none';
+    floatingEl.style.userSelect = 'none';
+    floatingEl.style.webkitUserSelect = 'none';
     floatingEl.setAttribute('title', 'คลิกซ้าย: พักให้นั่งรอ / ลากไปวางที่ต่างๆ | คลิกขวา: กลับที่เดิม (มือถือกดค้าง 1 วิ)');
     document.body.appendChild(floatingEl);
 
@@ -1562,7 +1567,103 @@ const FLOATING_O_CONFIG = {
       returnHome();
     });
 
-    // ── 2. Pointer Down (เตรียมลาก, คลิกซ้าย หรือจับเวลา 1 วินาทีบนมือถือ) ──
+    // ป้องกัน Browser Gestures (การเลื่อนหน้าเว็บ / ดึงเพื่อรีเฟรช / ซูม) แทรกแซงขณะจับตัว O บนมือถือ
+    floatingEl.addEventListener('touchstart', e => {
+      if (e.cancelable) e.preventDefault();
+    }, { passive: false });
+
+    // ── 2. ระบบลากและการติดตาม Pointer (Track ผ่าน window เพื่อความลื่นไหลสูงสุด 120 FPS ไม่สะดุด) ──
+    const onPointerMove = e => {
+      if (!isDraggingO || !isChasing) return;
+      if (activeDragPointerId !== null && e.pointerId !== undefined && e.pointerId !== activeDragPointerId) return;
+
+      if (e.cancelable) e.preventDefault();
+
+      const dx = e.clientX - dragStartX;
+      const dy = e.clientY - dragStartY;
+
+      if (Math.hypot(dx, dy) > 4) {
+        hasMovedSignificantly = true;
+        clearTimeout(touchHoldTimer); // ยกเลิกการกดค้างส่งกลับบ้านทันทีเมื่อเริ่มลาก
+      }
+
+      const effSize = (badgeSize * currentScale) || 42;
+      const minX = 6;
+      const maxX = Math.max(minX, window.innerWidth - effSize - 6);
+      const minY = 6;
+      const maxY = Math.max(minY, window.innerHeight - effSize - 6);
+
+      let newX = dragInitialX + dx;
+      let newY = dragInitialY + dy;
+
+      newX = Math.max(minX, Math.min(maxX, newX));
+      newY = Math.max(minY, Math.min(maxY, newY));
+
+      currentX = newX;
+      currentY = newY;
+      pinnedX = newX;
+      pinnedY = newY;
+
+      // อัปเดตตำแหน่งลงสไตล์ทันทีแบบ Zero-latency สำหรับหน้าจอ Refresh Rate สูง (60Hz - 120Hz)
+      currentTilt = 0;
+      floatingEl.style.transform = `translate3d(${newX.toFixed(1)}px, ${newY.toFixed(1)}px, 0) rotate(0deg) scale(${currentScale.toFixed(4)})`;
+    };
+
+    const handleDragEnd = (e, isCancel = false) => {
+      clearTimeout(touchHoldTimer);
+      if (activeDragPointerId !== null && e && e.pointerId !== undefined && e.pointerId !== activeDragPointerId) return;
+
+      cleanupDragListeners();
+
+      if (!isDraggingO || !isChasing) return;
+      if (e && e.cancelable) e.preventDefault();
+
+      isDraggingO = false;
+
+      if (hasMovedSignificantly || isCancel) {
+        // [แบบที่ 2]: ลากไปวางที่ใหม่สำเร็จ -> ปักหมุดอยู่นิ่งตรงตำแหน่งนั้น
+        isPinned = true;
+        pinnedX = currentX;
+        pinnedY = currentY;
+        if (floatingFabEl && !isCancel) {
+          playGreeting(floatingFabEl, 100, getRandomStayDialogue());
+        }
+      } else {
+        // [แบบที่ 1]: คลิกซ้ายหรือแตะสั้นๆ โดยไม่ลาก -> สลับโหมดนิ่ง / บินตาม
+        if (!isPinned) {
+          isPinned = true;
+          pinnedX = currentX;
+          pinnedY = currentY;
+          if (floatingFabEl) {
+            playGreeting(floatingFabEl, 100, getRandomStayDialogue());
+          }
+        } else {
+          isPinned = false;
+          if (floatingFabEl) {
+            playGreeting(floatingFabEl, 100, "ไปต่อกันเถอะ ฟิ้ววว (・o・)");
+          }
+        }
+      }
+    };
+
+    const onPointerUp = e => handleDragEnd(e, false);
+    const onPointerCancel = e => handleDragEnd(e, true);
+
+    cleanupDragListeners = () => {
+      window.removeEventListener('pointermove', onPointerMove);
+      window.removeEventListener('pointerup', onPointerUp);
+      window.removeEventListener('pointercancel', onPointerCancel);
+      if (floatingEl) {
+        floatingEl.classList.remove('is-dragging');
+        floatingEl.style.cursor = 'grab';
+        if (activeDragPointerId !== null) {
+          try { floatingEl.releasePointerCapture(activeDragPointerId); } catch (_) { }
+        }
+      }
+      activeDragPointerId = null;
+    };
+
+    // ── 3. Pointer Down บนตัว O (เตรียมลาก หรือจับเวลากดค้างบนมือถือ) ──
     floatingEl.addEventListener('pointerdown', e => {
       if (!isChasing) return;
       if (e.button === 2) { // คลิกขวา
@@ -1573,98 +1674,38 @@ const FLOATING_O_CONFIG = {
       }
       if (e.button !== 0 && e.pointerType === 'mouse') return; // เมาส์รับเฉพาะคลิกซ้าย
 
-      e.preventDefault();
+      if (e.cancelable) e.preventDefault();
       e.stopPropagation();
 
       isDraggingO = true;
+      activeDragPointerId = e.pointerId;
       dragStartX = e.clientX;
       dragStartY = e.clientY;
       dragInitialX = currentX;
       dragInitialY = currentY;
       hasMovedSignificantly = false;
+
+      floatingEl.classList.add('is-dragging');
       floatingEl.style.cursor = 'grabbing';
       try { floatingEl.setPointerCapture(e.pointerId); } catch (_) { }
+
+      // ผูก Event ติดตามเข้ากับ window เพื่อไม่ให้การลากหลุดเมื่อผู้ใช้วาดนิ้วเร็วเกินขอบเขต 42px
+      window.addEventListener('pointermove', onPointerMove, { passive: false });
+      window.addEventListener('pointerup', onPointerUp, { passive: false });
+      window.addEventListener('pointercancel', onPointerCancel, { passive: false });
 
       // กดค้าง 1 วินาทีบนหน้าจอมือถือ/แท็บเล็ต เพื่อส่งกลับบ้าน
       clearTimeout(touchHoldTimer);
       if (e.pointerType === 'touch') {
         touchHoldTimer = setTimeout(() => {
           if (!hasMovedSignificantly && isChasing) {
+            cleanupDragListeners();
             isDraggingO = false;
-            floatingEl.style.cursor = 'grab';
-            try { floatingEl.releasePointerCapture(e.pointerId); } catch (_) { }
             returnHome();
           }
         }, 1000);
       }
     });
-
-    // ── 3. Pointer Move (ลากขยับตัว O ไปวางตำแหน่งต่างๆ บนหน้าจอ) ──
-    floatingEl.addEventListener('pointermove', e => {
-      if (!isDraggingO || !isChasing) return;
-      e.preventDefault();
-      e.stopPropagation();
-
-      const dx = e.clientX - dragStartX;
-      const dy = e.clientY - dragStartY;
-      if (Math.hypot(dx, dy) > 6) {
-        hasMovedSignificantly = true;
-        clearTimeout(touchHoldTimer); // ยกเลิกการกดค้างกลับบ้านเพราะเป็นการลากย้าย
-      }
-
-      let newX = dragInitialX + dx;
-      let newY = dragInitialY + dy;
-      // ป้องกันตัว O หลุดออกจากขอบเขตหน้าจอขณะลาก
-      newX = Math.max(8, Math.min(window.innerWidth - badgeSize - 8, newX));
-      newY = Math.max(8, Math.min(window.innerHeight - badgeSize - 8, newY));
-
-      currentX = newX;
-      currentY = newY;
-      pinnedX = newX;
-      pinnedY = newY;
-    });
-
-    // ── 4. Pointer Up / Cancel (ปล่อยวาง หรือคลิกสลับโหมดนิ่ง/ตาม) ──
-    const handlePointerEnd = e => {
-      clearTimeout(touchHoldTimer);
-      if (!isDraggingO || !isChasing) return;
-      e.preventDefault();
-      e.stopPropagation();
-
-      isDraggingO = false;
-      floatingEl.style.cursor = 'grab';
-      try { floatingEl.releasePointerCapture(e.pointerId); } catch (_) { }
-
-      if (hasMovedSignificantly) {
-        // [แบบที่ 2]: ลากไปวางที่ใหม่สำเร็จ -> ปักหมุดอยู่นิ่งตรงตำแหน่งนั้น
-        isPinned = true;
-        pinnedX = currentX;
-        pinnedY = currentY;
-        if (floatingFabEl) {
-          playGreeting(floatingFabEl, 100, getRandomStayDialogue());
-        }
-      } else {
-        // [แบบที่ 1]: คลิกซ้ายสั้นๆ โดยไม่ลาก -> สลับโหมดนิ่ง / บินตาม
-        if (!isPinned) {
-          // สั่งให้นั่งรอนิ่งๆ ตรงจุดนี้
-          isPinned = true;
-          pinnedX = currentX;
-          pinnedY = currentY;
-          if (floatingFabEl) {
-            playGreeting(floatingFabEl, 100, getRandomStayDialogue());
-          }
-        } else {
-          // สั่งให้กลับมาบินตามเมาส์ต่อ
-          isPinned = false;
-          if (floatingFabEl) {
-            playGreeting(floatingFabEl, 100, "ไปต่อกันเถอะ ฟิ้ววว (・o・)");
-          }
-        }
-      }
-    };
-
-    floatingEl.addEventListener('pointerup', handlePointerEnd);
-    floatingEl.addEventListener('pointercancel', handlePointerEnd);
 
     floatingEl.addEventListener('click', e => {
       e.preventDefault();
@@ -1790,6 +1831,7 @@ const FLOATING_O_CONFIG = {
   }, { passive: true });
 
   window.addEventListener('touchmove', e => {
+    if (isDraggingO) return; // ไม่รัน DOM query และ elementFromPoint ขณะกำลังลากตัว O เพื่อความลื่นไหลระดับ 120 FPS
     if (e.touches && e.touches.length > 0) {
       const touch = e.touches[0];
       updatePos(touch.clientX, touch.clientY);
@@ -1939,9 +1981,8 @@ const FLOATING_O_CONFIG = {
     if (isChasing && floatingFabEl && floatingEl) {
       const floatPoly = document.getElementById('floating-bubble-pointer-poly');
       if (floatPoly) {
-        const oRect = floatingEl.getBoundingClientRect();
-        const oTargetX = oRect.left + (oRect.width / 2);
-        const oTargetY = oRect.top + (oRect.height / 2);
+        const oTargetX = currentX + (badgeSize / 2);
+        const oTargetY = currentY + (badgeSize / 2);
         updateSinglePointer(floatingFabEl, floatPoly, oTargetX, oTargetY);
       }
     }
@@ -2001,10 +2042,9 @@ const FLOATING_O_CONFIG = {
 
     // Contact button smoothly follows at the configured position relative to letter O
     if (floatingFabEl) {
-      const oRect = floatingEl.getBoundingClientRect();
-      const oRadius = Math.round(Math.max(oRect.width, oRect.height) / 2) || 21;
-      const oCenterX = oRect.left + (oRect.width / 2);
-      const oCenterY = oRect.top + (oRect.height / 2);
+      const oRadius = Math.round((badgeSize * currentScale) / 2) || 21;
+      const oCenterX = currentX + (badgeSize / 2);
+      const oCenterY = currentY + (badgeSize / 2);
 
       const fabRect = floatingFabEl.getBoundingClientRect();
       const curW = fabRect.width || (fabGreetingActive ? 170 : 44);
@@ -2032,6 +2072,7 @@ const FLOATING_O_CONFIG = {
     if (isDockedIntroActive) {
       stopDockedIntro(true);
     }
+    cleanupDragListeners();
     isChasing = false;
     cancelAnimationFrame(animId);
     clearIdleGreetingTimer();
@@ -2130,6 +2171,7 @@ const FLOATING_O_CONFIG = {
 
   function returnHome() {
     if (!isChasing) return;
+    cleanupDragListeners();
     isChasing = false;
     isPinned = false;
     isDraggingO = false;
@@ -2226,11 +2268,16 @@ const FLOATING_O_CONFIG = {
   }
 
   // Delegate click on #easter-egg-o or #floating-o
+  let lastEasterEggTriggerTime = 0;
   function handleOTargetClick(e) {
     const oTarget = e.target.closest('#easter-egg-o');
     if (oTarget) {
       e.preventDefault();
       e.stopPropagation();
+      const now = Date.now();
+      if (now - lastEasterEggTriggerTime < 450) return; // ป้องกัน Double trigger ระหว่าง touchend และ synthetic click
+      lastEasterEggTriggerTime = now;
+
       if (isChasing && floatingEl && floatingEl.classList.contains('active')) {
         returnHome();
       } else {
