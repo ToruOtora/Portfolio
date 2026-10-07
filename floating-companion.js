@@ -8,26 +8,60 @@
 
 const FLOATING_O_CONFIG = {
   // ── บทพูด / ข้อความที่ตัว O พูด (Speech Dialogue) ──
-  // ข้อความหลักที่จะแสดงในกล่องคำพูด (คำแรกที่แสดงเสมอ)
-  greetingText: "สวัสดี (◍•ᴗ•◍)",
+  // ข้อความหลักที่จะแสดงในกล่องคำพูด (แสดงเป็นลำดับทีละประโยคตอนเข้าใกล้รอบแรก)
+  greetingText: [
+    "สวัสดี (◍•ᴗ•◍)",
+    "ผมไม่ใช่ AI นะ",
+    "ผมแค่ถูกจ้างมาให้อธิบายเว็บนี้",
+    "ยินดีที่ได้รู้จัก (⁠ ⁠╹⁠▽⁠╹⁠ ⁠)",
+  ],
+
+  // ข้อความทักทายรอบที่สอง (เมื่อผู้ใช้ชี้เข้ามาใกล้อีกรอบหลังจากพูดจบชุดแรกแล้ว - แนวทาง A)
+  followUpGreetingText: [
+    "ยังอยู่ตรงนี้เสมอนะ (´꒳`)",
+    "คลิกที่ตัวผมเพื่อพาบินเล่นได้นะ!",
+  ],
+
+  // ข้อความทักทายสั้นๆ สำหรับรอบที่สามเป็นต้นไป (สุ่มพูดประโยคสั้นๆ กระชับ ไม่ยืดเยื้อ)
+  subsequentGreetings: [
+    "พร้อมลุยงานเสมอนะครับ (◍•ᴗ•◍)",
+    "มีโปรเจกต์ใหม่ ปรึกษาโอเว่นได้ตลอดนะ!",
+    "วันนี้แวะมาดูงานอะไรเป็นพิเศษไหมครับ (´꒳`)",
+    "จิ้มปุ่มข้างๆ เพื่อสั่ง COMMISSION ได้เลยนะ",
+    "ยินดีต้อนรับอีกครั้งนะ (⁠ ⁠╹⁠▽⁠╹⁠ ⁠)",
+  ],
+
+  // ── การตั้งค่าเสียงพูด 8-บิต (8-bit Voice Sound Settings - Web Audio API) ──
+  sound: {
+    enabled: true,             // เปิด/ปิดเสียงพูด 8-บิต (true / false)
+    volume: 0.12,              // ระดับความดังหลัก (ปรับเพิ่มจาก 0.055 เป็น 0.12 ให้ได้ยินชัดเจนยิ่งขึ้น)
+    volumeSwing: 0.45,         // อัตราสวิงความเบา-ดัง (0.0 = ดังเท่ากันทุกพยางค์, 0.45 = พยางค์หนักเบาต่างกัน ~3 เท่า, 0.8 = ต่างกัน 8-10 เท่า)
+    basePitch: 450,            // ระดับความถี่เสียงพื้นฐาน (Hz: 350 = ทุ้มเข้ม, 450 = กลางๆ น่ารัก, 560 = แหลมใส)
+    pitchSwing: 110,           // ระยะสวิงสูง-ต่ำของระดับเสียง (Hz: ยิ่งมากเสียงยิ่งมีเมโลดี้ขึ้นลงเป็นธรรมชาติ เช่น 80 - 150Hz)
+    waveType: 'triangle',      // ชนิดคลื่นเสียง ('triangle' = นุ่มนวลกลมกล่อม, 'square' = 8-bit ติ๊ดๆ เรโทรแท้, 'sine' = ใสนุ่ม)
+    pitchGlide: 0.82,          // การสไลด์คีย์ในแต่ละพยางค์ (0.75 - 0.95: รูดคีย์ลงเลียนแบบเสียงสระ/คำพูด)
+    blipSpeedMs: 76,           // ความเร็วการเคาะพยางค์ (ms: ยิ่งน้อยยิ่งพูดรัวไว เช่น 65 - 90ms)
+    blipDurationMs: 44,        // ความยาวของเนื้อเสียงแต่ละพยางค์ (ms: 30 - 55ms)
+    filterCutoff: 2200,        // โทนความทุ้ม-แหลม (Hz: 1500 = ทุ้มอบอุ่น, 2200 = พอดีๆ, 3500 = ใสคมชัด)
+  },
 
   // รายการคำพูดเพิ่มเติม (สุ่มแสดงหลังจากคำแรก)
   greetingPool: [
     "สวัสดี (◍•ᴗ•◍)",
-    "ผมไม่ใช่ AI นะ",
-    "ผมแค่ถูกจ้างมาให้อธิบายเว็บนี้",
     "ยินดีที่ได้รู้จัก (⁠ ⁠╹⁠▽⁠╹⁠ ⁠)",
     "ชี้สิ่งที่สนใจ เดี๋ยวผมอธิบายให้เอง",
     "ติ๊กตอก ๆๆ",
     "ค่าตัวผมแพงนะรู้ป่าว ୧⁠(⁠ ⁠˵⁠ ⁠°⁠ ⁠~⁠ ⁠°⁠ ⁠˵⁠ ⁠)⁠୨",
     "เจ้าของเว็บบอกว่าถ้ามาช่วยจะได้ลูกอม (⁠人⁠ ⁠•͈⁠ᴗ⁠•͈⁠)ノ由",
     "โอเคคุณชี้ไปเลยเดี๋ยวผมอธิบายให้ (⁠ ⁠•⁠ ⁠▽⁠ ⁠•⁠ ⁠)",
-    "555+",
+    "คลิกที่ตัวผม เดี๋ยวจะนั้งรออธิบายอยู่ตรงนี้ (⁠ ⁠•⁠ ⁠▽⁠ ⁠•⁠ ⁠)",
     "เมาส์ไปไหน ผมจะตามไปทางนั้น (⁠•⁠ ⁠u⁠ ⁠•⁠ )ノ~",
     "กดที่ปุ่มด้านล่างได้เลยนะ (⁠•⁠ ⁠‿⁠ ⁠•⁠ )",
     "ลูกอมๆ ₍⁠₍⁠ ⁠◝⁠(⁠　ﾟ⁠∀⁠ ﾟ⁠ ⁠)⁠◟⁠ ⁠⁾⁠⁾",
-    "จ้องนานๆ ระวังหลงรักนะ (⁠ ⁠•͈⁠ ⁠ล⁠ ⁠•͈⁠ )",
+    "จ้องนานๆ ระวังหลงรักนะ (⁠ ⁠•͈⁠ ᴗ⁠ ⁠•͈⁠ )",
     "ฟิ้วววววววว (⁠・⁠o⁠・⁠)",
+    "เจ้านายยยยยยยยยยยยยย (⁠・3⁠・⁠)",
+    "ผมว่าเขาน่าจะลืมให้ลูกอมผมแล้วอะ (⁠๑⁠´⁠•⁠.̫⁠ ⁠•⁠ ⁠`⁠๑⁠)",
   ],
 
   // ข้อความเดิมตอนปุ่มหดกลับเป็นปกติ หรือตอนชี้เมาส์ (สุ่มเปลี่ยนใหม่ทุกครั้งที่เมาส์เข้ามาชี้)
@@ -42,6 +76,8 @@ const FLOATING_O_CONFIG = {
     "โอเคเดี๋ยวผมจะรออยู่ตรงนี้นะ(´ . .̫ . `)",
     "พักเหนื่อยแป๊บ วางผมไว้ตรงนี้แหละ ( ｡• ᵕ •｡ )",
     "ถ้าง่วงแล้ว คลิกขวาที่ตัวผมเพื่อส่งกลับบ้านได้นะ",
+    "อย่าทิ้งผมไว้นานนะ (´･ω･`)",
+    "เจ้านายจะไปไหนอีกแล้ว ( ・_・)ノ",
   ],
 
   // ── ตำแหน่งของตัว O เทียบกับเคอร์เซอร์เมาส์ (Position of O relative to mouse) ──
@@ -62,10 +98,16 @@ const FLOATING_O_CONFIG = {
 
   // ── การตั้งค่าระยะเวลา (Timings in milliseconds: 1000 = 1 วินาที) ──
   timing: {
-    greetingHoldMs: 5000,          // เวลาที่แสดงข้อความทักทายค้างไว้ (5 วินาที)
+    greetingHoldMs: 5000,          // เวลาที่แสดงข้อความทักทายค้างไว้ในโหมดปกติ (5 วินาที)
+    introSentenceHoldMs: 2000,     // เวลาแสดงแต่ละประโยคในโหมดแนะนำตัวต่อเนื่อง (2 วินาที)
+    introTransitionMs: 180,        // เวลาสลับเปลี่ยนระหว่างประโยค (0.18 วินาที)
+    proximityRadius: 160,          // ระยะเคอร์เซอร์เมาส์เข้าใกล้ชื่อเพื่อเริ่มทักทาย (160px)
+    proximityLeaveRadius: 320,     // ระยะเคอร์เซอร์เมาส์ออกจากชื่อก่อนเริ่มนับเวลากลับบ้าน (320px)
+    proximityCooldownMs: 2500,     // เวลาเว้นช่วงก่อนทักทายรอบใหม่เมื่อจบชุด (2.5 วินาที)
     approachDelayMs: 420,          // หน่วงเวลาก่อนเริ่มกางกล่องคำพูดหลังบินไปหา O (0.42 วินาที)
     collapseResetMs: 260,          // เวลาคืนค่าข้อความหลังหดตัวกลับ (0.26 วินาที)
-    returnFlightMs: 680,           // เวลาบินกลับประจำที่เดิม (0.68 วินาที)
+    glideInFlightMs: 520,          // เวลาบินเลื่อนมาจากทางขวามือ (0.52 วินาที)
+    returnFlightMs: 480,           // เวลาบินกลับประจำที่เดิมทางขวามือ (0.48 วินาที)
     greetOnReload: true,           // แสดงข้อความทักทายตอนโหลด/รีเฟรชหน้าเว็บใหม่ถ้าตัว O กำลังติดตามเมาส์อยู่
     reloadGreetingDelayMs: 350,    // หน่วงเวลาก่อนเริ่มทักทายตอนโหลดหน้าเว็บใหม่ (0.35 วินาที)
     idleGreetingIntervalMs: 8000,  // แสดงข้อความทักทายทุกๆ 8 วินาที หากผู้ใช้ไม่ได้กดหรือเข้าไปชี้ปุ่ม
@@ -187,7 +229,7 @@ const FLOATING_O_CONFIG = {
       {
         id: 'profile-name',
         selector: '#profile-name-el',
-        message: 'นี่เจ้าของผมเอง Toru O วาดรูปเก่งนะ แต่ติดสินบนผมด้วยลูกอม (⁠≧⁠▽⁠≦⁠)',
+        message: 'นี่เจ้าของผมเอง Toru O เข้าบอกถ้าผมมาช่วยจะได้ลูกอม (⁠≧⁠▽⁠≦⁠)',
       },
       {
         id: 'profile-tags',
@@ -214,17 +256,17 @@ const FLOATING_O_CONFIG = {
       {
         id: 'social-fb',
         selector: '#social-fb',
-        message: 'แวะไปกดไลก์และทักทายที่หน้า Facebook ได้เลยครับ!',
+        message: 'แวะไปกดไลก์และทักทายที่หน้า Facebook ได้นะ!',
       },
       {
         id: 'social-ig',
         selector: '#social-ig',
-        message: 'แกลเลอรีรูปภาพสวยๆ บน Instagram แวะไปชมกันนะ',
+        message: 'แกลเลอรีรูปภาพสวยๆ บน Instagram เอ๊ะมันคืออะไรอ๊ะ? (⁠๑⁠•⁠ ⁠▽⁠ ⁠•⁠๑⁠)',
       },
       {
         id: 'social-da',
         selector: '#social-da',
-        message: 'รวมคลังภาพผลงานบน DeviantArt สายอาร์ตต้องไม่พลาด!',
+        message: 'DeviantArt เหรอ? เห็นว่าเขาจะลงอดอปในนี้!',
       },
 
       // ภาพรวมของแถวโปรไฟล์ (ถ้าชี้พื้นที่ว่างในแถวโปรไฟล์)
@@ -502,6 +544,100 @@ const FLOATING_O_CONFIG = {
         selector: '#color-palette-modal',
         message: 'หน้าต่าง Color Generator สามารถลากขอบด้านขวาเพื่อปรับขนาดหน้าต่างได้ด้วยนะ (⁠•⁠ ⁠‿⁠ ⁠•⁠ )',
       },
+
+      // ─────────────────────────────────────────────────────────────────────
+      // 📌 หมวดที่ 12: หน้าคำนวณราคาคอมมิชชัน & ข้อตกลง (Commission & Terms)
+      // ─────────────────────────────────────────────────────────────────────
+      // 1. รายการคำนวณราคาแต่ละชิ้นที่ดึงมาจาก Google Sheets แบบเรียลไทม์
+      {
+        id: 'terms-info-item',
+        selector: '.terms-info-item',
+        message: function(el) {
+          if (!el) return '';
+          let title = (el.getAttribute('data-title') || '').trim();
+          const price = (el.getAttribute('data-price') || '').trim();
+          const isSel = el.classList.contains('calc-selected');
+          // คุมความยาวชื่อบนจอมือถือ ไม่ให้ยาวเกินไป
+          if (title.length > 15) {
+            title = title.slice(0, 14) + '..';
+          }
+          if (isSel) {
+            return [
+              `เลือก ${title} ไว้แล้วนะ (´꒳\`)`,
+              `กดซ้ำเพื่อยกเลิก ${title} ได้ครับ`,
+            ];
+          }
+          if (price) {
+            return [
+              `${title} (${price}) กด [+] คำนวณได้นะ`,
+              `กดปุ่ม [+] เพื่อรวมราคา ${title} ได้เลย`,
+            ];
+          }
+          return `${title} กดดูรายละเอียดได้นะ`;
+        },
+      },
+      // 2. ปุ่มลอยใบเสนอราคา / ดูยอดรวมคำนวณ
+      {
+        id: 'terms-price-fab',
+        selector: '#price-fab',
+        message: function() {
+          const textEl = document.getElementById('price-fab-text');
+          const text = textEl ? textEl.textContent.trim() : '';
+          if (!text || text.includes('0') || text === '฿0' || text === 'ราคา: ฿0') {
+            return [
+              "กด [+] ที่รายการเพื่อคำนวณราคานะ",
+              "ใบเสนอราคา! เลือกรายการได้เลย (◍•ᴗ•◍)",
+            ];
+          }
+          return [
+            `ยอดรวม ${text} จิ้มดูใบเสนอราคาได้นะ`,
+            `คำนวณไว้ ${text} คลิกเปิดดูบิลได้เลย!`,
+          ];
+        },
+      },
+      // 3. หัวข้อ Commission และคำอธิบายภาพรวม
+      {
+        id: 'terms-commission-guide',
+        selector: '#terms-commission .terms-section-title',
+        message: [
+          "กด [+] ตามรายการที่สนใจเพื่อคำนวณราคา",
+          "เลือกสเกลภาพและฉากหลังได้ตามชอบเลยนะ",
+        ],
+      },
+      // 4. ปุ่มลอยส่งข้อความบนหน้า Commission
+      {
+        id: 'terms-contact-fab',
+        selector: '.terms-contact-fab',
+        message: [
+          "คิดราคาเสร็จแล้ว ทักแชทส่งบรีฟได้เลยนะ",
+          "กดตรงนี้เพื่อเปิดแชทคุยงานกับเจ้าของผม!",
+        ],
+      },
+      // 5. หมวดเงื่อนไขและข้อตกลง Adoptable
+      {
+        id: 'terms-adoptable',
+        selector: '#terms-adoptable .terms-section-title',
+        message: [
+          "ข้อตกลงและเงื่อนไขรับเลี้ยง Adoptable",
+          "อ่านกติกาลิขสิทธิ์ก่อนรับเลี้ยงน้องๆ นะ",
+        ],
+      },
+      // 6. ปุ่มคำสั่งต่างๆ ภายในหน้าต่างใบเสนอราคา (Receipt Modal)
+      {
+        id: 'receipt-copy',
+        selector: '.receipt-btn.copy-btn',
+        message: "กดคัดลอกรายการไปส่งในแชทได้เลยนะ",
+      },
+      {
+        id: 'receipt-save',
+        selector: '.receipt-btn.save-btn',
+        message: "บันทึกใบเสนอราคาเป็นรูปภาพเก็บไว้ได้นะ",
+      },
+      {
+        id: 'receipt-reset',
+        selector: '.receipt-btn.reset-btn',
+        message: "ล้างรายการที่เลือกทั้งหมดเพื่อคิดใหม่",
+      },
     ]
   }
 };
@@ -536,6 +672,7 @@ const FLOATING_O_CONFIG = {
   let touchHoldTimer = null;     // ตัวจับเวลากดค้าง 1 วินาทีบนมือถือเพื่อส่งกลับบ้าน
   let greetingExpandTimer = null;
   let greetingTimer = null;
+  let seqTransitionTimer = null;
   let idleGreetingTimer = null;
   let isFirstGreeting = true;
   let lastGreetingIndex = 0;
@@ -545,12 +682,154 @@ const FLOATING_O_CONFIG = {
   let activeSectionKey = null;
   const sectionCooldownMap = new Map();
   const sectionLastIndexMap = new Map();
+  let isDockedIntroActive = false;
+  let hasPlayedDockedIntro = false;
+  let lastDockedIntroTime = 0;
+  let dockedIntroLeaveTimer = null;
+  let dockedSeqTimer = null;
+  let dockedTransitionTimer = null;
+  let dockedSeqIndex = 0;
+  let dockedIntroCount = 0;
+  let lastSubsequentIndex = -1;
 
-  // ดึงข้อความทักทายจาก Config (คำแรกที่แสดงคือ สวัสดี เสมอ และคำที่เหลือจะเป็นการสุ่ม)
+  // ═══════════════════════════════════════════════════════════════════
+  //  8-BIT RETRO CHIPTUNE SPEECH SYNTHESIZER (Web Audio API)
+  // ═══════════════════════════════════════════════════════════════════
+  let audioCtx = null;
+  let voiceTimer = null;
+  let isVoiceSpeaking = false;
+
+  function getAudioContext() {
+    if (!audioCtx) {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (AudioCtx) {
+        audioCtx = new AudioCtx();
+      }
+    }
+    if (audioCtx && audioCtx.state === 'suspended') {
+      audioCtx.resume().catch(() => {});
+    }
+    return audioCtx;
+  }
+
+  function unlockAudio() {
+    const ctx = getAudioContext();
+    if (ctx && ctx.state === 'suspended') {
+      ctx.resume().catch(() => {});
+    }
+  }
+  window.addEventListener('pointerdown', unlockAudio, { passive: true });
+  window.addEventListener('keydown', unlockAudio, { passive: true });
+
+  function play8BitBlip(customFreq = null, customVol = null) {
+    const sndCfg = FLOATING_O_CONFIG.sound || {};
+    if (sndCfg.enabled === false) return;
+
+    try {
+      const ctx = getAudioContext();
+      if (!ctx || ctx.state !== 'running') return;
+
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      const filter = ctx.createBiquadFilter();
+
+      // ชนิดคลื่นเสียงตาม Config (triangle = นุ่มนวล, square = เรโทร 8-bit, sine = ใสนุ่ม)
+      osc.type = sndCfg.waveType || 'triangle';
+
+      const basePitch = sndCfg.basePitch || 450;
+      const freq = customFreq || basePitch;
+      const now = ctx.currentTime;
+
+      // Pitch glide ลงเบาๆ เลียนแบบจังหวะออกเสียงพยางค์
+      const glideFactor = typeof sndCfg.pitchGlide === 'number' ? sndCfg.pitchGlide : 0.82;
+      const durationSec = ((sndCfg.blipDurationMs || 44) / 1000);
+      osc.frequency.setValueAtTime(freq, now);
+      osc.frequency.exponentialRampToValueAtTime(Math.max(80, freq * glideFactor), now + durationSec * 0.9);
+
+      // Low-pass filter ตัดความถี่สูงแหลมบาดหูออก ให้โทนอบอุ่นแบบ Retro Gaming
+      filter.type = 'lowpass';
+      filter.frequency.setValueAtTime(sndCfg.filterCutoff || 2200, now);
+
+      // คำนวณความดังพร้อม Dynamic Volume Swing (รองรับระดับความดังสูงสุดถึง 1.0)
+      const baseVol = typeof sndCfg.volume === 'number' ? sndCfg.volume : 0.12;
+      const finalVol = Math.max(0.005, Math.min(1.0, (customVol !== null ? customVol : baseVol)));
+
+      gain.gain.setValueAtTime(0.0001, now);
+      gain.gain.linearRampToValueAtTime(finalVol, now + 0.005);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + durationSec);
+
+      osc.connect(filter);
+      filter.connect(gain);
+      gain.connect(ctx.destination);
+
+      osc.start(now);
+      osc.stop(now + durationSec + 0.005);
+    } catch (_) {}
+  }
+
+  function playSpeechSoundBurst(syllableCount = 4, intervalMsOverride = null) {
+    stopSpeechSound();
+    isVoiceSpeaking = true;
+    let count = 0;
+
+    const sndCfg = FLOATING_O_CONFIG.sound || {};
+    const basePitch = sndCfg.basePitch || 450;
+    const pitchSwing = typeof sndCfg.pitchSwing === 'number' ? sndCfg.pitchSwing : 110;
+    const baseVol = typeof sndCfg.volume === 'number' ? sndCfg.volume : 0.12;
+    const volSwing = typeof sndCfg.volumeSwing === 'number' ? sndCfg.volumeSwing : 0.45;
+    const speedMs = intervalMsOverride || (sndCfg.blipSpeedMs || 76);
+
+    function triggerNextBlip() {
+      if (!isVoiceSpeaking || count >= syllableCount) {
+        clearInterval(voiceTimer);
+        voiceTimer = null;
+        return;
+      }
+
+      // คำนวณ Pitch Swing: ผสมผสานทำนองเมโลดี้ตามลำดับพยางค์ + ไมโครแวเรียนซ์
+      const melodyCurve = Math.sin(count * 1.7) * 0.75 + (Math.random() - 0.5) * 0.5;
+      let blipPitch = basePitch + (melodyCurve * pitchSwing);
+
+      // พยางค์สุดท้ายของประโยคยกเสียงสูงขึ้นเล็กน้อย (Inflection ทักทาย)
+      if (count === syllableCount - 1 && syllableCount > 2) {
+        blipPitch += pitchSwing * 0.35;
+      }
+
+      // คำนวณ Volume Swing: สวิงความเบา-ดังของแต่ละพยางค์
+      // พยางค์แรกให้เน้นเสียงคมชัด (accent), พยางค์ถัดๆ ไปสวิงตาม volSwing
+      let volMultiplier = 1.0;
+      if (count === 0) {
+        volMultiplier = 1.0 + (volSwing * 0.4); // เน้นพยางค์แรก
+      } else {
+        const randomFactor = (Math.random() * 2 - 1); // -1 ถึง +1
+        volMultiplier = 1.0 + (randomFactor * volSwing);
+      }
+      const blipVol = Math.max(0.005, baseVol * volMultiplier);
+
+      play8BitBlip(blipPitch, blipVol);
+      count++;
+    }
+
+    triggerNextBlip();
+    voiceTimer = setInterval(triggerNextBlip, speedMs);
+  }
+
+  function stopSpeechSound() {
+    isVoiceSpeaking = false;
+    if (voiceTimer) {
+      clearInterval(voiceTimer);
+      voiceTimer = null;
+    }
+  }
+
+  // ดึงข้อความทักทายจาก Config (ถ้าเป็นครั้งแรกและ greetingText เป็น Array จะส่งคืนชุดประโยคทั้งหมดเพื่อเล่นแบบต่อเนื่อง)
   function getGreetingDialogue() {
     if (isFirstGreeting) {
       isFirstGreeting = false;
       lastGreetingIndex = 0;
+      if (Array.isArray(FLOATING_O_CONFIG.greetingText)) {
+        return FLOATING_O_CONFIG.greetingText;
+      }
       return FLOATING_O_CONFIG.greetingText || "สวัสดี (◍•ᴗ•◍)";
     }
     if (Array.isArray(FLOATING_O_CONFIG.greetingPool) && FLOATING_O_CONFIG.greetingPool.length > 0) {
@@ -562,6 +841,9 @@ const FLOATING_O_CONFIG = {
       }
       lastGreetingIndex = idx;
       return list[idx];
+    }
+    if (Array.isArray(FLOATING_O_CONFIG.greetingText)) {
+      return FLOATING_O_CONFIG.greetingText[0] || "สวัสดี (◍•ᴗ•◍)";
     }
     return FLOATING_O_CONFIG.greetingText || "สวัสดี (◍•ᴗ•◍)";
   }
@@ -743,7 +1025,7 @@ const FLOATING_O_CONFIG = {
       if (customTalkEl) {
         const msg = customTalkEl.getAttribute('data-o-talk');
         if (msg && msg.trim()) {
-          queueSectionSpeech('custom:' + msg.trim(), msg.trim(), cfg);
+          queueSectionSpeech('custom:' + msg.trim(), msg.trim(), cfg, customTalkEl);
           return;
         }
       }
@@ -753,9 +1035,14 @@ const FLOATING_O_CONFIG = {
         for (let i = 0; i < cfg.sections.length; i++) {
           const sec = cfg.sections[i];
           if (!sec || !sec.selector || !sec.message) continue;
-          if (targetEl.closest(sec.selector)) {
-            const key = sec.id || sec.selector;
-            queueSectionSpeech(key, sec.message, cfg);
+          const matchedEl = targetEl.closest(sec.selector);
+          if (matchedEl) {
+            let key = sec.id || sec.selector;
+            const subTitle = matchedEl.getAttribute('data-title') || matchedEl.id || '';
+            if (subTitle) {
+              key = `${key}:${subTitle}`;
+            }
+            queueSectionSpeech(key, sec.message, cfg, matchedEl);
             return;
           }
         }
@@ -767,7 +1054,14 @@ const FLOATING_O_CONFIG = {
     activeSectionKey = null;
   }
 
-  function resolveSectionMessage(messageRaw, key) {
+  function resolveSectionMessage(messageRaw, key, matchedEl = null) {
+    if (typeof messageRaw === 'function') {
+      try {
+        messageRaw = messageRaw(matchedEl);
+      } catch (err) {
+        return '';
+      }
+    }
     if (Array.isArray(messageRaw) && messageRaw.length > 0) {
       if (messageRaw.length === 1) return messageRaw[0];
       const lastIdx = sectionLastIndexMap.get(key);
@@ -781,7 +1075,7 @@ const FLOATING_O_CONFIG = {
     return typeof messageRaw === 'string' ? messageRaw : '';
   }
 
-  function queueSectionSpeech(key, message, cfg) {
+  function queueSectionSpeech(key, message, cfg, matchedEl = null) {
     if (activeSectionKey === key && sectionHoverTimer) return;
     activeSectionKey = key;
     clearSectionHoverTimer();
@@ -796,20 +1090,24 @@ const FLOATING_O_CONFIG = {
       sectionHoverTimer = null;
       if (!isChasing || fabGreetingActive || isFabHovered || !floatingFabEl) return;
       sectionCooldownMap.set(key, Date.now());
-      const finalMsg = resolveSectionMessage(message, key);
+      const finalMsg = resolveSectionMessage(message, key, matchedEl);
       if (finalMsg) {
         playGreeting(floatingFabEl, 120, finalMsg, true);
       }
     }, delayMs);
   }
 
-  // ฟังก์ชันเล่นแอนิเมชันคำพูดทักทาย / อธิบายจุดสำคัญ
+  // ฟังก์ชันเล่นแอนิเมชันคำพูดทักทาย / อธิบายจุดสำคัญ (รองรับทั้งประโยคเดี่ยวและลำดับประโยคต่อเนื่อง)
   function playGreeting(floatFab, delayOverrideMs = null, customMessage = null, isSectionExplain = false) {
     if (!floatFab) return;
     clearIdleGreetingTimer();
     clearSectionHoverTimer();
     clearTimeout(greetingExpandTimer);
     clearTimeout(greetingTimer);
+    clearTimeout(seqTransitionTimer);
+    floatFab.classList.remove('seq-switching');
+    if (floatingEl) floatingEl.classList.remove('is-speaking');
+    stopSpeechSound();
 
     // ปรับสถานะโหมดอธิบายจุดสำคัญ (ถ้าเป็นการอธิบาย ตัว O จะบินขึ้นบนและสลับซ้ายขวา)
     isExplainingSection = Boolean(isSectionExplain);
@@ -817,50 +1115,425 @@ const FLOATING_O_CONFIG = {
     const fabTextEl = floatFab.querySelector('.floating-contact-fab-text');
     const delayMs = delayOverrideMs !== null ? delayOverrideMs : (FLOATING_O_CONFIG.timing.approachDelayMs || 420);
     const holdMs = FLOATING_O_CONFIG.timing.greetingHoldMs || 5000;
+    const sentenceHoldMs = (FLOATING_O_CONFIG.timing && FLOATING_O_CONFIG.timing.introSentenceHoldMs) || 2000;
+    const transitionMs = (FLOATING_O_CONFIG.timing && FLOATING_O_CONFIG.timing.introTransitionMs) || 200;
 
-    // เตรียมข้อความทันทีและล็อคการคลิกตั้งแต่เริ่ม
-    const resolvedCustom = Array.isArray(customMessage)
-      ? resolveSectionMessage(customMessage, 'direct')
-      : customMessage;
-    const dialogue = (typeof resolvedCustom === 'string' && resolvedCustom.trim())
-      ? resolvedCustom.trim()
-      : getGreetingDialogue();
-    if (fabTextEl) fabTextEl.textContent = dialogue;
+    // เตรียมข้อความ (แปลงเป็น Array เสมอเพื่อรองรับ Sequence)
+    let dialogueList = [];
+    if (customMessage) {
+      const resolvedCustom = Array.isArray(customMessage)
+        ? resolveSectionMessage(customMessage, 'direct')
+        : customMessage;
+      dialogueList = Array.isArray(resolvedCustom) ? resolvedCustom : [resolvedCustom];
+    } else {
+      const gDialogue = getGreetingDialogue();
+      dialogueList = Array.isArray(gDialogue) ? gDialogue : [gDialogue];
+    }
+    dialogueList = dialogueList
+      .map(s => (typeof s === 'string' ? s.trim() : ''))
+      .filter(Boolean);
+    if (dialogueList.length === 0) {
+      dialogueList = ["สวัสดี (◍•ᴗ•◍)"];
+    }
+
+    if (fabTextEl) fabTextEl.textContent = dialogueList[0];
     fabGreetingActive = true;
 
     greetingExpandTimer = setTimeout(() => {
       if (!isChasing) {
         fabGreetingActive = false;
         isExplainingSection = false;
+        if (floatingEl) floatingEl.classList.remove('is-speaking');
+        stopSpeechSound();
         return;
       }
       fabGreetingActive = true;
       floatFab.classList.add('greeting-active');
       floatFab.style.cursor = 'default';
-      if (fabTextEl) fabTextEl.textContent = dialogue;
+      if (fabTextEl) fabTextEl.textContent = dialogueList[0];
+      if (floatingEl) floatingEl.classList.add('is-speaking');
+      playSpeechSoundBurst(Math.min(6, Math.max(3, Math.round(dialogueList[0].length * 0.35))), 78);
       updateBubblePointer();
 
-      // แสดงค้างไว้ holdMs แล้วค่อยสลับเป็นข้อความปกติ/defaultButtonText
-      greetingTimer = setTimeout(() => {
-        if (!isChasing) {
+      // ── โหมดแสดงบทพูดต่อเนื่องทีละประโยค (Sequence Mode) ──
+      if (dialogueList.length > 1) {
+        let seqIndex = 0;
+        function runNextSentence() {
+          greetingTimer = setTimeout(() => {
+            if (!isChasing || !fabGreetingActive) return;
+            seqIndex++;
+            if (seqIndex < dialogueList.length) {
+              floatFab.classList.add('seq-switching');
+              seqTransitionTimer = setTimeout(() => {
+                if (!isChasing || !fabGreetingActive) return;
+                if (fabTextEl) fabTextEl.textContent = dialogueList[seqIndex];
+                floatFab.classList.remove('seq-switching');
+                playSpeechSoundBurst(Math.min(6, Math.max(3, Math.round(dialogueList[seqIndex].length * 0.35))), 78);
+                updateBubblePointer();
+                runNextSentence();
+              }, transitionMs);
+            } else {
+              // จบชุดประโยคทั้งหมด คืนค่ากลับสู่สถานะปกติ
+              fabGreetingActive = false;
+              isExplainingSection = false;
+              floatFab.classList.remove('greeting-active', 'seq-switching');
+              floatFab.style.cursor = '';
+              isFabHovered = false;
+              if (floatingEl) floatingEl.classList.remove('is-speaking');
+              stopSpeechSound();
+              if (fabTextEl) {
+                fabTextEl.textContent = getRandomDefaultButtonText();
+              }
+              updateBubblePointer();
+              scheduleIdleGreeting();
+            }
+          }, sentenceHoldMs);
+        }
+        runNextSentence();
+      } else {
+        // ── โหมดแสดงประโยคเดี่ยวตามปกติ (Single Dialogue Mode) ──
+        greetingTimer = setTimeout(() => {
+          if (!isChasing) {
+            fabGreetingActive = false;
+            isExplainingSection = false;
+            if (floatingEl) floatingEl.classList.remove('is-speaking');
+            stopSpeechSound();
+            return;
+          }
           fabGreetingActive = false;
           isExplainingSection = false;
-          return;
-        }
-        fabGreetingActive = false;
-        isExplainingSection = false; // เมื่ออธิบายเสร็จ คืนค่ากลับสู่ตำแหน่งปกติ (ซ้ายล่าง)
-        floatFab.classList.remove('greeting-active');
-        floatFab.style.cursor = '';
-        isFabHovered = false; // ป้องกันสถานะ hover ค้างหลังกล่องคำพูดหดตัว
-        if (fabTextEl) {
-          fabTextEl.textContent = getRandomDefaultButtonText();
-        }
-        updateBubblePointer();
-
-        // เมื่อกล่องคำพูดหดกลับ และไม่มีการกระทำ ให้เริ่มจับเวลา 8 วินาทีเพื่อแสดงคำพูดถัดไป
-        scheduleIdleGreeting();
-      }, holdMs);
+          floatFab.classList.remove('greeting-active', 'seq-switching');
+          floatFab.style.cursor = '';
+          isFabHovered = false;
+          if (floatingEl) floatingEl.classList.remove('is-speaking');
+          stopSpeechSound();
+          if (fabTextEl) {
+            fabTextEl.textContent = getRandomDefaultButtonText();
+          }
+          updateBubblePointer();
+          scheduleIdleGreeting();
+        }, holdMs);
+      }
     }, delayMs);
+  }
+
+  // ── ระบบทักทายแนะนำตัวเมื่อเมาส์เข้าใกล้ชื่อ (Docked Proximity Intro) ──
+  function checkDockedProximity(px, py) {
+    if (isChasing) return;
+    const oEl = document.getElementById('easter-egg-o');
+    if (!oEl) return;
+
+    const rect = oEl.getBoundingClientRect();
+    if (rect.width === 0 || rect.bottom < -50 || rect.top > window.innerHeight + 50) return;
+
+    const oCenterX = rect.left + (rect.width / 2);
+    const oCenterY = rect.top + (rect.height / 2);
+    const dist = Math.hypot(px - oCenterX, py - oCenterY);
+
+    const proxRadius = (FLOATING_O_CONFIG.timing && FLOATING_O_CONFIG.timing.proximityRadius) || 160;
+    const leaveRadius = (FLOATING_O_CONFIG.timing && FLOATING_O_CONFIG.timing.proximityLeaveRadius) || 320;
+    const cooldownMs = (FLOATING_O_CONFIG.timing && FLOATING_O_CONFIG.timing.proximityCooldownMs) || 2500;
+
+    if (!isDockedIntroActive) {
+      if (dist <= proxRadius) {
+        const now = Date.now();
+        if (now - lastDockedIntroTime > cooldownMs) {
+          startDockedIntro(oEl);
+        }
+      }
+    } else {
+      // ถ้าผู้ใช้ไม่ทำอะไรหรือเลื่อนเมาส์ออกห่างเกินระยะ ให้กลับที่เดิม
+      if (dist > leaveRadius) {
+        if (!dockedIntroLeaveTimer) {
+          dockedIntroLeaveTimer = setTimeout(() => {
+            dockedIntroLeaveTimer = null;
+            if (!isDockedIntroActive || isChasing) return;
+            const curRect = oEl.getBoundingClientRect();
+            const curDist = Math.hypot(mouseX - (curRect.left + curRect.width / 2), mouseY - (curRect.top + curRect.height / 2));
+            if (curDist > leaveRadius) {
+              stopDockedIntro(false);
+            }
+          }, 1400);
+        }
+      } else {
+        if (dockedIntroLeaveTimer) {
+          clearTimeout(dockedIntroLeaveTimer);
+          dockedIntroLeaveTimer = null;
+        }
+      }
+    }
+  }
+
+  function startDockedIntro(oEl) {
+    if (isChasing || isDockedIntroActive) return;
+    if (!oEl) oEl = document.getElementById('easter-egg-o');
+    if (!oEl) return;
+
+    const origFab = document.getElementById('contact-fab-btn');
+    const floatFab = createFloatingContactFab();
+    if (!floatFab) return;
+
+    isDockedIntroActive = true;
+    window.__isDockedIntroSpeaking = true;
+    lastDockedIntroTime = Date.now();
+    hasPlayedDockedIntro = true;
+    dockedSeqIndex = 0;
+
+    // เตรียมข้อความตามรอบการเข้าใกล้ (แนวทาง A):
+    // รอบที่ 1: ชุดข้อความแนะนำตัวเต็มชุด (greetingText)
+    // รอบที่ 2: ชุดข้อความทักทายรอบสองสั้นๆ (followUpGreetingText)
+    // รอบที่ 3 เป็นต้นไป: สุ่มข้อความสั้นกระชับ 1 ข้อความ (subsequentGreetings)
+    let sentences = [];
+    if (dockedIntroCount === 0) {
+      if (Array.isArray(FLOATING_O_CONFIG.greetingText)) {
+        sentences = FLOATING_O_CONFIG.greetingText;
+      } else if (typeof FLOATING_O_CONFIG.greetingText === 'string') {
+        sentences = [FLOATING_O_CONFIG.greetingText];
+      }
+    } else if (dockedIntroCount === 1) {
+      if (Array.isArray(FLOATING_O_CONFIG.followUpGreetingText)) {
+        sentences = FLOATING_O_CONFIG.followUpGreetingText;
+      } else if (typeof FLOATING_O_CONFIG.followUpGreetingText === 'string') {
+        sentences = [FLOATING_O_CONFIG.followUpGreetingText];
+      }
+    } else {
+      const pool = FLOATING_O_CONFIG.subsequentGreetings || [
+        "พร้อมลุยงานเสมอนะครับ (◍•ᴗ•◍)",
+        "มีโปรเจกต์ใหม่ ปรึกษาโอเว่นได้ตลอดนะ!",
+        "ยินดีต้อนรับอีกครั้งนะ (⁠ ⁠╹⁠▽⁠╹⁠ ⁠)",
+      ];
+      if (Array.isArray(pool) && pool.length > 0) {
+        let idx = Math.floor(Math.random() * pool.length);
+        if (idx === lastSubsequentIndex && pool.length > 1) {
+          idx = (idx + 1) % pool.length;
+        }
+        lastSubsequentIndex = idx;
+        sentences = [pool[idx]];
+      }
+    }
+
+    sentences = sentences.map(s => (typeof s === 'string' ? s.trim() : '')).filter(Boolean);
+    if (sentences.length === 0) {
+      sentences = ["สวัสดี (◍•ᴗ•◍)"];
+    }
+    dockedIntroCount++;
+
+    const fabTextEl = floatFab.querySelector('.floating-contact-fab-text');
+    if (fabTextEl) fabTextEl.textContent = sentences[0];
+
+    // 1. ตำแหน่งเริ่มต้น: เลื่อนมาจากปุ่มส่งข้อความทางขวามือ (#contact-fab-btn)
+    let startX = window.innerWidth - 80;
+    let startY = 80;
+    if (origFab) {
+      const origRect = origFab.getBoundingClientRect();
+      startX = origRect.left;
+      startY = origRect.top;
+    }
+
+    // ล้างสถานะเก่า ล็อก transition เป็น none แล้ววางพิกัดเริ่มต้นไว้ที่ปุ่มขวามือทันที
+    floatFab.classList.remove('returning', 'seq-switching', 'greeting-active', 'docked-intro');
+    floatFab.style.setProperty('transition', 'none', 'important');
+    floatFab.style.transform = `translate3d(${startX.toFixed(1)}px, ${startY.toFixed(1)}px, 0)`;
+    floatFab.classList.add('active');
+    floatFab.style.cursor = 'default';
+    if (origFab) {
+      origFab.classList.add('is-detached');
+    }
+
+    // บังคับ Reflow ให้เบราว์เซอร์รับรู้พิกัดเริ่มต้นทางขวาโดยไม่มีแอนิเมชันข้ามตำแหน่ง
+    void floatFab.offsetWidth;
+
+    const glideFlightMs = (FLOATING_O_CONFIG.timing && FLOATING_O_CONFIG.timing.glideInFlightMs) || 520;
+    const sentenceHoldMs = (FLOATING_O_CONFIG.timing && FLOATING_O_CONFIG.timing.introSentenceHoldMs) || 2000;
+    const transitionMs = (FLOATING_O_CONFIG.timing && FLOATING_O_CONFIG.timing.introTransitionMs) || 180;
+
+    // 2. ในเฟรมถัดไป ร่อนมาจากขวามือมาหาตัว O ทางซ้าย และเริ่มกางกล่องคำพูด
+    requestAnimationFrame(() => {
+      if (!isDockedIntroActive || isChasing) return;
+      floatFab.style.removeProperty('transition');
+      floatFab.classList.add('docked-intro', 'greeting-active');
+      floatFab.style.transition = `transform ${glideFlightMs}ms cubic-bezier(0.16, 1.15, 0.3, 1), opacity 0.25s ease, background 0.22s ease, color 0.22s ease, border-color 0.22s ease`;
+      updateDockedIntroPosition();
+
+      const glideStart = performance.now();
+      function trackGlideIn(now) {
+        if (!isDockedIntroActive || isChasing) return;
+        const curO = document.getElementById('easter-egg-o') || oEl;
+        const floatPoly = document.getElementById('floating-bubble-pointer-poly');
+        if (curO && floatPoly) {
+          const oRect = curO.getBoundingClientRect();
+          updateSinglePointer(floatFab, floatPoly, oRect.left + oRect.width / 2, oRect.top + oRect.height / 2);
+        }
+        if (now - glideStart < glideFlightMs + 20) {
+          requestAnimationFrame(trackGlideIn);
+        } else {
+          // ถึงจุดหมายเหนือตัว O เรียบร้อย: ตรึงพิกัดปลายทาง ยิงเสียงพูด 8-บิต และเริ่มดุกดิกพูดทักทาย
+          updateDockedIntroPosition();
+          const curO = document.getElementById('easter-egg-o') || oEl;
+          if (curO) curO.classList.add('is-speaking');
+          playSpeechSoundBurst(Math.min(6, Math.max(3, Math.round(sentences[0].length * 0.35))), 78);
+          startSentencePlayback();
+        }
+      }
+      requestAnimationFrame(trackGlideIn);
+    });
+
+    function startSentencePlayback() {
+      function runNextDockedSentence() {
+        dockedSeqTimer = setTimeout(() => {
+          if (isChasing || !isDockedIntroActive) return;
+          dockedSeqIndex++;
+          if (dockedSeqIndex < sentences.length) {
+            floatFab.classList.add('seq-switching');
+            dockedTransitionTimer = setTimeout(() => {
+              if (isChasing || !isDockedIntroActive) return;
+              if (fabTextEl) fabTextEl.textContent = sentences[dockedSeqIndex];
+              floatFab.classList.remove('seq-switching');
+              const speakingO = document.getElementById('easter-egg-o') || oEl;
+              if (speakingO) speakingO.classList.add('is-speaking');
+              playSpeechSoundBurst(Math.min(6, Math.max(3, Math.round(sentences[dockedSeqIndex].length * 0.35))), 78);
+              updateDockedIntroPosition();
+              requestAnimationFrame(() => updateDockedIntroPosition());
+              runNextDockedSentence();
+            }, transitionMs);
+          } else {
+            // พูดจบครบชุดแล้ว ค้างข้อความสุดท้ายแป๊บนึงก่อนร่อนกลับที่เดิมทางขวามือ
+            dockedSeqTimer = setTimeout(() => {
+              stopDockedIntro(false);
+            }, 1800);
+          }
+        }, sentenceHoldMs);
+      }
+
+      if (sentences.length > 1) {
+        runNextDockedSentence();
+      } else {
+        dockedSeqTimer = setTimeout(() => {
+          stopDockedIntro(false);
+        }, sentenceHoldMs + 600);
+      }
+    }
+  }
+
+  function stopDockedIntro(immediate = false) {
+    if (!isDockedIntroActive && !immediate) return;
+    isDockedIntroActive = false;
+    window.__isDockedIntroSpeaking = false;
+    lastDockedIntroTime = Date.now();
+    stopSpeechSound();
+
+    if (dockedIntroLeaveTimer) {
+      clearTimeout(dockedIntroLeaveTimer);
+      dockedIntroLeaveTimer = null;
+    }
+    if (dockedSeqTimer) {
+      clearTimeout(dockedSeqTimer);
+      dockedSeqTimer = null;
+    }
+    if (dockedTransitionTimer) {
+      clearTimeout(dockedTransitionTimer);
+      dockedTransitionTimer = null;
+    }
+
+    const oEl = document.getElementById('easter-egg-o');
+    if (oEl) oEl.classList.remove('is-speaking');
+
+    const origFab = document.getElementById('contact-fab-btn');
+
+    if (floatingFabEl && !isChasing) {
+      floatingFabEl.classList.remove('greeting-active', 'seq-switching');
+      floatingFabEl.style.cursor = '';
+
+      if (immediate || !origFab) {
+        floatingFabEl.classList.remove('active', 'docked-intro', 'returning');
+        if (origFab) origFab.classList.remove('is-detached');
+      } else {
+        // ร่อนกลับไปที่ปุ่มขวามือตามเดิม (#contact-fab-btn)
+        const returnFlightMs = (FLOATING_O_CONFIG.timing && FLOATING_O_CONFIG.timing.returnFlightMs) || 480;
+        const origRect = origFab.getBoundingClientRect();
+        floatingFabEl.classList.add('returning');
+        floatingFabEl.style.transition = `transform ${returnFlightMs}ms cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease`;
+        floatingFabEl.style.transform = `translate3d(${origRect.left.toFixed(1)}px, ${origRect.top.toFixed(1)}px, 0)`;
+
+        const returnStart = performance.now();
+        function trackReturnGlide(now) {
+          if (isChasing || isDockedIntroActive) return;
+          const floatPoly = document.getElementById('floating-bubble-pointer-poly');
+          const curO = document.getElementById('easter-egg-o');
+          if (floatPoly && curO) {
+            const oRect = curO.getBoundingClientRect();
+            updateSinglePointer(floatingFabEl, floatPoly, oRect.left + oRect.width / 2, oRect.top + oRect.height / 2);
+          }
+          if (now - returnStart < returnFlightMs + 20) {
+            requestAnimationFrame(trackReturnGlide);
+          } else {
+            // ถึงบ้านทางขวามือแล้ว คืนค่าปุ่มเดิม
+            if (!isChasing && !isDockedIntroActive && floatingFabEl) {
+              floatingFabEl.classList.remove('active', 'docked-intro', 'returning');
+              if (origFab) origFab.classList.remove('is-detached');
+            }
+          }
+        }
+        requestAnimationFrame(trackReturnGlide);
+      }
+    }
+  }
+
+  function attachDockedHoverListeners() {
+    const oEl = document.getElementById('easter-egg-o');
+    const nameRow = document.getElementById('profile-name-el');
+    if (oEl && !oEl.__hasDockedHover) {
+      oEl.__hasDockedHover = true;
+      oEl.addEventListener('mouseenter', () => {
+        if (!isChasing && !isDockedIntroActive) {
+          startDockedIntro(oEl);
+        }
+      });
+    }
+    if (nameRow && !nameRow.__hasDockedHover) {
+      nameRow.__hasDockedHover = true;
+      nameRow.addEventListener('mouseenter', () => {
+        if (!isChasing && !isDockedIntroActive) {
+          const targetO = document.getElementById('easter-egg-o');
+          if (targetO) startDockedIntro(targetO);
+        }
+      });
+    }
+  }
+  window.__attachDockedHoverListeners = attachDockedHoverListeners;
+
+  function updateDockedIntroPosition() {
+    if (!isDockedIntroActive || isChasing || !floatingFabEl) return;
+    const oEl = document.getElementById('easter-egg-o');
+    if (!oEl) return;
+
+    const oRect = oEl.getBoundingClientRect();
+    const fabRect = floatingFabEl.getBoundingClientRect();
+    const curW = fabRect.width || 210;
+    const curH = fabRect.height || 38;
+
+    const oCenterX = oRect.left + (oRect.width / 2);
+    const oCenterY = oRect.top + (oRect.height / 2);
+
+    // วางกล่องคำพูดไว้เหนือตัว O ในระดับสายตา
+    let fabX = oCenterX - 28;
+    let fabY = oRect.top - curH - 14;
+
+    // หากติดขอบบนของจอ ให้สลับลงด้านล่างของตัว O
+    if (fabY < 12) {
+      fabY = oRect.bottom + 14;
+    }
+
+    // ป้องกันหลุดขอบจอซ้าย-ขวา
+    fabX = Math.max(12, Math.min(window.innerWidth - curW - 12, fabX));
+
+    floatingFabEl.style.transform = `translate3d(${fabX.toFixed(1)}px, ${fabY.toFixed(1)}px, 0)`;
+
+    // ให้หางชี้ (Speech pointer) พุ่งตรงเข้าหาจุดศูนย์กลางของตัว O บนชื่อ
+    const floatPoly = document.getElementById('floating-bubble-pointer-poly');
+    if (floatPoly) {
+      updateSinglePointer(floatingFabEl, floatPoly, oCenterX, oCenterY);
+    }
   }
 
   function createFloatingO() {
@@ -1004,6 +1677,12 @@ const FLOATING_O_CONFIG = {
     floatingFabEl.href = orig ? orig.href : '#';
     floatingFabEl.target = '_blank';
     floatingFabEl.setAttribute('aria-label', 'ติดต่อ');
+    if (orig) {
+      const origRect = orig.getBoundingClientRect();
+      floatingFabEl.style.transform = `translate3d(${origRect.left.toFixed(1)}px, ${origRect.top.toFixed(1)}px, 0)`;
+    } else {
+      floatingFabEl.style.transform = `translate3d(${window.innerWidth - 80}px, 80px, 0)`;
+    }
     floatingFabEl.innerHTML = `
       <svg class="bubble-pointer-svg" id="floating-bubble-pointer-svg" style="overflow: visible !important; position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10;" aria-hidden="true">
         <polygon id="floating-bubble-pointer-poly" style="fill: var(--text) !important;" points="" />
@@ -1011,13 +1690,13 @@ const FLOATING_O_CONFIG = {
       <svg class="contact-fab-icon" viewBox="0 0 24 24">
         <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z" />
       </svg>
-      <span class="floating-contact-fab-text">${FLOATING_O_CONFIG.greetingText || "สวัสดี (◍•ᴗ•◍)"}</span>
+      <span class="floating-contact-fab-text">${Array.isArray(FLOATING_O_CONFIG.greetingText) ? (FLOATING_O_CONFIG.greetingText[0] || "สวัสดี (◍•ᴗ•◍)") : (FLOATING_O_CONFIG.greetingText || "สวัสดี (◍•ᴗ•◍)")}</span>
     `;
     document.body.appendChild(floatingFabEl);
 
     // ป้องกันการคลิกกล่องข้อความถ้าเวลาที่แสดงข้อความทักทายค้างไว้ยังไม่เสร็จ
     floatingFabEl.addEventListener('click', e => {
-      if (fabGreetingActive) {
+      if (fabGreetingActive || isDockedIntroActive) {
         e.preventDefault();
         e.stopPropagation();
         return;
@@ -1026,7 +1705,7 @@ const FLOATING_O_CONFIG = {
     });
 
     floatingFabEl.addEventListener('touchend', e => {
-      if (fabGreetingActive) {
+      if (fabGreetingActive || isDockedIntroActive) {
         e.preventDefault();
         e.stopPropagation();
         return;
@@ -1035,7 +1714,7 @@ const FLOATING_O_CONFIG = {
     });
 
     floatingFabEl.addEventListener('pointerdown', e => {
-      if (fabGreetingActive) {
+      if (fabGreetingActive || isDockedIntroActive) {
         e.preventDefault();
         e.stopPropagation();
       }
@@ -1100,11 +1779,18 @@ const FLOATING_O_CONFIG = {
   window.addEventListener('mousemove', e => {
     updatePos(e.clientX, e.clientY);
     handleSectionExplanationHover(e.target);
+    checkDockedProximity(e.clientX, e.clientY);
   }, { passive: true });
 
   window.addEventListener('touchmove', e => {
     if (e.touches && e.touches.length > 0) {
-      updatePos(e.touches[0].clientX, e.touches[0].clientY);
+      const touch = e.touches[0];
+      updatePos(touch.clientX, touch.clientY);
+      checkDockedProximity(touch.clientX, touch.clientY);
+      if (typeof document.elementFromPoint === 'function') {
+        const touchEl = document.elementFromPoint(touch.clientX, touch.clientY);
+        if (touchEl) handleSectionExplanationHover(touchEl);
+      }
     }
   }, { passive: true });
 
@@ -1336,6 +2022,9 @@ const FLOATING_O_CONFIG = {
   function startChasing(originEl) {
     if (!originEl) originEl = document.getElementById('easter-egg-o');
     if (!originEl) return;
+    if (isDockedIntroActive) {
+      stopDockedIntro(true);
+    }
     isChasing = false;
     cancelAnimationFrame(animId);
     clearIdleGreetingTimer();
@@ -1409,10 +2098,17 @@ const FLOATING_O_CONFIG = {
     clearIdleGreetingTimer();
 
     const fabTextEl = floatFab.querySelector('.floating-contact-fab-text');
-    if (fabTextEl) fabTextEl.textContent = FLOATING_O_CONFIG.greetingText || "สวัสดี (◍•ᴗ•◍)";
+    let initDialogue = null;
+    if (hasPlayedDockedIntro) {
+      initDialogue = "เมาส์ไปไหน ผมจะตามไปทางนั้น (⁠•⁠ ⁠u⁠ ⁠•⁠ )ノ~";
+    }
+    const initText = initDialogue || (Array.isArray(FLOATING_O_CONFIG.greetingText)
+      ? (FLOATING_O_CONFIG.greetingText[0] || "สวัสดี (◍•ᴗ•◍)")
+      : (FLOATING_O_CONFIG.greetingText || "สวัสดี (◍•ᴗ•◍)"));
+    if (fabTextEl) fabTextEl.textContent = initText;
 
     isChasing = true;
-    playGreeting(floatFab);
+    playGreeting(floatFab, null, initDialogue);
 
     updateBubblePointer();
     cancelAnimationFrame(animId);
@@ -1430,6 +2126,10 @@ const FLOATING_O_CONFIG = {
     clearIdleGreetingTimer();
     clearTimeout(greetingExpandTimer);
     clearTimeout(greetingTimer);
+    clearTimeout(seqTransitionTimer);
+    if (floatingFabEl) floatingFabEl.classList.remove('seq-switching');
+    if (floatingEl) floatingEl.classList.remove('is-speaking');
+    stopSpeechSound();
     fabGreetingActive = false;
     isFabHovered = false;
     isExplainingSection = false;
@@ -1537,74 +2237,16 @@ const FLOATING_O_CONFIG = {
   document.addEventListener('click', handleOTargetClick);
   document.addEventListener('touchend', handleOTargetClick);
 
-  // Resume floating companion state if page was refreshed without returning home
+  // Clean any old localStorage floating state so page always starts fresh and clean at home
   try {
-    if (localStorage.getItem('toru_floating_o_active') === '1') {
-      const originEl = document.getElementById('easter-egg-o');
-      const origFab = document.getElementById('contact-fab-btn');
-      if (originEl) {
-        originEl.classList.add('is-detached');
-        const floatEl = createFloatingO();
-        const rect = originEl.getBoundingClientRect();
-        const comp = window.getComputedStyle(originEl);
-
-        floatEl.style.fontSize = comp.fontSize;
-        floatEl.style.fontWeight = comp.fontWeight;
-        floatEl.style.fontFamily = comp.fontFamily;
-        floatEl.style.letterSpacing = comp.letterSpacing;
-        floatEl.style.lineHeight = '1';
-
-        const fontPx = parseFloat(comp.fontSize) || 32;
-        badgeSize = Math.round(Math.max(rect.width, rect.height, fontPx) * 1.35);
-        const compactPx = FLOATING_O_CONFIG.physics.compactBadgePx || 42;
-        compactScale = Math.min(1, Math.max(0.35, compactPx / badgeSize));
-        currentScale = compactScale;
-
-        floatEl.style.width = `${badgeSize}px`;
-        floatEl.style.height = `${badgeSize}px`;
-
-        const initOCoords = getTargetOCoords(mouseX, mouseY);
-        currentX = initOCoords.x;
-        currentY = initOCoords.y;
-
-        floatEl.classList.remove('returning');
-        floatEl.style.transition = 'none';
-        floatEl.style.transform = `translate3d(${currentX}px, ${currentY}px, 0) rotate(0deg) scale(${compactScale.toFixed(4)})`;
-        floatEl.classList.add('active');
-
-        if (origFab) {
-          origFab.classList.add('is-detached');
-          const floatFab = createFloatingContactFab();
-          const initFab = getTargetFabCoords(initOCoords.centerX, initOCoords.centerY, 44, 32, compactPx / 2);
-          fabX = initFab.x;
-          fabY = initFab.y;
-          floatFab.classList.remove('returning', 'greeting-active');
-          floatFab.classList.add('active', 'chasing-o');
-          floatFab.style.transition = 'none';
-          floatFab.style.transform = `translate3d(${fabX}px, ${fabY}px, 0) rotate(0deg)`;
-
-          // รันสวัสดีตอนเริ่มโหลดหน้าเว็บใหม่ถ้าตัว O กำลังติดตามเมาส์อยู่
-          isPinned = false;
-          isDraggingO = false;
-          if (FLOATING_O_CONFIG.timing.greetOnReload !== false) {
-            const reloadDelay = FLOATING_O_CONFIG.timing.reloadGreetingDelayMs || 350;
-            isFirstGreeting = true;
-            lastGreetingIndex = 0;
-            isChasing = true;
-            playGreeting(floatFab, reloadDelay);
-          } else {
-            isChasing = true;
-            scheduleIdleGreeting();
-          }
-        }
-
-        isChasing = true;
-        updateBubblePointer();
-        cancelAnimationFrame(animId);
-        animId = requestAnimationFrame(chaseLoop);
-      }
-    }
+    localStorage.removeItem('toru_floating_o_active');
   } catch (_) { }
+
+  // Attach hover and proximity triggers on load
+  attachDockedHoverListeners();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', attachDockedHoverListeners);
+  }
 
   // Synchronize speech bubble pointer position and angle
   const fabBtn = document.getElementById('contact-fab-btn');
@@ -1624,10 +2266,26 @@ const FLOATING_O_CONFIG = {
     fabBtn.addEventListener('blur', updateBubblePointer);
   }
 
-  window.addEventListener('resize', updateBubblePointer);
+  window.addEventListener('resize', () => {
+    updateBubblePointer();
+    if (isDockedIntroActive) {
+      updateDockedIntroPosition();
+    }
+  });
   window.addEventListener('scroll', () => {
     clearSectionHoverTimer();
     updateBubblePointer();
+    if (isDockedIntroActive) {
+      const oEl = document.getElementById('easter-egg-o');
+      if (oEl) {
+        const rect = oEl.getBoundingClientRect();
+        if (rect.bottom < -40 || rect.top > window.innerHeight + 40) {
+          stopDockedIntro(false);
+        } else {
+          updateDockedIntroPosition();
+        }
+      }
+    }
   }, { passive: true });
   setTimeout(updateBubblePointer, 150);
 })();

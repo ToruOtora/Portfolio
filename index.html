@@ -676,6 +676,52 @@
       transition: opacity 0.65s cubic-bezier(0.2, 0.8, 0.2, 1);
     }
 
+    /* ══ O SPEAKING 3D DIMENSIONAL (ดุกดิกแบบมีมิติ 3D พยักหน้าเอียงคอ ไม่สั่นแบนๆ) ══ */
+    @keyframes o-speaking-dimensional {
+      0%, 100% {
+        transform: perspective(360px) translateY(0) rotateX(0deg) rotateY(0deg) rotateZ(0deg) scale3d(1, 1, 1);
+      }
+      18% {
+        /* จังหวะพยักหน้าพูดคำแรก: ยืดตัวขึ้น เอนมาข้างหน้า หันเอียงหาผู้ใช้ (Nod & Lean in) */
+        transform: perspective(360px) translateY(-3.8px) rotateX(-14deg) rotateY(-11deg) rotateZ(-3.5deg) scale3d(0.93, 1.12, 1);
+      }
+      38% {
+        /* จังหวะลงน้ำหนักพยางค์: ยุบตัวนุ่มนวล เอนกลับเล็กน้อย (Squash & Rebound) */
+        transform: perspective(360px) translateY(0.8px) rotateX(8deg) rotateY(5deg) rotateZ(1.5deg) scale3d(1.08, 0.92, 1);
+      }
+      62% {
+        /* จังหวะพูดพยางค์ถัดไป: เอียงหัวอีกฝั่งอย่างร่าเริง มีมิติมุมมองลึก (Lively Tilt) */
+        transform: perspective(360px) translateY(-2.6px) rotateX(-10deg) rotateY(12deg) rotateZ(3.5deg) scale3d(0.96, 1.07, 1);
+      }
+      82% {
+        /* ซับแรงกระแทกเบาๆ ก่อนคืนสภาพ (Gentle Settle) */
+        transform: perspective(360px) translateY(0.4px) rotateX(4deg) rotateY(-3deg) rotateZ(-1deg) scale3d(1.03, 0.97, 1);
+      }
+    }
+
+    .easter-egg-o.is-speaking {
+      display: inline-block !important;
+      animation: o-speaking-dimensional 0.76s cubic-bezier(0.35, 0.15, 0.3, 1) infinite !important;
+      transform-origin: center 85% !important;
+      transform-style: preserve-3d;
+      will-change: transform;
+    }
+
+    .floating-o.is-speaking .floating-o-text {
+      display: inline-block !important;
+      animation: o-speaking-dimensional 0.76s cubic-bezier(0.35, 0.15, 0.3, 1) infinite !important;
+      transform-origin: center 85% !important;
+      transform-style: preserve-3d;
+      will-change: transform;
+    }
+
+    .floating-o.is-speaking::before {
+      animation: o-speaking-dimensional 0.76s cubic-bezier(0.35, 0.15, 0.3, 1) infinite !important;
+      transform-origin: center 85% !important;
+      transform-style: preserve-3d;
+      will-change: transform;
+    }
+
     .profile-tags {
       font-size: 12px;
       font-weight: 300;
@@ -2012,6 +2058,10 @@
         line-height: 1.4 !important;
         padding-top: 1px !important;
         padding-bottom: 1px !important;
+        max-width: calc(100vw - 60px) !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        white-space: nowrap !important;
       }
     }
 
@@ -2032,7 +2082,7 @@
       opacity: 0;
       visibility: hidden;
       overflow: visible !important;
-      transform: translate3d(-200px, -200px, 0);
+      transform: translate3d(100vw, 80px, 0);
       transform-origin: center center;
       margin: 0 !important;
       transition: background 0.22s ease, color 0.22s ease, border-color 0.22s ease, min-width 0.35s cubic-bezier(0.16, 1.25, 0.3, 1), width 0.35s cubic-bezier(0.16, 1.25, 0.3, 1), padding 0.35s cubic-bezier(0.16, 1.25, 0.3, 1);
@@ -2119,6 +2169,21 @@
       line-height: 1.4 !important;
       padding-top: 1px !important;
       padding-bottom: 1px !important;
+    }
+
+    .floating-contact-fab.seq-switching span,
+    .floating-contact-fab.seq-switching .floating-contact-fab-text {
+      opacity: 0 !important;
+      transform: translateY(-2px) scale(0.96) !important;
+      transition: opacity 0.16s ease, transform 0.16s ease !important;
+    }
+
+    .floating-contact-fab.docked-intro {
+      transition: transform 0.52s cubic-bezier(0.16, 1.15, 0.3, 1), opacity 0.25s ease, background 0.22s ease, color 0.22s ease, border-color 0.22s ease;
+    }
+
+    .floating-contact-fab.docked-intro.returning {
+      transition: transform 0.48s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease;
     }
 
     /* Speech pointer SVG: hidden by default when shrunk, only visible during greeting or hover */
@@ -2369,31 +2434,68 @@
       }
     }
 
-    /* Fixed contact fab on terms page (bottom right) */
-    .contact-fab.terms-contact-fab {
+    /* Contact FAB for terms page (สไตล์เดียวกับ price-fab) */
+    .terms-contact-fab {
       position: fixed;
-      top: auto;
-      left: auto;
-      bottom: 2rem;
       right: 2rem;
+      bottom: 2rem;
+      width: 70px;
+      height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      background: var(--bg2);
+      border: 1px solid var(--line2);
+      border-radius: 999px;
+      color: var(--text2);
+      text-decoration: none;
+      cursor: pointer;
+      transition: all 0.25s ease;
       z-index: 90;
     }
 
-    @media (max-width: 900px) {
-      .contact-fab.terms-contact-fab {
-        top: auto;
-        left: auto;
-        bottom: 2rem;
-        right: 2rem;
-      }
+    .terms-contact-fab:hover,
+    .terms-contact-fab:focus-visible {
+      width: 140px;
+      background: var(--text);
+      color: var(--bg);
+      border-color: var(--text);
+    }
+
+    .terms-contact-fab svg {
+      position: absolute;
+      width: 18px;
+      height: 18px;
+      fill: currentColor;
+      opacity: 1;
+      transition: opacity 0.2s ease;
+    }
+
+    .terms-contact-fab:hover svg,
+    .terms-contact-fab:focus-visible svg {
+      opacity: 0;
+    }
+
+    .terms-contact-fab span {
+      opacity: 0;
+      transform: translateX(10px);
+      transition: opacity 0.2s ease, transform 0.2s ease;
+      font-size: 13px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .terms-contact-fab:hover span,
+    .terms-contact-fab:focus-visible span {
+      opacity: 1;
+      transform: translateX(0);
     }
 
     @media (max-width: 600px) {
-      .contact-fab.terms-contact-fab {
-        top: auto;
-        left: auto;
-        bottom: 4.5rem;
+      .terms-contact-fab {
         right: 1.25rem;
+        bottom: 4.5rem;
       }
     }
 
@@ -3258,8 +3360,8 @@
         </div>
       </div>
 
-      <!-- Contact Button Fixed Bottom Left -->
-      <a class="contact-fab terms-contact-fab" href="https://www.facebook.com/sittichok.janto" target="_blank"
+      <!-- Contact FAB for terms page (สไตล์เดียวกับ price-fab) -->
+      <a class="terms-contact-fab" href="https://www.facebook.com/sittichok.janto" target="_blank"
         title="ติดต่อ">
         <svg viewBox="0 0 24 24">
           <path
@@ -5453,9 +5555,12 @@
             } else {
               pnEl.textContent = m.name;
             }
-            if (localStorage.getItem('toru_floating_o_active') === '1') {
+            if (window.__attachDockedHoverListeners) {
+              window.__attachDockedHoverListeners();
+            }
+            if (window.__isDockedIntroSpeaking) {
               const oEl = document.getElementById('easter-egg-o');
-              if (oEl) oEl.classList.add('is-detached');
+              if (oEl) oEl.classList.add('is-speaking');
             }
           }
           const brandEl = document.getElementById('nav-brand-name');
@@ -5810,9 +5915,18 @@
     loadQueue();
 
     /* ══ PWA SERVICE WORKER REGISTRATION ══ */
+    if ('caches' in window) {
+      caches.keys().then(keys => {
+        keys.forEach(k => {
+          if (k !== 'toru-portfolio-v9') caches.delete(k);
+        });
+      });
+    }
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('sw.js').catch(err => {
+        navigator.serviceWorker.register('sw.js?v=9').then(reg => {
+          reg.update();
+        }).catch(err => {
           console.log('SW registration skipped/failed:', err);
         });
       });
@@ -5982,7 +6096,7 @@
     })();
 
   </script>
-  <script src="floating-companion.js?v=3.8"></script>
+  <script src="floating-companion.js?v=7.3"></script>
   <script src="character-generator.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/ag-psd/dist/bundle.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>

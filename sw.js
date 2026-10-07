@@ -1,8 +1,9 @@
 /* Service Worker for Toru O Portfolio & Tools */
-const CACHE_NAME = 'toru-portfolio-v1';
+const CACHE_NAME = 'toru-portfolio-v10';
 const CORE_ASSETS = [
   './',
   'index.html',
+  'floating-companion.js?v=7.3',
   'character-generator.js',
   'color-palette.js',
   'color-palette.css',
@@ -15,7 +16,9 @@ const CORE_ASSETS = [
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(CORE_ASSETS);
+      return cache.addAll(CORE_ASSETS).catch((err) => {
+        console.warn('Cache addAll warning:', err);
+      });
     }).then(() => self.skipWaiting())
   );
 });
@@ -58,6 +61,20 @@ self.addEventListener('fetch', (event) => {
         }
         return response;
       }).catch(() => caches.match(request).then((cached) => cached || caches.match('index.html')))
+    );
+    return;
+  }
+
+  // JS & CSS scripts/styles or versioned queries: Network first, fall back to cache
+  if (url.pathname.endsWith('.js') || url.pathname.endsWith('.css') || url.search.includes('v=')) {
+    event.respondWith(
+      fetch(request).then((networkResponse) => {
+        if (networkResponse && networkResponse.status === 200) {
+          const clone = networkResponse.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
+        }
+        return networkResponse;
+      }).catch(() => caches.match(request))
     );
     return;
   }
