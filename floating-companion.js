@@ -22,11 +22,18 @@ const FLOATING_O_CONFIG = {
     "คลิกที่ตัวผมเพื่อพาบินเล่นได้นะ!",
   ],
 
+  // ── ข้อความทักทายเมื่อเปิดเว็บกลับมาใหม่ (Welcome Back Greetings) ──
+  welcomeBackGreetingText: [
+    "ยินดีต้อนรับกลับมานะ (´꒳`)",
+    "พร้อมลุยงานเสมอคับ (◍•ᴗ•◍)",
+    "มีโปรเจกต์ใหม่ ปรึกษาผมได้ตลอดนะ!",
+  ],
+
   // ข้อความทักทายสั้นๆ สำหรับรอบที่สามเป็นต้นไป (สุ่มพูดประโยคสั้นๆ กระชับ ไม่ยืดเยื้อ)
   subsequentGreetings: [
-    "พร้อมลุยงานเสมอนะครับ (◍•ᴗ•◍)",
-    "มีโปรเจกต์ใหม่ ปรึกษาโอเว่นได้ตลอดนะ!",
-    "วันนี้แวะมาดูงานอะไรเป็นพิเศษไหมครับ (´꒳`)",
+    "พร้อมลุยงานเสมอคับ (◍•ᴗ•◍)",
+    "มีโปรเจกต์ใหม่ ปรึกษาผมได้ตลอดนะ!",
+    "วันนี้แวะมาดูงานอะไรเป็นพิเศษไหมคับ (´꒳`)",
     "จิ้มปุ่มข้างๆ เพื่อสั่ง COMMISSION ได้เลยนะ",
     "ยินดีต้อนรับอีกครั้งนะ (⁠ ⁠╹⁠▽⁠╹⁠ ⁠)",
   ],
@@ -34,15 +41,15 @@ const FLOATING_O_CONFIG = {
   // ── การตั้งค่าเสียงพูด 8-บิต (8-bit Voice Sound Settings - Web Audio API) ──
   sound: {
     enabled: true,             // เปิด/ปิดเสียงพูด 8-บิต (true / false)
-    volume: 0.12,              // ระดับความดังหลัก (ปรับเพิ่มจาก 0.055 เป็น 0.12 ให้ได้ยินชัดเจนยิ่งขึ้น)
+    volume: 0.72,              // ระดับความดังหลัก (ปรับเพิ่มจาก 0.055 เป็น 0.12 ให้ได้ยินชัดเจนยิ่งขึ้น)
     volumeSwing: 0.45,         // อัตราสวิงความเบา-ดัง (0.0 = ดังเท่ากันทุกพยางค์, 0.45 = พยางค์หนักเบาต่างกัน ~3 เท่า, 0.8 = ต่างกัน 8-10 เท่า)
-    basePitch: 450,            // ระดับความถี่เสียงพื้นฐาน (Hz: 350 = ทุ้มเข้ม, 450 = กลางๆ น่ารัก, 560 = แหลมใส)
+    basePitch: 550,            // ระดับความถี่เสียงพื้นฐาน (Hz: 350 = ทุ้มเข้ม, 450 = กลางๆ น่ารัก, 560 = แหลมใส)
     pitchSwing: 110,           // ระยะสวิงสูง-ต่ำของระดับเสียง (Hz: ยิ่งมากเสียงยิ่งมีเมโลดี้ขึ้นลงเป็นธรรมชาติ เช่น 80 - 150Hz)
     waveType: 'triangle',      // ชนิดคลื่นเสียง ('triangle' = นุ่มนวลกลมกล่อม, 'square' = 8-bit ติ๊ดๆ เรโทรแท้, 'sine' = ใสนุ่ม)
     pitchGlide: 0.82,          // การสไลด์คีย์ในแต่ละพยางค์ (0.75 - 0.95: รูดคีย์ลงเลียนแบบเสียงสระ/คำพูด)
     blipSpeedMs: 76,           // ความเร็วการเคาะพยางค์ (ms: ยิ่งน้อยยิ่งพูดรัวไว เช่น 65 - 90ms)
     blipDurationMs: 44,        // ความยาวของเนื้อเสียงแต่ละพยางค์ (ms: 30 - 55ms)
-    filterCutoff: 2200,        // โทนความทุ้ม-แหลม (Hz: 1500 = ทุ้มอบอุ่น, 2200 = พอดีๆ, 3500 = ใสคมชัด)
+    filterCutoff: 3200,        // โทนความทุ้ม-แหลม (Hz: 1500 = ทุ้มอบอุ่น, 2200 = พอดีๆ, 3500 = ใสคมชัด)
   },
 
   // รายการคำพูดเพิ่มเติม (สุ่มแสดงหลังจากคำแรก)
@@ -552,7 +559,7 @@ const FLOATING_O_CONFIG = {
       {
         id: 'terms-info-item',
         selector: '.terms-info-item',
-        message: function(el) {
+        message: function (el) {
           if (!el) return '';
           let title = (el.getAttribute('data-title') || '').trim();
           const price = (el.getAttribute('data-price') || '').trim();
@@ -580,7 +587,7 @@ const FLOATING_O_CONFIG = {
       {
         id: 'terms-price-fab',
         selector: '#price-fab',
-        message: function() {
+        message: function () {
           const textEl = document.getElementById('price-fab-text');
           const text = textEl ? textEl.textContent.trim() : '';
           if (!text || text.includes('0') || text === '฿0' || text === 'ราคา: ฿0') {
@@ -707,7 +714,7 @@ const FLOATING_O_CONFIG = {
       }
     }
     if (audioCtx && audioCtx.state === 'suspended') {
-      audioCtx.resume().catch(() => {});
+      audioCtx.resume().catch(() => { });
     }
     return audioCtx;
   }
@@ -715,7 +722,7 @@ const FLOATING_O_CONFIG = {
   function unlockAudio() {
     const ctx = getAudioContext();
     if (ctx && ctx.state === 'suspended') {
-      ctx.resume().catch(() => {});
+      ctx.resume().catch(() => { });
     }
   }
   window.addEventListener('pointerdown', unlockAudio, { passive: true });
@@ -764,7 +771,7 @@ const FLOATING_O_CONFIG = {
 
       osc.start(now);
       osc.stop(now + durationSec + 0.005);
-    } catch (_) {}
+    } catch (_) { }
   }
 
   function playSpeechSoundBurst(syllableCount = 4, intervalMsOverride = null) {
@@ -1298,8 +1305,8 @@ const FLOATING_O_CONFIG = {
       }
     } else {
       const pool = FLOATING_O_CONFIG.subsequentGreetings || [
-        "พร้อมลุยงานเสมอนะครับ (◍•ᴗ•◍)",
-        "มีโปรเจกต์ใหม่ ปรึกษาโอเว่นได้ตลอดนะ!",
+        "พร้อมลุยงานเสมอคับ (◍•ᴗ•◍)",
+        "มีโปรเจกต์ใหม่ ปรึกษาผมได้ตลอดนะ!",
         "ยินดีต้อนรับอีกครั้งนะ (⁠ ⁠╹⁠▽⁠╹⁠ ⁠)",
       ];
       if (Array.isArray(pool) && pool.length > 0) {
@@ -1576,7 +1583,7 @@ const FLOATING_O_CONFIG = {
       dragInitialY = currentY;
       hasMovedSignificantly = false;
       floatingEl.style.cursor = 'grabbing';
-      try { floatingEl.setPointerCapture(e.pointerId); } catch (_) {}
+      try { floatingEl.setPointerCapture(e.pointerId); } catch (_) { }
 
       // กดค้าง 1 วินาทีบนหน้าจอมือถือ/แท็บเล็ต เพื่อส่งกลับบ้าน
       clearTimeout(touchHoldTimer);
@@ -1585,7 +1592,7 @@ const FLOATING_O_CONFIG = {
           if (!hasMovedSignificantly && isChasing) {
             isDraggingO = false;
             floatingEl.style.cursor = 'grab';
-            try { floatingEl.releasePointerCapture(e.pointerId); } catch (_) {}
+            try { floatingEl.releasePointerCapture(e.pointerId); } catch (_) { }
             returnHome();
           }
         }, 1000);
@@ -1626,7 +1633,7 @@ const FLOATING_O_CONFIG = {
 
       isDraggingO = false;
       floatingEl.style.cursor = 'grab';
-      try { floatingEl.releasePointerCapture(e.pointerId); } catch (_) {}
+      try { floatingEl.releasePointerCapture(e.pointerId); } catch (_) { }
 
       if (hasMovedSignificantly) {
         // [แบบที่ 2]: ลากไปวางที่ใหม่สำเร็จ -> ปักหมุดอยู่นิ่งตรงตำแหน่งนั้น
@@ -2019,7 +2026,7 @@ const FLOATING_O_CONFIG = {
     animId = requestAnimationFrame(chaseLoop);
   }
 
-  function startChasing(originEl) {
+  function startChasing(originEl, isWelcomeBack = false) {
     if (!originEl) originEl = document.getElementById('easter-egg-o');
     if (!originEl) return;
     if (isDockedIntroActive) {
@@ -2099,10 +2106,16 @@ const FLOATING_O_CONFIG = {
 
     const fabTextEl = floatFab.querySelector('.floating-contact-fab-text');
     let initDialogue = null;
-    if (hasPlayedDockedIntro) {
+    if (isWelcomeBack) {
+      initDialogue = FLOATING_O_CONFIG.welcomeBackGreetingText || [
+        "ยินดีต้อนรับกลับมานะ (´꒳`)",
+        "พร้อมลุยงานเสมอนะครับ (◍•ᴗ•◍)",
+        "มีโปรเจกต์ใหม่ ปรึกษาได้ตลอดนะ!",
+      ];
+    } else if (hasPlayedDockedIntro) {
       initDialogue = "เมาส์ไปไหน ผมจะตามไปทางนั้น (⁠•⁠ ⁠u⁠ ⁠•⁠ )ノ~";
     }
-    const initText = initDialogue || (Array.isArray(FLOATING_O_CONFIG.greetingText)
+    const initText = (Array.isArray(initDialogue) ? initDialogue[0] : initDialogue) || (Array.isArray(FLOATING_O_CONFIG.greetingText)
       ? (FLOATING_O_CONFIG.greetingText[0] || "สวัสดี (◍•ᴗ•◍)")
       : (FLOATING_O_CONFIG.greetingText || "สวัสดี (◍•ᴗ•◍)"));
     if (fabTextEl) fabTextEl.textContent = initText;
@@ -2237,15 +2250,41 @@ const FLOATING_O_CONFIG = {
   document.addEventListener('click', handleOTargetClick);
   document.addEventListener('touchend', handleOTargetClick);
 
-  // Clean any old localStorage floating state so page always starts fresh and clean at home
-  try {
-    localStorage.removeItem('toru_floating_o_active');
-  } catch (_) { }
+  // ── ตรวจสอบสถานะเดิมเพื่อบินออกมาต้อนรับอัตโนมัติ (Auto-resume Companion on Return) ──
+  function checkAutoResumeFloating() {
+    let wasActive = false;
+    try {
+      wasActive = localStorage.getItem('toru_floating_o_active') === '1';
+    } catch (_) { }
+
+    if (!wasActive) return;
+
+    const delayMs = (FLOATING_O_CONFIG.timing && FLOATING_O_CONFIG.timing.reloadGreetingDelayMs) || 350;
+    const runResume = () => {
+      setTimeout(() => {
+        const originEl = document.getElementById('easter-egg-o');
+        if (originEl && !isChasing) {
+          startChasing(originEl, true);
+        }
+      }, delayMs);
+    };
+
+    if (document.fonts && document.fonts.ready) {
+      document.fonts.ready.then(runResume).catch(runResume);
+    } else {
+      runResume();
+    }
+  }
 
   // Attach hover and proximity triggers on load
-  attachDockedHoverListeners();
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', attachDockedHoverListeners);
+    document.addEventListener('DOMContentLoaded', () => {
+      attachDockedHoverListeners();
+      checkAutoResumeFloating();
+    });
+  } else {
+    attachDockedHoverListeners();
+    checkAutoResumeFloating();
   }
 
   // Synchronize speech bubble pointer position and angle

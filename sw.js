@@ -1,11 +1,11 @@
 /* Service Worker for Toru O Portfolio & Tools */
-const CACHE_NAME = 'toru-portfolio-v10';
+const CACHE_NAME = 'toru-portfolio-v12';
 const CORE_ASSETS = [
   './',
   'index.html',
-  'floating-companion.js?v=7.3',
+  'floating-companion.js?v=7.4',
   'character-generator.js',
-  'color-palette.js',
+  'color-palette.js?v=2.6',
   'color-palette.css',
   'reference-board.js?v=2.6',
   'reference-board.css?v=2.6',

@@ -2052,8 +2052,12 @@
         overflow: visible !important;
       }
 
-      .floating-contact-fab.active span,
-      .floating-contact-fab.active .floating-contact-fab-text {
+      .floating-contact-fab.active.greeting-active span,
+      .floating-contact-fab.active.greeting-active .floating-contact-fab-text,
+      .floating-contact-fab.active:hover span,
+      .floating-contact-fab.active:hover .floating-contact-fab-text,
+      .floating-contact-fab.active:focus-visible span,
+      .floating-contact-fab.active:focus-visible .floating-contact-fab-text {
         font-size: 12px !important;
         line-height: 1.4 !important;
         padding-top: 1px !important;
@@ -2062,6 +2066,16 @@
         overflow: hidden !important;
         text-overflow: ellipsis !important;
         white-space: nowrap !important;
+      }
+
+      .floating-contact-fab.active:not(.greeting-active):not(:hover) span,
+      .floating-contact-fab.active:not(.greeting-active):not(:hover) .floating-contact-fab-text {
+        display: none !important;
+        max-width: 0 !important;
+        width: 0 !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        overflow: hidden !important;
       }
     }
 
@@ -2110,6 +2124,7 @@
       position: static !important;
       width: 17px !important;
       height: 17px !important;
+      flex-shrink: 0 !important;
       fill: currentColor !important;
       opacity: 1 !important;
       display: block !important;
@@ -2222,6 +2237,29 @@
 
     .floating-contact-fab.returning {
       pointer-events: none;
+    }
+
+    /* ══ MOBILE FLOATING COMPANION OVERRIDES ══ */
+    @media (max-width: 600px) {
+      .floating-contact-fab.active {
+        width: 44px !important;
+        min-width: 44px !important;
+        height: 36px !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        padding: 0 !important;
+      }
+
+      .floating-contact-fab.active .contact-fab-icon {
+        width: 20px !important;
+        height: 20px !important;
+        min-width: 20px !important;
+        min-height: 20px !important;
+        flex-shrink: 0 !important;
+        display: block !important;
+        margin: 0 auto !important;
+      }
     }
 
 
@@ -5915,16 +5953,9 @@
     loadQueue();
 
     /* ══ PWA SERVICE WORKER REGISTRATION ══ */
-    if ('caches' in window) {
-      caches.keys().then(keys => {
-        keys.forEach(k => {
-          if (k !== 'toru-portfolio-v9') caches.delete(k);
-        });
-      });
-    }
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('sw.js?v=9').then(reg => {
+        navigator.serviceWorker.register('sw.js?v=12').then(reg => {
           reg.update();
         }).catch(err => {
           console.log('SW registration skipped/failed:', err);
@@ -5983,6 +6014,7 @@
 
       // Fetch live count from GoatCounter API (targeting /Portfolio)
       async function fetchGoatCounter() {
+        if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') return;
         const pathsToTry = [
           'https://owen1233m.goatcounter.com/counter/' + encodeURIComponent((location.pathname.replace(/\/$/, '') || '/Portfolio')) + '.json',
           'https://owen1233m.goatcounter.com/counter/Portfolio.json',
@@ -6096,12 +6128,12 @@
     })();
 
   </script>
-  <script src="floating-companion.js?v=7.3"></script>
+  <script src="floating-companion.js?v=7.4"></script>
   <script src="character-generator.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/ag-psd/dist/bundle.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/svg2pdf.js/2.2.3/svg2pdf.umd.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/ag-psd/dist/bundle.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/svg2pdf.js@2.2.3/dist/svg2pdf.umd.min.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js" defer></script>
   <script src="color-palette.js?v=2.6"></script>
   <script src="reference-board.js?v=2.6"></script>
 </body>
